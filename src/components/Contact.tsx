@@ -111,8 +111,8 @@ export default function Contact() {
                 onChange={handleChange}
                 required
                 className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all"
+                placeholder="Select a project type"
               >
-                <option value="">Select a project type</option>
                 <option value="ecommerce">E-commerce Website</option>
                 <option value="saas">SaaS Product</option>
                 <option value="webapp">Web Application</option>
