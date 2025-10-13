@@ -26,8 +26,7 @@ export default function Hero() {
             </a>
             <a href="linkedin.com/in/sudharsan-k-2027b1370" 
                target="_blank"
-               rel="noopener noreferrer"
-              className="text-slate-300 hover:text-cyan-400 transition-colors transform hover:scale-110 duration-300">
+               className="text-slate-300 hover:text-cyan-400 transition-colors transform hover:scale-110 duration-300">
               <Linkedin size={28} />
             </a>
             <a href="#" className="text-slate-300 hover:text-cyan-400 transition-colors transform hover:scale-110 duration-300">
