@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Mail, Send, Github, Linkedin, Twitter } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -8,11 +9,30 @@ export default function Contact() {
     projectType: '',
     message: ''
   });
+  const [status, setStatus] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  const form = e.target as HTMLFormElement;
+  const formData = new FormData(form);
+
+  const res = await fetch("https://formspree.io/f/yourFormID", {
+    method: "POST",
+    body: formData,
+    headers: { Accept: "application/json" },
+  });
+
+  if (res.ok) {
+    setStatus("success");
+    form.reset();
+    setTimeout(() => setStatus(""), 4000);
+  } else {
+    setStatus("error");
+    setTimeout(() => setStatus(""), 4000);
+  }
+};
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({
@@ -152,6 +172,31 @@ export default function Contact() {
           </form>
         </div>
       </div>
+      <AnimatePresence>
+  {status === "success" && (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 30 }}
+      transition={{ duration: 0.4 }}
+      className="fixed bottom-10 right-10 bg-green-500 text-white px-5 py-3 rounded-lg shadow-lg"
+    >
+      ✅ Your message was sent successfully!
+    </motion.div>
+  )}
+
+  {status === "error" && (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 30 }}
+      transition={{ duration: 0.4 }}
+      className="fixed bottom-10 right-10 bg-red-500 text-white px-5 py-3 rounded-lg shadow-lg"
+    >
+      ❌ Oops! Something went wrong. Please try again.
+    </motion.div>
+  )}
+</AnimatePresence>
     </section>
   );
 }
