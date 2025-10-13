@@ -24,7 +24,7 @@ export default function Hero() {
           <div className="flex justify-center gap-6 pt-4">
   {/* GitHub */}
   <motion.a
-    href=https://github.com/Sudharsan1-5"
+    href="https://github.com/Sudharsan1-5"
     target="_blank"
     rel="noopener noreferrer"
     whileHover={{
