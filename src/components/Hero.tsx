@@ -21,7 +21,7 @@ export default function Hero() {
           </div>
 
           <div className="flex justify-center gap-6 pt-4">
-            <a href="#" className="text-slate-300 hover:text-cyan-400 transition-colors transform hover:scale-110 duration-300">
+            <a href="https://github.com/xiasudharsank-glitch" className="text-slate-300 hover:text-cyan-400 transition-colors transform hover:scale-110 duration-300">
               <Github size={28} />
             </a>
             <a href="#" className="text-slate-300 hover:text-cyan-400 transition-colors transform hover:scale-110 duration-300">
