@@ -20,7 +20,7 @@ export default function About() {
         className="relative w-48 h-48 md:w-60 md:h-60 rounded-full overflow-hidden shadow-[0_0_40px_rgba(0,255,255,0.4)] hover:shadow-[0_0_80px_rgba(0,255,255,0.6)] transform transition-all duration-300"
       >
         <img
-          src="/profile.jpg" // ← replace with your own image file or URL
+          src="https://files.imagetourl.net/uploads/1760358752168-eb843ce2-4540-46f6-b9a1-c6fcc6a4c5cf.jpg" // ← replace with your own image file or URL
           alt="Sudharsan"
           className="w-full h-full object-cover rounded-full"
         />
