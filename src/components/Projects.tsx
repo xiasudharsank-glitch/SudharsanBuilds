@@ -57,7 +57,7 @@ export default function Projects() {
       gradient: 'from black-500 to-orange-600',
       image: 'placeholder'
       link: 'freelancerassistance.lovable.app'
-    },
+    }
   ];
 
   return (
