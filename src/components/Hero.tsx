@@ -11,7 +11,7 @@ export default function Hero() {
         <div className="text-center space-y-8 animate-fade-in">
           <div className="space-y-4">
             <h1 className="text-6xl md:text-8xl font-bold text-white tracking-tight">
-              <span className="block">Sudharsan</span>
+              <span className="block">Divya</span>
             </h1>
             <p className="text-2xl md:text-3xl text-cyan-400 font-medium">
               AI-Assisted No Code Developer & Web App Builder
