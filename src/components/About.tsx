@@ -1,52 +1,59 @@
-import React from 'react';
-import { Code, Palette, Rocket, Zap } from 'lucide-react';
+import { Code2, Palette, Rocket, Zap } from "lucide-react";
+import React from "react";
+import { motion } from "framer-motion";
 
-const coreSkills = [
-  { icon: Code, name: 'Web App Development' },
-  { icon: Palette, name: 'Front-End Tools' },
-  { icon: Rocket, name: 'E-Commerce Solutions' },
-  { icon: Zap, name: 'Workflow Automation' },
-];
+export default function About() {
+  const skills = [
+    { icon: <Code2 className="w-6 h-6" />, name: "No-Code Development" },
+    { icon: <Rocket className="w-6 h-6" />, name: "SaaS Products" },
+    { icon: <Palette className="w-6 h-6" />, name: "UI/UX Design" },
+    { icon: <Zap className="w-6 h-6" />, name: "Workflow Automation" },
+  ];
 
-const About: React.FC = () => {
   return (
     <section
       id="about"
-      className="min-h-screen bg-white py-24 px-6 flex items-center justify-center"
+      className="min-h-screen flex flex-col md:flex-row items-center justify-center gap-10 p-10 bg-gradient-to-b from-gray-900 to-gray-800 text-white"
     >
-      <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
-        {/* Profile Image */}
-        <div className="flex-shrink-0">
-          <img
-            src="https://files.imagetourl.net/uploads/1760358752168-eb843ce2-4540-46f6-b9a1-c6fcc6a4c5cf.jpg"
-            alt="Profile"
-            className="w-52 h-52 rounded-full object-cover shadow-xl border-4 border-blue-300 hover:scale-105 transition-transform duration-500 ease-in-out"
-          />
-        </div>
+      {/* Profile Image */}
+      <motion.div
+        whileHover={{ scale: 1.08, rotate: 10 }}
+        transition={{ type: "spring", stiffness: 280, damping: 20 }}
+        className="relative w-48 h-48 md:w-80 md:h-80 rounded-full overflow-hidden shadow-[0_0_40px_rgba(0,255,255,0.4)] hover:shadow-[0_0_80px_rgba(0,255,255,0.6)] transform transition-all duration-300"
+      >
+        <img
+          src="/profile.jpg" // ✅ Replace with your correct path or import
+          alt="Sudharsan"
+          className="w-full h-full object-cover rounded-full"
+        />
+      </motion.div>
 
-        {/* Text and Skills */}
-        <div className="flex-1">
-          <h2 className="text-4xl font-bold text-gray-900 mb-6">About Me</h2>
+      {/* About Text */}
+      <div className="space-y-5">
+        <p className="text-lg text-slate-300 leading-relaxed">
+          Hi! I'm a passionate developer specializing in transforming ideas into fully functional
+          web applications and SaaS products. With expertise in modern no-code and AI-assisted
+          development, I help businesses and entrepreneurs bring their visions to life quickly and
+          efficiently.
+        </p>
 
-          <p className="text-gray-700 text-lg mb-4 leading-relaxed">
-            Hi! I'm a passionate developer specializing in transforming ideas into fully functional web applications and SaaS products. With expertise in modern no-code and AI-assisted development, I help businesses and entrepreneurs bring their visions to life quickly and efficiently.
-          </p>
+        <p className="text-lg text-slate-300 leading-relaxed">
+          My goal is to provide high-quality, production-ready solutions that not only look
+          stunning but also deliver exceptional user experiences. Whether you need an e-commerce
+          platform, a subscription service, or a custom web application, I’ve got you covered.
+        </p>
 
-          <p className="text-gray-700 text-lg mb-8 leading-relaxed">
-            My goal is to provide high-quality, production-ready solutions that not only look stunning but also deliver exceptional user experiences. Whether you need an e-commerce platform, a subscription service, or a custom web application, I've got you covered.
-          </p>
-
-          {/* Core Skills */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {coreSkills.map((skill, index) => (
+        {/* Skills Section */}
+        <div className="pt-5">
+          <h3 className="text-xl font-bold text-slate-300 mb-3">Core Skills</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {skills.map((skill, index) => (
               <div
                 key={index}
-                className="group relative p-6 bg-gray-100 rounded-lg shadow-md cursor-pointer transition-all duration-500 ease-in-out hover:scale-105 hover:bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500"
+                className="flex items-center gap-3 p-4 bg-gray-800 rounded-xl hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1"
               >
-                <skill.icon className="w-6 h-6 text-gray-700 group-hover:text-white transition-colors duration-300 mb-2" />
-                <p className="text-sm font-semibold text-gray-700 group-hover:text-white transition-colors duration-300">
-                  {skill.name}
-                </p>
+                <span className="text-cyan-400">{skill.icon}</span>
+                <span className="text-slate-300 font-medium">{skill.name}</span>
               </div>
             ))}
           </div>
@@ -54,6 +61,4 @@ const About: React.FC = () => {
       </div>
     </section>
   );
-};
-
-export default About;
+}
