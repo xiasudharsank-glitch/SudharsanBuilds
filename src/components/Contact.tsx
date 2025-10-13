@@ -67,7 +67,12 @@ export default function Contact() {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-xl space-y-6">
+          <form
+  action="https://formspree.io/f/xldpowyp"
+  method="POST"
+  className="bg-white p-4 rounded-2xl shadow-xl space-y-6"
+>
+
             <div>
               <label htmlFor="name" className="block text-slate-700 font-semibold mb-2">
                 Your Name
