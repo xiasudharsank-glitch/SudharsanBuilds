@@ -9,16 +9,21 @@ export default function About() {
   ];
 
   return (
-  
-            About <span className="text-cyan-600">Me</span>
-          </h2>
+   <section id="about" className="min-h-screen flex flex-col md:flex-row items-center justify-center gap-10 p-10 bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+      
+      {/* 3D Profile Image */}
+      <motion.div
+        whileHover={{ scale: 1.08, rotateY: 10 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        className="relative w-48 h-48 md:w-60 md:h-60 rounded-full overflow-hidden shadow-[0_0_40px_rgba(0,255,255,0.4)] hover:shadow-[0_0_80px_rgba(0,255,255,0.6)] transform transition-all duration-300"
+      >
+        <img
+          src="/profile.jpg" // ← replace with your own image file or URL
+          alt="Sudharsan"
+          className="w-full h-full object-cover rounded-full"
+        />
+      </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <div className="aspect-square bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl shadow-2xl flex items-center justify-center">
-                <div className="text-white text-9xl font-bold opacity-20">YN</div>
-              </div>
-            </div>
 
             <div className="space-y-6">
               <p className="text-lg text-slate-700 leading-relaxed">
