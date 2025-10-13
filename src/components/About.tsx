@@ -19,7 +19,7 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <div className="aspect-square bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl shadow-2xl flex items-center justify-center">
-                <div className="text-white text-9xl font-bold opacity-20"></div>
+                <div className="text-white text-9xl font-bold opacity-20">YN</div>
               </div>
             </div>
 
