@@ -1,4 +1,6 @@
 import { Code2, Palette, Rocket, Zap } from 'lucide-react';
+import React from "react";
+import { motion } from "framer-motion"; // optional, for smooth animation
 
 export default function About() {
   const skills = [
