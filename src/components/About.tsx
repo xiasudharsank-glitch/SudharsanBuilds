@@ -10,12 +10,12 @@ export default function About() {
     { icon: <Zap className="w-6 h-6" />, name: "Workflow Automation" },
   ];
 
-  // Motion values for interactive 3D tilt
-  const [isHovering, setIsHovering] = useState(false);
+  // Motion values for realistic 3D cursor-based tilt
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const rotateX = useTransform(y, [-50, 50], [15, -15]);
-  const rotateY = useTransform(x, [-50, 50], [-15, 15]);
+  const rotateX = useTransform(y, [-150, 150], [15, -15]);
+  const rotateY = useTransform(x, [-150, 150], [-15, 15]);
+  const [isHovering, setIsHovering] = useState(false);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -26,9 +26,9 @@ export default function About() {
   };
 
   const handleMouseLeave = () => {
-    setIsHovering(false);
     x.set(0);
     y.set(0);
+    setIsHovering(false);
   };
 
   return (
@@ -39,39 +39,38 @@ export default function About() {
             About <span className="text-cyan-600">Me</span>
           </h2>
 
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            {/* ---------- PROFILE IMAGE WITH 3D MOTION REACTIVITY ---------- */}
-            <div className="space-y-6 flex justify-center">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            {/* ---------- 3D INTERACTIVE IMAGE SECTION ---------- */}
+            <div className="flex justify-center">
               <motion.div
-                className="relative aspect-square w-72 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-2xl shadow-2xl overflow-hidden flex items-center justify-center"
+                className="relative w-96 h-96 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-3xl shadow-2xl overflow-hidden flex items-center justify-center"
                 onMouseMove={handleMouseMove}
                 onMouseEnter={() => setIsHovering(true)}
                 onMouseLeave={handleMouseLeave}
                 style={{
                   rotateX,
                   rotateY,
-                  scale: isHovering ? 1.05 : 1,
+                  scale: isHovering ? 1.07 : 1,
                   transition: "all 0.3s ease",
                 }}
               >
-                {/* Glowing animated ring */}
-                <div className="absolute inset-0 animate-spin-slow rounded-2xl border-4 border-cyan-300 opacity-20"></div>
+                {/* Glowing border animation */}
+                <div className="absolute inset-0 animate-spin-slow rounded-3xl border-4 border-cyan-300 opacity-20"></div>
 
                 {/* Profile Image */}
                 <motion.img
-                  src="https://files.imagetourl.net/uploads/1760358752168-eb843ce2-4540-46f6-b9a1-c6fcc6a4c5cf.jpg" // replace with your image path or hosted URL
+                  src="/profile.jpg" // Replace with your image path or external URL
                   alt="Sudharsan"
-                  className="w-full h-full object-cover rounded-2xl transition-all duration-500"
-                  whileHover={{ scale: 1.1 }}
+                  className="w-full h-full object-cover rounded-3xl transition-all duration-500"
+                  whileHover={{ scale: 1.12 }}
                 />
 
-                {/* Subtle gradient overlay for depth */}
+                {/* Soft gradient overlay for depth */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
               </motion.div>
             </div>
-            {/* ----------------------------------------------------------- */}
 
-            {/* ---------- ABOUT TEXT SECTION ---------- */}
+            {/* ---------- TEXT SECTION ---------- */}
             <div className="space-y-6">
               <p className="text-lg text-slate-700 leading-relaxed">
                 Hi! I'm a passionate developer specializing in transforming
@@ -108,7 +107,6 @@ export default function About() {
                 </div>
               </div>
             </div>
-            {/* ----------------------------------------- */}
           </div>
         </div>
       </div>
