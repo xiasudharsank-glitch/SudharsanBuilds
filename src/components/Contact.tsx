@@ -13,25 +13,33 @@ export default function Contact() {
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  const form = e.target as HTMLFormElement;
-  const formData = new FormData(form);
+    e.preventDefault();
+    setStatus("sending");
 
-  const res = await fetch("https://formspree.io/f/xldpowyp", {
-    method: "POST",
-    body: formData,
-    headers: { Accept: "application/json" },
-  });
+    const form = e.target as HTMLFormElement;
+    const formDataObj = new FormData(form);
 
-  if (res.ok) {
-    setStatus("success");
-    form.reset();
-    setTimeout(() => setStatus(""), 4000);
-  } else {
-    setStatus("error");
-    setTimeout(() => setStatus(""), 4000);
-  }
-};
+    try {
+      const res = await fetch("https://formspree.io/f/xldpowyp", {
+        method: "POST",
+        body: formDataObj,
+        headers: { Accept: "application/json" },
+      });
+
+      if (res.ok) {
+        setStatus("success");
+        setFormData({ name: '', email: '', projectType: '', message: '' });
+        form.reset();
+        setTimeout(() => setStatus(""), 5000);
+      } else {
+        setStatus("error");
+        setTimeout(() => setStatus(""), 5000);
+      }
+    } catch (error) {
+      setStatus("error");
+      setTimeout(() => setStatus(""), 5000);
+    }
+  };
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -88,10 +96,9 @@ export default function Contact() {
           </div>
 
           <form
-  action="https://formspree.io/f/xldpowyp"
-  method="POST"
-  className="bg-white p-4 rounded-2xl shadow-xl space-y-6"
->
+            onSubmit={handleSubmit}
+            className="bg-white p-8 rounded-2xl shadow-xl space-y-6"
+          >
 
             <div>
               <label htmlFor="name" className="block text-slate-700 font-semibold mb-2">
@@ -164,39 +171,61 @@ export default function Contact() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-4 rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105"
+              disabled={status === "sending"}
+              className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-4 rounded-lg font-semibold hover:shadow-xl hover:shadow-cyan-500/50 transition-all duration-300 flex items-center justify-center gap-2 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Send className="w-5 h-5" />
-              Send Message
+              {status === "sending" ? (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                  />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  Send Message
+                </>
+              )}
             </button>
           </form>
         </div>
       </div>
-      <AnimatePresence>
-  {status === "success" && (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 30 }}
-      transition={{ duration: 0.4 }}
-      className="fixed bottom-10 right-10 bg-green-500 text-white px-5 py-3 rounded-lg shadow-lg"
-    >
-      ✅ Your message was sent successfully!
-    </motion.div>
-  )}
+        <AnimatePresence>
+          {status === "success" && (
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.8 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="fixed bottom-10 right-10 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-8 py-4 rounded-xl shadow-2xl z-50 flex items-center gap-3"
+            >
+              <span className="text-2xl">✅</span>
+              <div>
+                <p className="font-bold text-lg">Success!</p>
+                <p className="text-sm">Your message was sent successfully!</p>
+              </div>
+            </motion.div>
+          )}
 
-  {status === "error" && (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 30 }}
-      transition={{ duration: 0.4 }}
-      className="fixed bottom-10 right-10 bg-red-500 text-white px-5 py-3 rounded-lg shadow-lg"
-    >
-      ❌ Oops! Something went wrong. Please try again.
-    </motion.div>
-  )}
-</AnimatePresence>
+          {status === "error" && (
+            <motion.div
+              initial={{ opacity: 0, y: 30, scale: 0.8 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 30, scale: 0.8 }}
+              transition={{ duration: 0.5, type: "spring" }}
+              className="fixed bottom-10 right-10 bg-gradient-to-r from-red-500 to-rose-600 text-white px-8 py-4 rounded-xl shadow-2xl z-50 flex items-center gap-3"
+            >
+              <span className="text-2xl">❌</span>
+              <div>
+                <p className="font-bold text-lg">Oops!</p>
+                <p className="text-sm">Something went wrong. Please try again.</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
     </section>
   );
 }
