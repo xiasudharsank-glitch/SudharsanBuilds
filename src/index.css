@@ -2,6 +2,19 @@
 @tailwind components;
 @tailwind utilities;
 
+
+/* ========== Custom global styles ========== */
+
+/* Slow spinning glow used for the profile card ring */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
+
+
 /* Add this after the above lines 👇 */
 
 .profile-container {
@@ -28,3 +41,4 @@
 .profile-card:hover .profile-image {
   transform: scale(1.05) translateZ(20px);
 }
+
