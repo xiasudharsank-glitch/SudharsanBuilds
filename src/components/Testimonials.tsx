@@ -4,32 +4,32 @@ import { motion } from 'framer-motion';
 export default function Testimonials() {
   const testimonials = [
     {
-      name: 'Sarah Johnson',
-      role: 'E-commerce Entrepreneur',
-      avatar: 'SJ',
+      name: 'Manoj Kumar S',
+      role: 'MBA Graduate, Finance & Business Analytics',
+      avatar: 'MK',
       rating: 5,
-      text: 'Absolutely incredible work! My online store was delivered ahead of schedule and exceeded all expectations.'
+      text: "Sudharsan created a professional portfolio website and an ATS-friendly resume that really helped me stand out in my job search. The portfolio looks polished and the resume is optimized to get through recruiter systems. I'm now getting better quality inquiries."
     },
     {
-      name: 'Michael Chen',
-      role: 'SaaS Founder',
-      avatar: 'MC',
+      name: 'Vembarasi K',
+      role: 'Registered Nurse, Healthcare Professional',
+      avatar: 'VK',
       rating: 5,
-      text: 'Best decision I made was hiring for my SaaS platform. The subscription system works flawlessly!'
+      text: "Having a dedicated professional portfolio with a built-in resume download feature has definitely helped my job search in Germany. It's convenient for recruiters and shows I'm serious about the position. The polished design gives the right professional impression."
     },
     {
-      name: 'Emily Rodriguez',
-      role: 'Small Business Owner',
-      avatar: 'ER',
+      name: 'Senthil Kumar',
+      role: 'e-Sevai Maiyam Service Center, Trichy',
+      avatar: 'SK',
       rating: 5,
-      text: 'Professional and talented. My booking system has transformed how I manage appointments.'
+      text: "The website has been a game-changer for our e-Sevai business. Customers no longer call asking the same questions repeatedly—they find all the information they need online. The dynamic status showing if we're open or closed is perfect, and the Google Maps integration helps new customers find us easily."
     },
     {
-      name: 'David Park',
-      role: 'Startup Founder',
-      avatar: 'DP',
+      name: 'Bharath Kumar',
+      role: 'Marketing & Sales Executive',
+      avatar: 'BK',
       rating: 5,
-      text: 'Exceptional quality and attention to detail. Delivered exactly what we needed on time!'
+      text: "A marketing professional needs a portfolio that sells their expertise, and that's what Sudharsan created for me. The website highlights my digital marketing campaigns, sales achievements, and strategic thinking. It's opened doors to conversations with companies looking for someone with my skillset."
     }
   ];
 

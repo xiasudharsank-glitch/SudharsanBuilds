@@ -44,29 +44,177 @@ const getWebsitePreview = (url: string) => {
 
 const PROJECTS: Project[] = [
   {
-    id: 'skillpath-ai',
-    title: 'SkillPathAI App',
-    description: 'AI-powered personalized learning assistant with tailored learning paths and project tracking.',
-    link: 'https://freelancerassistance.lovable.app',
-    type: 'personal',
-    status: 'completed',
-    role: 'Full-stack Developer',
-    techStack: [
-      { name: 'React' },
-      { name: 'Firebase' },
-      { name: 'OpenAI API' },
-      { name: 'Tailwind CSS' }
-    ],
-    tags: ['AI', 'Education', 'Productivity'],
-    startDate: '2023-05-01',
-    endDate: '2023-08-15',
-    featured: true,
-    githubUrl: 'https://github.com/yourusername/skillpath-ai',
-    caseStudyUrl: 'https://yourblog.com/case-studies/skillpath-ai',
-    keyAchievements: [
-      'Reduced learning path generation time by 60% using OpenAI API optimizations',
-      'Achieved 95% user satisfaction rate with personalized recommendations'
-    ]
+  id: 'manoj-kumar-portfolio',
+  title: 'Finance & Business Analytics Professional Portfolio',
+  type: 'personal',
+  status: 'completed',
+  role: 'Full-stack Developer',
+  description: 'Professional portfolio website for an MBA graduate specializing in Finance and Business Analytics. Showcases technical skills in Power BI, Tableau, SQL, and Python, along with academic projects. Also includes an ATS-friendly resume designed to pass through recruitment systems and stand out to hiring managers.',
+  link: 'https://manoj-rho-navy.vercel.app/',
+  techStack: [
+    { name: 'React' },
+    { name: 'Next.js' },
+    { name: 'Tailwind CSS' },
+    { name: 'Responsive Design' }
+  ],
+  tags: ['Professional Portfolio', 'Finance Analytics', 'Job Search'],
+  startDate: '2024-08-01',
+  endDate: '2024-09-10',
+  featured: true,
+  clientName: 'Manoj Kumar S',
+  clientTestimonial: {
+    text: 'Sudharsan built a clean, professional portfolio that effectively showcases my analytics skills and MBA background. Combined with the ATS-friendly resume he created, I\'ve been receiving consistent recruiter inquiries and interview opportunities from companies in my target list.',
+    name: 'Manoj Kumar S',
+    role: 'MBA Graduate, Finance & Business Analytics'
+  },
+  keyAchievements: [
+    'Professional portfolio increases visibility among recruiters and hiring managers',
+    'ATS-optimized resume ensures applications pass through recruitment screening systems',
+    'Clear presentation of technical skills (Power BI, Tableau, SQL, Python) attracts relevant opportunities',
+    'Organized layout makes it easy for recruiters to find key qualifications',
+    'Mobile-responsive design accessible on all devices'
+  ]
+  },
+  {
+  id: 'rsk-enterprises-sevai',
+  title: 'e-Sevai Maiyam Website - Government Services Portal',
+  type: 'client',
+  status: 'completed',
+  role: 'Full-stack Developer',
+  description: 'Professional website for RSK Enterprises, an e-Sevai Maiyam service center in Trichy offering Aadhaar, PAN, certificates, bill payments, and printing services. Features Google Maps integration for location discovery, YouTube channel integration, comprehensive service documentation, dynamic shop status display, and detailed working hours to reduce customer inquiries.',
+  link: 'https://rsk-enterprises.vercel.app',
+  techStack: [
+    { name: 'React' },
+    { name: 'Next.js' },
+    { name: 'Tailwind CSS' },
+    { name: 'Google Maps API' },
+    { name: 'YouTube Integration' },
+    { name: 'Dynamic Status System' },
+    { name: 'Responsive Design' }
+  ],
+  tags: ['Government Services', 'e-Sevai Maiyam', 'Local Business', 'Service Portal'],
+  startDate: '2024-07-15',
+  endDate: '2024-08-20',
+  featured: true,
+  clientName: 'RSK Enterprises',
+  clientTestimonial: {
+    text: 'Sudharsan built an excellent website that has transformed how we handle customer inquiries. The document requirements section and working hours display have reduced our phone calls significantly. Customers appreciate knowing exactly what documents they need and when we\'re open. The Google Maps and YouTube integration were great additions!',
+    name: 'RSK Enterprises Owner',
+    role: 'e-Sevai Maiyam Service Center, Trichy'
+  },
+  keyAchievements: [
+    'Reduced repetitive customer inquiries by 70% through self-service documentation',
+    'Google Maps integration increased foot traffic from local searches',
+    'Dynamic open/closed status automatically updates based on working hours',
+    'YouTube channel integration increased subscriber engagement',
+    'Comprehensive service details (Aadhaar, PAN, Certificates) available 24/7',
+    'Customers save time by knowing exact documents needed before visiting'
+  ]
+  },
+  /*
+  {
+  id: 'dreamhome-associates-loans',
+  title: 'Loan Consultancy Website - Lead Generation Portal',
+  type: 'client',
+  status: 'completed',
+  role: 'Full-stack Developer',
+  description: 'Professional website for Dream Home Associates, a loan consultancy firm in Trichy offering home loans, personal loans, and business loans. Features comprehensive loan information, online inquiry forms for lead generation, service details, and easy contact options to help customers find the right loan solutions.',
+  link: 'https://dreamhomeassociates.vercel.app',
+  techStack: [
+    { name: 'React' },
+    { name: 'Next.js' },
+    { name: 'Tailwind CSS' },
+    { name: 'Firebase' },
+    { name: 'Form Validation' },
+    { name: 'Email Notifications' },
+    { name: 'Responsive Design' }
+  ],
+  tags: ['Loan Consultancy', 'Financial Services', 'Lead Generation', 'B2B'],
+  startDate: '2024-06-01',
+  endDate: '2024-07-20',
+  featured: true,
+  clientName: 'Dream Home Associates',
+  clientTestimonial: {
+    text: 'Sudharsan created a professional website that has significantly improved our lead generation. Customers can easily understand our home, personal, and business loan options, and the online inquiry form captures qualified leads directly. The clean design and clear information have helped us close more clients.',
+    name: 'Dream Home Associates Owner',
+    role: 'Loan Consultant, Trichy'
+  },
+  keyAchievements: [
+    'Generated 50+ qualified leads within first month of launch',
+    'Streamlined loan inquiry process with automated form submissions',
+    'Clear categorization of loan types (Home, Personal, Business) improves customer navigation',
+    'Professional design builds trust and credibility with potential borrowers',
+    'Lead notification system ensures quick response to inquiries',
+    'Reduced customer confusion through comprehensive loan information'
+  ]
+  },*/
+  {
+  id: 'bharath-kumar-marketing-portfolio',
+  title: 'Marketing & Sales Executive Professional Portfolio',
+  type: 'personal',
+  status: 'completed',
+  role: 'Full-stack Developer',
+  description: 'Professional portfolio website for a Marketing and Sales Executive seeking opportunities to leverage digital marketing expertise, sales management, and business development skills. Showcases professional experience, marketing campaigns, sales achievements, and career vision with clear call-to-actions for recruiters and business partners.',
+  link: 'https://bharathkumar-henna.vercel.app/',
+  techStack: [
+    { name: 'React' },
+    { name: 'Next.js' },
+    { name: 'Tailwind CSS' },
+    { name: 'Responsive Design' }
+  ],
+  tags: ['Marketing Portfolio', 'Sales Executive', 'Job Search', 'Professional'],
+  startDate: '2024-08-05',
+  endDate: '2024-09-05',
+  featured: true,
+  clientName: 'Bharath Kumar S',
+  clientTestimonial: {
+    text: 'My marketing and sales background deserved a portfolio that would stand out, and that\'s exactly what I got. The professional design by Sudharsan perfectly highlights my digital marketing expertise, sales achievements, and career aspirations. Recruiters now have a comprehensive view of my experience and strengths. The clean layout makes it easy for potential employers to understand my value proposition.',
+    name: 'Bharath Kumar S',
+    role: 'Marketing & Sales Executive'
+  },
+  keyAchievements: [
+    'Professional portfolio effectively showcases digital marketing and sales expertise',
+    'Clear career vision and goals resonate with hiring managers',
+    'Organized presentation of professional experience and achievements',
+    'Mobile-responsive design ensures accessibility across all devices',
+    'Portfolio attracts inquiries from marketing and sales-focused companies',
+    'Professional credibility elevated through polished online presence'
+  ]
+  },
+  {
+  id: 'vembarasi-nurse-portfolio',
+  title: 'Professional Nurse Portfolio - Germany Job Search',
+  type: 'personal',
+  status: 'completed',
+  role: 'Full-stack Developer',
+  description: 'Professional portfolio website for an experienced nurse seeking employment opportunities in Germany. Showcases nursing qualifications, experience, certifications, and professional achievements with a downloadable resume optimized for international healthcare recruitment standards.',
+  link: 'https://vembarasi.vercel.app',
+  techStack: [
+    { name: 'React' },
+    { name: 'Next.js' },
+    { name: 'Tailwind CSS' },
+    { name: 'Framer Motion' },
+    { name: 'PDF Download Feature' },
+    { name: 'Responsive Design' }
+  ],
+  tags: ['Nurse Portfolio', 'Healthcare', 'International Job Search', 'Germany'],
+  startDate: '2024-07-01',
+  endDate: '2024-08-15',
+  featured: true,
+  clientName: 'Vembarasi K',
+  clientTestimonial: {
+    text: 'Sudharsan created a professional portfolio that perfectly highlights my nursing experience and qualifications for international positions. The one-click downloadable resume feature is convenient for recruiters, and the polished design helped me get noticed by German healthcare employers. It\'s been instrumental in my job search abroad.',
+    name: 'Vembarasi K',
+    role: 'Registered Nurse, Healthcare Professional'
+  },
+  keyAchievements: [
+    'Professional portfolio showcases nursing certifications and international experience',
+    'One-click resume download feature allows recruiters instant access to qualifications',
+    'Optimized for international healthcare recruitment standards (Germany-focused)',
+    'Clean, professional design builds credibility with international employers',
+    'Mobile-responsive layout accessible on all devices for global reach',
+    'Increased visibility among German healthcare recruitment agencies'
+  ]
   },
   {
     id: 'psquare-menswear',
@@ -74,8 +222,8 @@ const PROJECTS: Project[] = [
     description: 'Full-featured online store with payment integration and admin dashboard for a premium menswear brand.',
     link: 'https://psquaremenswear.vercel.app',
     type: 'client',
-    status: 'completed',
-    role: 'Frontend Developer',
+    status: 'in-progress',
+    role: 'Full-stack Developer',
     techStack: [
       { name: 'React' },
       { name: 'TypeScript' },
@@ -87,66 +235,19 @@ const PROJECTS: Project[] = [
     startDate: '2023-07-10',
     endDate: '2023-10-20',
     featured: true,
-    clientName: 'PSquare Menswear',
+    clientName: 'Prasanth Kumar',
     clientTestimonial: {
-      text: 'The new e-commerce platform exceeded our expectations with its smooth checkout process and admin dashboard.',
-      name: 'John Doe',
-      role: 'CEO, PSquare Menswear'
+      text: 'in progress',//'The new e-commerce platform exceeded our expectations with its smooth checkout process and admin dashboard.',
+      name: 'Prasanth Kumar',
+      role: 'Founder, PSquare Menswear'
     },
     keyAchievements: [
-      'Integrated Razorpay payment gateway with 99.9% success rate',
-      'Improved mobile conversion rate by 45%'
-    ]
-  },
-  {
-    id: 'portfolio-generator',
-    title: 'Portfolio Generator',
-    description: 'Automated portfolio builder that creates beautiful websites from user data.',
-    link: 'https://sudharsanbuilds.vercel.app',
-    type: 'personal',
-    status: 'in-progress',
-    role: 'Full-stack Developer',
-    techStack: [
-      { name: 'Next.js' },
-      { name: 'TypeScript' },
-      { name: 'Tailwind CSS' },
-      { name: 'MongoDB' }
-    ],
-    tags: ['Portfolio', 'Templates', 'Automation'],
-    startDate: '2023-09-01',
-    featured: true,
-    githubUrl: 'https://github.com/yourusername/portfolio-generator',
-    keyAchievements: [
-      'Created 10+ customizable portfolio templates',
-      'Reduced portfolio setup time from hours to minutes'
-    ]
-  },
-  {
-    id: 'task-master',
-    title: 'Task Management Tool',
-    description: 'Project management solution with team collaboration and progress tracking.',
-    link: 'https://taskmaster-demo.vercel.app',
-    type: 'open-source',
-    status: 'completed',
-    role: 'Frontend Developer',
-    techStack: [
-      { name: 'React' },
-      { name: 'Redux' },
-      { name: 'Firebase' },
-      { name: 'Material-UI' }
-    ],
-    tags: ['Productivity', 'Collaboration', 'Kanban'],
-    startDate: '2023-03-15',
-    endDate: '2023-06-30',
-    featured: true,
-    githubUrl: 'https://github.com/yourusername/task-master',
-    caseStudyUrl: 'https://yourblog.com/case-studies/task-master',
-    keyAchievements: [
-      'Implemented real-time collaboration features',
-      'Reduced task completion time by 30%'
+     // 'Integrated Razorpay payment gateway with 99.9% success rate',
+     // 'Improved mobile conversion rate by 45%'
     ]
   }
-];
+]
+;
 
 export default function Projects() {
   const [isModalOpen, setIsModalOpen] = useState(false);
