@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ExternalLink, X, FolderOpen, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -6,9 +6,19 @@ interface Project {
   title: string;
   tech: string;
   description: string;
-  image: string;
+  image?: string;
   link: string;
 }
+
+// Function to generate website preview URL using Microlink
+const getWebsitePreview = (url: string) => {
+  // First try to get from local storage to avoid unnecessary API calls
+  const cachedImage = localStorage.getItem(`preview_${url}`);
+  if (cachedImage) return cachedImage;
+  
+  // Fallback to Microlink for preview generation
+  return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
+};
 
 export default function Projects() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,28 +29,24 @@ export default function Projects() {
       title: 'SkillPathAI App',
       tech: 'React, Firebase, OpenAI API',
       description: 'AI-powered personalized learning assistant with tailored learning paths and project tracking.',
-      image: '/assets/skillpathai.jpg',
       link: 'https://freelancerassistance.lovable.app'
     },
     {
       title: 'Portfolio Generator',
       tech: 'React, Dynamic Templates',
       description: 'Automated portfolio builder that creates beautiful websites from user data.',
-      image: '/assets/skillpathai.jpg',
-      link: 'https://your-portfolio-generator.com'
+      link: 'https://sudharsanbuilds.vercel.app'
     },
     {
       title: 'Task Management Tool',
       tech: 'React, Drag & Drop',
       description: 'Project management solution with team collaboration and progress tracking.',
-      image: '/assets/skillpathai.jpg',
       link: 'https://sudharsanchatbot.lovable.app'
     },
     {
       title: 'AI Chatbot',
       tech: 'React, OpenAI, TypeScript',
       description: 'Intelligent conversational AI assistant with context awareness.',
-      image: '/assets/skillpathai.jpg',
       link: 'https://sudharsanchatbot.lovable.app'
     }
   ];
@@ -48,30 +54,26 @@ export default function Projects() {
   const clientProjects: Project[] = [
     {
       title: 'E-Commerce Platform',
-      tech: 'React, Supabase, Stripe',
+      tech: 'React with TypeScript , Supabase, Razorpay',
       description: 'Full-featured online store with payment integration and admin dashboard.',
-      image: '/assets/professional photo.jpg',
-      link: 'https://estorebysudharsan.lovable.app'
+      link: 'https://psquaremenswear.vercel.app'
     },
     {
       title: 'Booking Management',
       tech: 'React, Calendar API',
       description: 'Appointment scheduling system with automated reminders.',
-      image: '/assets/professional photo.jpg',
       link: 'https://your-booking-system.com'
     },
     {
       title: 'Social Media App',
       tech: 'React, Real-time DB',
       description: 'Community platform with user profiles and real-time interactions.',
-      image: '/assets/professional photo.jpg',
       link: 'https://your-social-app.com'
     },
     {
       title: 'SaaS Dashboard',
       tech: 'React, Analytics, Charts',
       description: 'Real-time analytics platform with subscription management.',
-      image: '/assets/professional photo.jpg',
       link: 'https://your-saas-dashboard.com'
     }
   ];
@@ -86,6 +88,18 @@ export default function Projects() {
     setIsModalOpen(false);
     setActiveCategory(null);
     document.body.style.overflow = 'unset';
+  };
+
+  const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
+
+  // Function to handle image loading and caching
+  const handleImageLoad = (url: string, imageUrl: string) => {
+    setPreviewCache(prev => ({
+      ...prev,
+      [url]: imageUrl
+    }));
+    // Cache in localStorage for future visits
+    localStorage.setItem(`preview_${url}`, imageUrl);
   };
 
   const activeProjects = activeCategory === 'personal' ? myProjects : clientProjects;
@@ -186,11 +200,24 @@ export default function Projects() {
                     className="group bg-slate-800 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
                     <div className="h-48 md:h-56 relative overflow-hidden">
-                      <img
-                        src={project.image}
-                        alt={project.title}
-                        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
+                      {project.image ? (
+                        <img
+                          src={project.image}
+                          alt={project.title}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                      ) : (
+                        <img
+                          src={previewCache[project.link] || getWebsitePreview(project.link)}
+                          alt={`${project.title} preview`}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                          onLoad={() => handleImageLoad(project.link, getWebsitePreview(project.link))}
+                          onError={(e) => {
+                            // Fallback to a placeholder if the preview fails to load
+                            (e.target as HTMLImageElement).src = `https://via.placeholder.com/600x400/1e293b/64748b?text=${encodeURIComponent(project.title)}`;
+                          }}
+                        />
+                      )}
                       <div className="absolute inset-0 bg-black/40 group-hover:bg-black/60 transition-colors duration-300 flex items-center justify-center">
                         <ExternalLink className="w-10 h-10 text-white opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110" />
                       </div>
