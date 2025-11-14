@@ -37,7 +37,7 @@ export default function AIChatbot() {
   const handleOpenChat = () => {
     setChatState({
       isOpen: true,
-      isWelcome: true,
+      isWelcome: messages.length === 0, // Keep welcome state if no messages
       isMinimized: false,
     });
   };
@@ -48,6 +48,8 @@ export default function AIChatbot() {
       isWelcome: true,
       isMinimized: false,
     });
+    // FIX 2: Clear messages on close
+    setMessages([]); 
   };
 
   const handleStartChat = () => {
@@ -66,6 +68,12 @@ export default function AIChatbot() {
       content: inputValue,
       timestamp: new Date(),
     };
+    
+    // FIX 1: Create the full conversation history payload for the API
+    const updatedConversationHistory = [...messages, userMessage].map((msg) => ({
+      role: msg.role,
+      content: msg.content,
+    }));
 
     setMessages((prev) => [...prev, userMessage]);
     setInputValue('');
@@ -82,10 +90,7 @@ export default function AIChatbot() {
         },
         body: JSON.stringify({
           message: inputValue,
-          conversationHistory: messages.map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
+          conversationHistory: updatedConversationHistory, // Use the complete history
         }),
       });
 
