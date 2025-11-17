@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Send, X, Minimize2, Maximize2, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   id: string;
@@ -196,9 +197,10 @@ export default function AIChatbot() {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: 'spring', duration: 0.4 }}
-            className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 w-full max-w-sm md:max-w-md overflow-hidden rounded-3xl shadow-2xl border border-slate-700 flex flex-col"
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 md:bottom-8 md:right-8 z-50 w-[calc(100%-2rem)] sm:w-96 md:max-w-md overflow-hidden rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-700 flex flex-col"
             style={{
-              height: '600px',
+              height: 'min(calc(100vh - 8rem), 600px)',
+              maxHeight: 'calc(100vh - 2rem)',
               background: 'linear-gradient(135deg, #0f172a 0%, #1a1f35 50%, #111827 100%)',
               boxShadow: '0 30px 60px rgba(0, 0, 0, 0.5), 0 0 80px rgba(8, 145, 178, 0.15)',
             }}
@@ -270,7 +272,7 @@ export default function AIChatbot() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="flex-1 flex flex-col items-center justify-center p-6 md:p-8 text-center space-y-6 bg-gradient-to-b from-slate-900/50 via-slate-800 to-slate-900"
+                className="flex-1 flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 text-center space-y-4 sm:space-y-6 bg-gradient-to-b from-slate-900/50 via-slate-800 to-slate-900"
               >
                 <motion.div
                   initial={{ scale: 0, rotate: -180 }}
@@ -287,9 +289,9 @@ export default function AIChatbot() {
                       ],
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
-                    className="w-20 h-20 md:w-24 md:h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl"
+                    className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center shadow-xl"
                   >
-                    <Sparkles className="w-10 h-10 md:w-12 md:h-12 text-white" />
+                    <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 text-white" />
                   </motion.div>
                 </motion.div>
 
@@ -297,16 +299,16 @@ export default function AIChatbot() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
-                  className="space-y-3"
+                  className="space-y-2 sm:space-y-3"
                 >
-                  <h3 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                    Premium Consultation Awaits
+                  <h3 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
+                    Premium Consultation
                   </h3>
-                  <p className="text-base md:text-lg text-slate-200 leading-relaxed font-medium">
-                    Experience elite-level expertise. Ask about web development, SaaS solutions, e-commerce, or anything digital.
+                  <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-medium">
+                    Experience elite expertise in web development, SaaS, e-commerce & digital solutions.
                   </p>
-                  <p className="text-sm md:text-base text-slate-400">
-                    Sudharsan's AI is trained to deliver exceptional insights that will exceed your expectations.
+                  <p className="text-xs sm:text-sm text-slate-400">
+                    Sudharsan's AI delivers exceptional insights tailored to your needs.
                   </p>
                 </motion.div>
 
@@ -314,7 +316,7 @@ export default function AIChatbot() {
                   whileHover={{ scale: 1.08, boxShadow: '0 20px 40px rgba(8, 145, 178, 0.5)' }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleStartChat}
-                  className="mt-8 px-8 md:px-10 py-3 md:py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg transition-all text-sm md:text-base"
+                  className="mt-6 sm:mt-8 px-6 sm:px-8 md:px-10 py-2.5 sm:py-3 md:py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg transition-all text-xs sm:text-sm md:text-base"
                 >
                   Start Premium Chat
                 </motion.button>
@@ -323,9 +325,9 @@ export default function AIChatbot() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.5 }}
-                  className="text-xs text-slate-400 mt-4"
+                  className="text-xs text-slate-400 mt-3 sm:mt-4"
                 >
-                  ✓ Instant responses • ✓ Expert insights • ✓ 24/7 availability
+                  ✓ Instant responses • ✓ Expert insights • ✓ 24/7
                 </motion.p>
               </motion.div>
             )}
@@ -355,17 +357,74 @@ export default function AIChatbot() {
                       className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <motion.div
-                        className={`max-w-xs md:max-w-sm px-5 py-3 rounded-2xl ${
+                        className={`max-w-xs md:max-w-sm px-4 py-3 rounded-2xl ${
                           message.role === 'user'
                             ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-br-none shadow-lg'
                             : 'bg-slate-700/80 text-slate-100 rounded-bl-none border border-slate-600/50 backdrop-blur-sm'
                         }`}
                       >
-                        <p className="text-sm md:text-base leading-relaxed break-words whitespace-pre-wrap">
-                          {message.content}
-                        </p>
+                        <div className="text-sm md:text-base leading-relaxed break-words">
+                          {message.role === 'user' ? (
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                          ) : (
+                            <ReactMarkdown
+                              components={{
+                                p: ({ children }) => (
+                                  <p className="mb-2 last:mb-0 text-slate-100">{children}</p>
+                                ),
+                                strong: ({ children }) => (
+                                  <strong className="font-bold text-white">{children}</strong>
+                                ),
+                                em: ({ children }) => (
+                                  <em className="italic text-slate-50">{children}</em>
+                                ),
+                                ul: ({ children }) => (
+                                  <ul className="list-disc list-inside mb-2 space-y-1 text-slate-100">
+                                    {children}
+                                  </ul>
+                                ),
+                                ol: ({ children }) => (
+                                  <ol className="list-decimal list-inside mb-2 space-y-1 text-slate-100">
+                                    {children}
+                                  </ol>
+                                ),
+                                li: ({ children }) => <li className="ml-2">{children}</li>,
+                                code: ({ children, inline }) =>
+                                  inline ? (
+                                    <code className="bg-slate-800/50 px-2 py-0.5 rounded text-cyan-300 font-mono text-xs">
+                                      {children}
+                                    </code>
+                                  ) : (
+                                    <code className="block bg-slate-800/50 px-3 py-2 rounded my-2 text-cyan-300 font-mono text-xs overflow-x-auto">
+                                      {children}
+                                    </code>
+                                  ),
+                                blockquote: ({ children }) => (
+                                  <blockquote className="border-l-4 border-cyan-500 pl-3 my-2 italic text-slate-300">
+                                    {children}
+                                  </blockquote>
+                                ),
+                                h1: ({ children }) => <h1 className="text-lg font-bold mt-2 mb-1">{children}</h1>,
+                                h2: ({ children }) => <h2 className="text-base font-bold mt-2 mb-1">{children}</h2>,
+                                h3: ({ children }) => <h3 className="text-sm font-bold mt-2 mb-1">{children}</h3>,
+                                a: ({ children, href }) => (
+                                  <a
+                                    href={href}
+                                    className="text-cyan-400 hover:underline"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
+                                    {children}
+                                  </a>
+                                ),
+                              }}
+                            >
+                              {message.content}
+                            </ReactMarkdown>
+                          )}
+                        </div>
                         <p
-                          className={`text-xs mt-2 ${
+                          className={`text-xs mt-2.5 ${
                             message.role === 'user' ? 'text-cyan-100' : 'text-slate-400'
                           }`}
                         >
@@ -411,13 +470,13 @@ export default function AIChatbot() {
                 </div>
 
                 <div
-                  className="border-t p-4 md:p-6 backdrop-blur-lg"
+                  className="border-t p-3 sm:p-4 md:p-6 backdrop-blur-lg"
                   style={{
                     background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.9) 100%)',
                     borderTopColor: 'rgba(8, 145, 178, 0.2)',
                   }}
                 >
-                  <div className="flex gap-3 mb-2">
+                  <div className="flex gap-2 sm:gap-3 mb-2">
                     <input
                       type="text"
                       value={inputValue}
@@ -425,24 +484,24 @@ export default function AIChatbot() {
                       onKeyPress={handleKeyPress}
                       placeholder="Ask me anything..."
                       disabled={isLoading}
-                      className="flex-1 bg-slate-700/60 text-white px-4 py-3 md:py-3 rounded-xl border border-slate-600/50 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all text-sm md:text-base placeholder-slate-500 disabled:opacity-50 backdrop-blur-sm"
+                      className="flex-1 bg-slate-700/60 text-white px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border border-slate-600/50 focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all text-sm placeholder-slate-500 disabled:opacity-50 backdrop-blur-sm"
                     />
                     <motion.button
                       whileHover={{ scale: 1.08 }}
                       whileTap={{ scale: 0.92 }}
                       onClick={handleSendMessage}
                       disabled={isLoading || !inputValue.trim()}
-                      className="w-11 h-11 md:w-12 md:h-12 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                      className="w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg sm:rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex-shrink-0"
                     >
-                      <Send className="w-5 h-5 md:w-6 md:h-6" />
+                      <Send className="w-5 h-5" />
                     </motion.button>
                   </div>
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="text-xs text-slate-500"
+                    className="text-xs text-slate-500 px-1"
                   >
-                    Press Enter to send • Powered by Mistral AI
+                    ↵ Enter to send • Powered by Mistral AI
                   </motion.p>
                 </div>
               </>
