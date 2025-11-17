@@ -97,7 +97,7 @@ Tone: Sophisticated, inspiring, confident, professional, warm, enthusiastic`;
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "mistral-large-latest",
+        model: "mistral-small-latest",
         messages: [
           { role: "system", content: systemPrompt },
           ...messages,
