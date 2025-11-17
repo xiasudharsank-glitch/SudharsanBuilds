@@ -7,6 +7,7 @@ import Services from './components/Services';
 import Testimonials from './components/Testimonials';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
+import AIChatbot from "./components/AIChatbot";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
       <Testimonials />
       <Contact />
       <Footer />
+      <AIChatbot />
     </div>
   );
 }
