@@ -45,7 +45,7 @@ SudharsanBuilds/
 │
 ├── Backend
 │   └── supabase/functions/ai-chatbot/
-│       └── index.ts (Deno function - Mistral AI)
+│       └── index.ts (Deno function - Gemini AI)
 │
 └── Config Files
     ├── package.json
@@ -69,7 +69,7 @@ SudharsanBuilds/
 | Testimonials | #testimonials | ✓ | 4 client reviews, 5-star ratings |
 | Contact | #contact | ⚠️ | Form (has broken link), Formspree |
 | Footer | (Fixed) | ✓ | Dynamic year |
-| AI Chatbot | (Floating) | ✓ | Mistral AI, Minimizable |
+| AI Chatbot | (Floating) | ✓ | Gemini AI, Minimizable |
 
 ---
 
@@ -375,7 +375,7 @@ App.tsx (Main)
 ├── Testimonials ✓
 ├── Contact ⚠️ (Broken email link)
 ├── Footer ✓
-└── AIChatbot ✓ (Mistral AI integration)
+└── AIChatbot ✓ (Gemini AI integration)
 ```
 
 ### Component Metrics

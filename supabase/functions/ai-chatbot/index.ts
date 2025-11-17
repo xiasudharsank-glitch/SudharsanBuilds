@@ -86,7 +86,7 @@ Important: When you mention features, technologies, or solutions, briefly explai
       { role: "user", content: message },
     ];
 
-    const apiKey = Deno.env.get("MISTRAL_API_KEY");
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: "AI service not configured" }),
@@ -94,27 +94,36 @@ Important: When you mention features, technologies, or solutions, briefly explai
       );
     }
 
-    const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "mistral-large-latest",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        temperature: 0.8,
-        top_p: 0.95,
-        max_tokens: 600,
-      }),
-    });
+    // Convert conversation history to Gemini format
+    const geminiContents = messages.map((msg: any) => ({
+      role: msg.role === "assistant" ? "model" : "user",
+      parts: [{ text: msg.content }],
+    }));
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: geminiContents,
+          systemInstruction: {
+            parts: [{ text: systemPrompt }],
+          },
+          generationConfig: {
+            temperature: 0.8,
+            topP: 0.95,
+            maxOutputTokens: 600,
+          },
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorData = await response.json();
-      console.error("Mistral API Error:", errorData);
+      console.error("Gemini API Error:", errorData);
       return new Response(
         JSON.stringify({ error: "Failed to get response from AI service" }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -122,7 +131,7 @@ Important: When you mention features, technologies, or solutions, briefly explai
     }
 
     const data = await response.json();
-    const assistantMessage = data.choices[0].message.content;
+    const assistantMessage = data.candidates[0].content.parts[0].text;
 
     return new Response(
       JSON.stringify({

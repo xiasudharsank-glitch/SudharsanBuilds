@@ -501,7 +501,7 @@ export default function AIChatbot() {
                     animate={{ opacity: 1 }}
                     className="text-xs text-slate-500 px-1"
                   >
-                    ↵ Enter to send • Powered by Mistral AI
+                    ↵ Enter to send • Powered by Gemini AI
                   </motion.p>
                 </div>
               </>
