@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen } from 'lucide-react';
+import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import ProjectGallery from './ProjectGallery';
 
 type ProjectStatus = 'completed' | 'in-progress' | 'on-hold';
 type ProjectType = 'client' | 'personal' | 'open-source' | 'freelance';
@@ -36,6 +37,7 @@ type Project = {
   featured: boolean;
   clientName?: string;
   clientTestimonial?: ClientTestimonial;
+  screenshots?: string[];
 };
 
 const getWebsitePreview = (url: string) => {
@@ -96,6 +98,12 @@ const PROJECTS: Project[] = [
   startDate: '2024-07-15',
   endDate: '2024-08-20',
   featured: true,
+  screenshots: [
+    '/images/projects/rsk-enterprises/homepage.jpg',
+    '/images/projects/rsk-enterprises/services.jpg',
+    '/images/projects/rsk-enterprises/contact.jpg',
+    '/images/projects/rsk-enterprises/about.jpg'
+  ],
   clientName: 'RSK Enterprises',
   clientTestimonial: {
     text: 'Sudharsan built an excellent website that has transformed how we handle customer inquiries. The document requirements section and working hours display have reduced our phone calls significantly. Customers appreciate knowing exactly what documents they need and when we\'re open. The Google Maps and YouTube integration were great additions!',
@@ -251,7 +259,9 @@ const PROJECTS: Project[] = [
 
 export default function Projects() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [filters, setFilters] = useState({
     type: 'all',
     tag: 'all',
@@ -277,8 +287,21 @@ export default function Projects() {
     document.body.style.overflow = 'hidden';
   };
 
+  const openGallery = (project: Project, index: number = 0) => {
+    setSelectedProject(project);
+    setCurrentImageIndex(index);
+    setIsGalleryOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
   const closeModal = () => {
     setIsModalOpen(false);
+    setSelectedProject(null);
+    document.body.style.overflow = 'unset';
+  };
+
+  const closeGallery = () => {
+    setIsGalleryOpen(false);
     setSelectedProject(null);
     document.body.style.overflow = 'unset';
   };
@@ -360,16 +383,31 @@ export default function Projects() {
               className="group bg-slate-800 rounded-xl overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-300 border border-slate-700 hover:border-cyan-500/50 cursor-pointer"
               onClick={() => openProjectModal(project)}
             >
-              <div className="h-48 relative overflow-hidden bg-slate-700">
-                <img
-                  src={previewCache[project.link] || getWebsitePreview(project.link)}
-                  alt={`${project.title} preview`}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onLoad={(e) => handleImageLoad(project.link, (e.target as HTMLImageElement).src)}
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = `https://via.placeholder.com/600x400/1e293b/64748b?text=${encodeURIComponent(project.title)}`;
-                  }}
-                />
+              <div className="h-48 relative overflow-hidden bg-slate-700 group/card">
+                <div className="relative w-full h-full">
+                  <img
+                    src={previewCache[project.link] || getWebsitePreview(project.link)}
+                    alt={`${project.title} preview`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                    onLoad={(e) => handleImageLoad(project.link, (e.target as HTMLImageElement).src)}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://via.placeholder.com/600x400/1e293b/64748b?text=${encodeURIComponent(project.title)}`;
+                    }}
+                  />
+                  {project.screenshots && project.screenshots.length > 0 && (
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openGallery(project);
+                      }}
+                      className="absolute top-2 left-2 bg-black/60 text-white p-1.5 rounded-md hover:bg-black/80 transition-colors flex items-center gap-1 text-xs"
+                      title="View Screenshots"
+                    >
+                      <ImageIcon size={14} />
+                      <span>{project.screenshots?.length || 0}</span>
+                    </button>
+                  )}
+                </div>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-4">
                   <div className="flex gap-2 flex-wrap">
                     {project.techStack.slice(0, 3).map((tech, i) => (
@@ -583,6 +621,16 @@ export default function Projects() {
             </motion.div>
           )}
         </AnimatePresence>
+
+      {/* Project Gallery */}
+      {selectedProject?.screenshots && selectedProject.screenshots.length > 0 && (
+        <ProjectGallery
+          images={selectedProject.screenshots}
+          isOpen={isGalleryOpen}
+          onClose={closeGallery}
+          initialIndex={currentImageIndex}
+        />
+      )}
       </div>
     </section>
   );
