@@ -131,7 +131,36 @@ Important: When you mention features, technologies, or solutions, briefly explai
     }
 
     const data = await response.json();
-    const assistantMessage = data.candidates[0].content.parts[0].text;
+
+    // Validate response structure
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error("Gemini returned no candidates:", data);
+      return new Response(
+        JSON.stringify({
+          error: "AI service returned an unexpected response",
+          details: data.promptFeedback || "No candidates available"
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const candidate = data.candidates[0];
+
+    // Check for safety filters or blocked content
+    if (candidate.finishReason && candidate.finishReason !== "STOP") {
+      console.error("Gemini blocked content:", candidate.finishReason, candidate.safetyRatings);
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "I appreciate your question, but I need to keep our conversation focused on how I can help with your web development needs. Whether you're looking to build a stunning website, launch a SaaS product, or transform your digital presence, I'm here to provide expert guidance. What project can I help you with today?",
+          role: "assistant",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Extract message with fallback
+    const assistantMessage = candidate?.content?.parts?.[0]?.text || "I'm here to help with your web development needs. How can I assist you today?";
 
     return new Response(
       JSON.stringify({
@@ -145,9 +174,13 @@ Important: When you mention features, technologies, or solutions, briefly explai
       }
     );
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Unexpected error in chatbot function:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({
+        error: "I'm experiencing technical difficulties. Please try again in a moment.",
+        success: false
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
