@@ -83,7 +83,8 @@ export default function AIChatbot() {
         },
         body: JSON.stringify({
           message: inputValue,
-          conversationHistory: messages.map((msg) => ({
+          // Only send last 4 messages to prevent payload overflow
+          conversationHistory: messages.slice(-4).map((msg) => ({
             role: msg.role,
             content: msg.content,
           })),
@@ -501,7 +502,7 @@ export default function AIChatbot() {
                     animate={{ opacity: 1 }}
                     className="text-xs text-slate-500 px-1"
                   >
-                    ↵ Enter to send • Powered by Mistral AI
+                    ↵ Enter to send • Powered by Gemini AI
                   </motion.p>
                 </div>
               </>

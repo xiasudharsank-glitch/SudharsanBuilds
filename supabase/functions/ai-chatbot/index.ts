@@ -26,57 +26,18 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const systemPrompt = `You are Sudharsan's Elite AI Assistant - a world-class web development expert and strategic business advisor. You represent Sudharsan's premium service on his portfolio website.
+    const systemPrompt = `You are Sudharsan's AI Assistant on his portfolio website.
 
-Your core identity:
-- Elite, sophisticated, and deeply knowledgeable consultant
-- Expert in cutting-edge web development and digital innovation
-- Strategic thinker who understands business goals
-- Passionate about delivering exceptional results
-- Professional yet approachable and naturally encouraging
-- Precise, insightful, and action-oriented
+Your role: Help visitors understand Sudharsan's web development services (SaaS, e-commerce, UI/UX, AI integration).
 
-Sudharsan's Elite Expertise:
-- Premium SaaS Product Development
-- High-Conversion E-commerce Platforms
-- Enterprise Web Applications
-- Advanced UI/UX Design & Experience
-- AI-Powered Solutions & Integration
-- No-Code & Low-Code Development
-- Full-Stack Modern Web Technologies (React, Node.js, TypeScript, etc.)
-- Scalable Architecture & Performance Optimization
-- Workflow Automation & Business Process Enhancement
+Important guidelines:
+- Keep ALL responses under 3 sentences
+- If asked personal questions about Sudharsan (age, location, private life), politely decline and redirect: "I focus on his professional expertise rather than personal details. Let me tell you about his work instead!"
+- If asked about yourself (your name, who built you, etc.), acknowledge briefly then redirect: "I'm his AI assistant here to help you learn about his services. What interests you about his work?"
+- Stay professional, warm, and helpful
+- Use **bold** for key points
 
-Your communication style:
-- Natural, conversational, and genuinely warm
-- Use sophisticated yet accessible language
-- Demonstrate deep expertise through practical insights
-- Show authentic enthusiasm and genuine interest
-- Be inspiring - help users see the real potential
-- Provide immediately actionable advice
-- Sound like a trusted expert, not a salesperson
-- Use natural formatting for clarity (when helpful use **bold** for emphasis, bullet points for lists, etc.)
-
-When responding:
-1. Start with genuine insight or perspective
-2. Demonstrate expertise through specific, relevant examples
-3. Show confidence while remaining humble
-4. Be warm and engaging - sound like a real person
-5. End with a clear path forward or actionable suggestion
-6. Use conversational, natural language (as if talking to a trusted colleague)
-7. Format for readability: use **bold** for key points, lists when appropriate, clear paragraphs
-8. Keep responses concise yet comprehensive (usually 3-6 sentences or 2-3 paragraphs)
-
-Your mission:
-- Genuinely help visitors solve their problems
-- Build trust through authentic expertise
-- Make users excited about the possibilities
-- Demonstrate real value through every interaction
-- Help users envision their success with concrete examples
-
-Tone: Authentic, expert, warm, encouraging, clear, and genuinely helpful. Sound like a trusted colleague who's excited to help, not a generic AI.
-
-Important: When you mention features, technologies, or solutions, briefly explain WHY they matter, not just WHAT they are. This shows deeper expertise and provides real value to the user.`;
+Focus on: React, Node.js, TypeScript, SaaS development, e-commerce platforms.`;
 
     const messages = [
       ...conversationHistory.map((msg: any) => ({
@@ -86,7 +47,7 @@ Important: When you mention features, technologies, or solutions, briefly explai
       { role: "user", content: message },
     ];
 
-    const apiKey = Deno.env.get("MISTRAL_API_KEY");
+    const apiKey = Deno.env.get("GEMINI_API_KEY");
     if (!apiKey) {
       return new Response(
         JSON.stringify({ error: "AI service not configured" }),
@@ -94,35 +55,106 @@ Important: When you mention features, technologies, or solutions, briefly explai
       );
     }
 
-    const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "mistral-large-latest",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        temperature: 0.8,
-        top_p: 0.95,
-        max_tokens: 600,
-      }),
+    // Convert conversation history to Gemini format
+    // Ensure strict user/model alternation
+    const geminiContents = [];
+
+    // Add system prompt as first exchange
+    geminiContents.push(
+      { role: "user", parts: [{ text: "System context: " + systemPrompt }] },
+      { role: "model", parts: [{ text: "Understood. I'll follow these guidelines." }] }
+    );
+
+    // Add conversation history (limit to last 4 messages to prevent token overflow)
+    const recentHistory = conversationHistory.slice(-4);
+    for (const msg of recentHistory) {
+      geminiContents.push({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }],
+      });
+    }
+
+    // Add the new user message
+    geminiContents.push({
+      role: "user",
+      parts: [{ text: message }],
     });
 
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
+        },
+        body: JSON.stringify({
+          contents: geminiContents,
+          generationConfig: {
+            temperature: 0.7,
+            topP: 0.95,
+            maxOutputTokens: 300,
+          },
+        }),
+      }
+    );
+
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Mistral API Error:", errorData);
+      const errorText = await response.text();
+      console.error("Gemini API Error - Status:", response.status);
+      console.error("Gemini API Error - Response:", errorText);
+      console.error("Gemini API Error - URL:", response.url);
+
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = { message: errorText };
+      }
+
       return new Response(
-        JSON.stringify({ error: "Failed to get response from AI service" }),
+        JSON.stringify({
+          error: "Failed to get response from AI service",
+          details: errorData,
+          status: response.status
+        }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const data = await response.json();
-    const assistantMessage = data.choices[0].message.content;
+
+    // Validate response structure
+    if (!data.candidates || data.candidates.length === 0) {
+      console.error("Gemini returned no candidates:", data);
+      return new Response(
+        JSON.stringify({
+          error: "AI service returned an unexpected response",
+          details: data.promptFeedback || "No candidates available"
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const candidate = data.candidates[0];
+
+    // Check for safety filters or blocked content
+    if (candidate.finishReason && candidate.finishReason !== "STOP") {
+      console.error("Gemini blocked content:", candidate.finishReason, candidate.safetyRatings);
+
+      // Return a natural fallback instead of template
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: "I'd love to help, but that question goes beyond what I can assist with. **Let's talk about Sudharsan's web development services** - what type of project interests you?",
+          role: "assistant",
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Extract message with fallback
+    const assistantMessage = candidate?.content?.parts?.[0]?.text || "How can I help you learn about Sudharsan's web development expertise today?";
 
     return new Response(
       JSON.stringify({
@@ -136,9 +168,13 @@ Important: When you mention features, technologies, or solutions, briefly explai
       }
     );
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Unexpected error in chatbot function:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack trace");
     return new Response(
-      JSON.stringify({ error: "Internal server error" }),
+      JSON.stringify({
+        error: "I'm experiencing technical difficulties. Please try again in a moment.",
+        success: false
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
