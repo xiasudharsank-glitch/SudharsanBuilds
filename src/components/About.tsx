@@ -60,7 +60,8 @@ export default function About() {
                 {/* Profile Image */}
                 <motion.img
                   src={new URL('../assets/professional photo.jpg', import.meta.url).href}
-                  alt="Sudharsan - Full-Stack Web Developer"
+                  alt="Sudharsan - Full Stack Web Developer and SaaS Expert - Professional Headshot"
+                  title="Sudharsan | Web Developer specializing in React, TypeScript, and Node.js"
                   className="w-full h-full object-cover rounded-3xl transition-all duration-500"
                   whileHover={{ scale: 1.12 }}
                   loading="lazy"
@@ -74,19 +75,26 @@ export default function About() {
             {/* ---------- TEXT SECTION ---------- */}
             <div className="space-y-4 md:space-y-6">
               <p className="text-base md:text-lg text-slate-700 leading-relaxed">
-                Hi! I'm a passionate developer specializing in transforming
-                ideas into fully functional web applications and SaaS products.
-                With expertise in modern no-code and AI-assisted development, I
+                Hi! I'm <strong>Sudharsan</strong>, a <strong>full stack web developer</strong> specializing in transforming
+                ideas into fully functional <strong>web applications</strong> and <strong>SaaS products</strong>.
+                With expertise in <strong>React, TypeScript, Node.js</strong>, and AI-assisted development, I
                 help businesses and entrepreneurs bring their visions to life
                 quickly and efficiently.
               </p>
 
               <p className="text-base md:text-lg text-slate-700 leading-relaxed">
-                My goal is to provide high-quality, production-ready solutions
+                As a professional <strong>web developer</strong>, my goal is to provide high-quality, production-ready solutions
                 that not only look stunning but also deliver exceptional user
-                experiences. Whether you need an e-commerce platform, a
-                subscription service, or a custom web application, I've got you
-                covered.
+                experiences. Whether you need an <strong>e-commerce platform</strong>, a
+                <strong>subscription service</strong>, or a <strong>custom web application</strong>, I leverage modern
+                web technologies to build scalable, performant solutions that drive results.
+              </p>
+
+              <p className="text-base md:text-lg text-slate-700 leading-relaxed">
+                <strong>Based in India</strong>, I work with clients worldwide to deliver cutting-edge
+                <strong> web development services</strong> including front-end development, back-end development,
+                API integration, database design, and full-stack solutions. My portfolio showcases
+                real-world projects built with industry-leading technologies.
               </p>
 
               <div className="pt-4 md:pt-6">

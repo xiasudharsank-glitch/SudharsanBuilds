@@ -253,35 +253,40 @@ const Hero: FC = () => {
             <div className="container mx-auto px-6 relative z-10">
                 <div className="text-center space-y-8 py-20">
                     <div className="space-y-4">
-                        {/* 3. 3D Name Effect: Mouse reactive rotation */}
+                        {/* 3. 3D Name Effect: Mouse reactive rotation - SEO Optimized H1 */}
                         <motion.h1
-                            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }} // Added transformStyle for deeper 3D
-                            className="text-6xl md:text-8xl lg:text-9xl font-extrabold text-white tracking-tighter cursor-default flex items-center justify-center gap-6"
+                            style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+                            className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-white tracking-tight cursor-default flex flex-col items-center justify-center gap-4"
                             transition={springConfig}
                         >
-                            {/* Reactive Bot Component */}
-                            <ReactiveBot mouseX={mouseX} mouseY={mouseY} />
+                            {/* Main Name with Bot */}
+                            <span className="flex items-center gap-6">
+                                {/* Reactive Bot Component */}
+                                <ReactiveBot mouseX={mouseX} mouseY={mouseY} />
 
-                            <span
-                                className="inline-block"
-                                style={{
-                                    textShadow: `
-                                        0 0 5px rgba(255, 255, 255, 0.8),
-                                        0 5px 0px rgba(0, 0, 0, 0.3),
-                                        0 10px 0px rgba(0, 175, 255, 0.2),
-                                        0 15px 5px rgba(0, 0, 0, 0.1)
-                                    `
-                                }}
-                            >
-                                Sudharsan
+                                <span
+                                    className="inline-block text-6xl md:text-8xl lg:text-9xl tracking-tighter"
+                                    style={{
+                                        textShadow: `
+                                            0 0 5px rgba(255, 255, 255, 0.8),
+                                            0 5px 0px rgba(0, 0, 0, 0.3),
+                                            0 10px 0px rgba(0, 175, 255, 0.2),
+                                            0 15px 5px rgba(0, 0, 0, 0.1)
+                                        `
+                                    }}
+                                >
+                                    Sudharsan
+                                </span>
+                            </span>
+
+                            {/* SEO-Rich Professional Title */}
+                            <span className="text-2xl md:text-3xl lg:text-4xl text-cyan-400 font-semibold tracking-wide">
+                                Full Stack Web Developer & SaaS Builder
                             </span>
                         </motion.h1>
 
-                        <p className="text-2xl md:text-3xl text-cyan-400 font-medium pt-2">
-                            AI-Assisted No Code Developer & Web App Builder
-                        </p>
-                        <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto pt-2">
-                            I turn ideas into powerful, premium Web Apps & SaaS Products
+                        <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto pt-4">
+                            Expert in <span className="text-cyan-400 font-semibold">React, TypeScript, Node.js</span> — Building modern web applications, SaaS platforms, and e-commerce solutions that drive business growth
                         </p>
                     </div>
 
