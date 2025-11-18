@@ -69,53 +69,89 @@ export default function AIChatbot() {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const currentInput = inputValue;
     setInputValue('');
     setIsLoading(true);
 
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-chatbot`;
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+      if (!apiKey) {
+        throw new Error('Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your .env file.');
+      }
+
+      // Build conversation history for context
+      const conversationContext = messages
+        .slice(-6) // Last 6 messages for better context
+        .map((msg) => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n');
+
+      const systemPrompt = `You are Sudharsan's Elite AI Assistant - a premium, professional AI that helps visitors with web development, SaaS solutions, e-commerce, and digital services.
+
+Key traits:
+- Professional, knowledgeable, and helpful
+- Provide concise, actionable insights
+- Focus on web development, SaaS, e-commerce, and tech consulting
+- Represent Sudharsan's expertise and brand excellence
+- Be friendly but maintain a premium, professional tone
+
+${conversationContext ? `Previous conversation:\n${conversationContext}\n\n` : ''}Current user question: ${currentInput}
+
+Provide a helpful, professional response:`;
+
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
         },
         body: JSON.stringify({
-          message: inputValue,
-          // Only send last 4 messages to prevent payload overflow
-          conversationHistory: messages.slice(-4).map((msg) => ({
-            role: msg.role,
-            content: msg.content,
-          })),
+          contents: [
+            {
+              parts: [
+                {
+                  text: systemPrompt,
+                },
+              ],
+            },
+          ],
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: 800,
+            topP: 0.8,
+            topK: 40,
+          },
         }),
       });
 
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Gemini API error:', errorData);
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
       const data = await response.json();
 
-      if (data.success && data.message) {
+      if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: data.message,
+          content: data.candidates[0].content.parts[0].text,
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } else {
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: 'I encountered a temporary issue. Please try again in a moment.',
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
+        throw new Error('Invalid response format from Gemini API');
       }
     } catch (error) {
       console.error('Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Connection error. Please check your internet and try again.',
+        content: error instanceof Error && error.message.includes('API key')
+          ? '⚠️ API configuration error. Please contact the site administrator.'
+          : 'I encountered a temporary issue. Please try again in a moment.',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, errorMessage]);
