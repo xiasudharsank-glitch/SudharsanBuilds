@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
-import { Github, Linkedin, Mail, Twitter, Bot, ArrowDown } from 'lucide-react'; // Added ArrowDown
-import { motion, useMotionValue, useTransform, useSpring, MotionValue } from "framer-motion";
+import { Github, Linkedin, Mail, Twitter, ArrowDown, Sparkles } from 'lucide-react';
+import { motion, useTransform, useSpring } from "framer-motion";
 
 // --- 1. TYPES ---
 type MousePosition = { x: number; y: number };
@@ -37,81 +37,8 @@ const useSmoothScroll = () => {
     return scrollToSection;
 };
 
-// --- 4. New Component: Bot Head with Reactive Eyes ---
-interface ReactiveBotProps {
-    mouseX: MotionValue<number>;
-    mouseY: MotionValue<number>;
-}
 
-const ReactiveBot: FC<ReactiveBotProps> = ({ mouseX, mouseY }) => {
-    const botRef = useRef<HTMLDivElement>(null);
-    const [angle, setAngle] = useState(0);
-
-    // Calculate angle of cursor relative to bot's center for eye rotation
-    useEffect(() => {
-        const updateAngle = () => {
-            if (botRef.current) {
-                const rect = botRef.current.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-
-                const dx = mouseX.get() - centerX;
-                const dy = mouseY.get() - centerY;
-                
-                // atan2 calculates the angle in radians
-                const angleRad = Math.atan2(dy, dx); 
-                // Convert to degrees and adjust (90 degrees offset for Lucide Bot icon orientation)
-                setAngle(angleRad * (180 / Math.PI) + 90); 
-            }
-        };
-
-        // Re-calculate whenever mouseX or mouseY updates
-        const unsubscribeX = mouseX.on("change", updateAngle);
-        const unsubscribeY = mouseY.on("change", updateAngle);
-        
-        // Recalculate on window resize to keep tracking accurate
-        window.addEventListener('resize', updateAngle);
-
-        return () => {
-            unsubscribeX();
-            unsubscribeY();
-            window.removeEventListener('resize', updateAngle);
-        };
-    }, [mouseX, mouseY]);
-
-    // Small movement of the head (translation) on mouse hover
-    const headTranslateX = useTransform(mouseX, [0, window.innerWidth], [-2, 2]);
-    const headTranslateY = useTransform(mouseY, [0, window.innerHeight], [-2, 2]);
-
-    return (
-        <motion.div
-            ref={botRef}
-            className="relative hidden sm:block w-24 h-24 p-2" 
-            style={{ x: headTranslateX, y: headTranslateY }} // Subtle head movement
-        >
-            {/* Bot Head Icon (Lucide Bot) */}
-            <Bot size={90} className="text-slate-700/80 drop-shadow-xl" strokeWidth={1} />
-            
-            {/* The Eyes Container - Rotates based on the cursor position */}
-            <motion.div 
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" 
-                style={{ rotate: angle }}
-            >
-                {/* Single Large Eye (The 'funny' element) */}
-                <div 
-                    className="w-8 h-8 rounded-full bg-cyan-400 absolute left-[-1.5rem] top-[-3.2rem]" 
-                    style={{ 
-                        boxShadow: '0 0 10px #22d3ee, 0 0 20px #22d3ee',
-                        transform: 'translateY(-2px)' // Keeps the pupil slightly up for a focused look
-                    }}
-                />
-            </motion.div>
-        </motion.div>
-    );
-};
-
-
-// --- 5. New Component: Generative 3D Grid ---
+// --- 4. New Component: Generative 3D Grid ---
 const GenerativeGrid: FC = () => {
     return (
         <div className="absolute inset-0 overflow-hidden" style={{ zIndex: 1, perspective: '800px' }}>
@@ -128,11 +55,11 @@ const GenerativeGrid: FC = () => {
                 }}
             >
                 {/* Subtle Glow Overlay */}
-                <div className="absolute inset-0 bg-transparent" 
-                     style={{ 
+                <div className="absolute inset-0 bg-transparent"
+                     style={{
                         boxShadow: 'inset 0 0 150px rgba(6, 182, 212, 0.2)',
                         // Rotating the glow source itself
-                        transform: 'rotateZ(45deg)' 
+                        transform: 'rotateZ(45deg)'
                      }}
                 />
             </motion.div>
@@ -140,7 +67,7 @@ const GenerativeGrid: FC = () => {
     );
 };
 
-// --- 6. Hero Component (The main showpiece) ---
+// --- 5. Hero Component (The main showpiece) ---
 const Hero: FC = () => {
     const scrollToSection = useSmoothScroll();
     const heroRef = useRef<HTMLElement>(null);
@@ -160,60 +87,27 @@ const Hero: FC = () => {
         return () => window.removeEventListener('resize', updateBounds);
     }, []);
 
-    // Mouse motion values with smooth spring animations
-    const mouseX = useMotionValue(0);
-    const mouseY = useMotionValue(0);
-
-    useEffect(() => {
-        mouseX.set(x);
-        mouseY.set(y);
-    }, [x, y, mouseX, mouseY]);
-
     // 3D Name Effect: Maps mouse position to rotation values
     const centerX = bounds.left + bounds.width / 2;
     const centerY = bounds.top + bounds.height / 2;
 
     // Use a stronger damping for a more responsive (less springy) feel
-    const springConfig = { stiffness: 100, damping: 20 }; 
+    const springConfig = { stiffness: 100, damping: 20 };
 
-    // Rotate X
-    const rotateX = useSpring(
-        useTransform(
-            mouseY,
-            [bounds.top, centerY, bounds.top + bounds.height],
-            [10, 0, -10]
-        ),
-        springConfig
-    );
+    // Calculate rotation based on mouse position
+    const rotateXValue = bounds.height > 0 ? ((y - centerY) / bounds.height) * -20 : 0;
+    const rotateYValue = bounds.width > 0 ? ((x - centerX) / bounds.width) * 20 : 0;
 
-    // Rotate Y
-    const rotateY = useSpring(
-        useTransform(
-            mouseX,
-            [bounds.left, centerX, bounds.left + bounds.width],
-            [-10, 0, 10]
-        ),
-        springConfig
-    );
+    // Rotate X and Y with spring animation
+    const rotateX = useSpring(rotateXValue, springConfig);
+    const rotateY = useSpring(rotateYValue, springConfig);
 
     // Dynamic Background Blob: Maps mouse position to movement
-    const blobX = useSpring(
-        useTransform(
-            mouseX,
-            [bounds.left, centerX, bounds.left + bounds.width],
-            [-150, 0, 150]
-        ),
-        { stiffness: 50, damping: 30 }
-    );
+    const blobXValue = bounds.width > 0 ? ((x - centerX) / bounds.width) * 150 : 0;
+    const blobYValue = bounds.height > 0 ? ((y - centerY) / bounds.height) * 150 : 0;
 
-    const blobY = useSpring(
-        useTransform(
-            mouseY,
-            [bounds.top, centerY, bounds.top + bounds.height],
-            [-150, 0, 150]
-        ),
-        { stiffness: 50, damping: 30 }
-    );
+    const blobX = useSpring(blobXValue, { stiffness: 50, damping: 30 });
+    const blobY = useSpring(blobYValue, { stiffness: 50, damping: 30 });
 
     return (
         <section
@@ -252,57 +146,68 @@ const Hero: FC = () => {
             {/* Content Layer */}
             <div className="container mx-auto px-6 relative z-10">
                 <div className="text-center space-y-8 py-20">
-                    <div className="space-y-4">
-                        {/* 3. 3D Name Effect: Mouse reactive rotation - SEO Optimized H1 */}
-                        <motion.h1
+                    <div className="space-y-6">
+                        {/* 3D Name Effect: Mouse reactive rotation - SEO Optimized H1 */}
+                        <motion.div
                             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-                            className="text-5xl md:text-7xl lg:text-8xl font-extrabold text-white tracking-tight cursor-default flex flex-col items-center justify-center gap-4"
+                            className="cursor-default"
                             transition={springConfig}
                         >
-                            {/* Main Name with Bot */}
-                            <span className="flex items-center gap-6">
-                                {/* Reactive Bot Component */}
-                                <ReactiveBot mouseX={mouseX} mouseY={mouseY} />
+                            <h1
+                                className="text-6xl md:text-8xl lg:text-9xl font-extrabold text-white tracking-tighter"
+                                style={{
+                                    textShadow: `
+                                        0 0 5px rgba(255, 255, 255, 0.8),
+                                        0 5px 0px rgba(0, 0, 0, 0.3),
+                                        0 10px 0px rgba(0, 175, 255, 0.2),
+                                        0 15px 5px rgba(0, 0, 0, 0.1)
+                                    `
+                                }}
+                            >
+                                Sudharsan
+                            </h1>
+                        </motion.div>
 
-                                <span
-                                    className="inline-block text-6xl md:text-8xl lg:text-9xl tracking-tighter"
-                                    style={{
-                                        textShadow: `
-                                            0 0 5px rgba(255, 255, 255, 0.8),
-                                            0 5px 0px rgba(0, 0, 0, 0.3),
-                                            0 10px 0px rgba(0, 175, 255, 0.2),
-                                            0 15px 5px rgba(0, 0, 0, 0.1)
-                                        `
-                                    }}
-                                >
-                                    Sudharsan
-                                </span>
-                            </span>
-
-                            {/* SEO-Rich Professional Title */}
-                            <span className="text-2xl md:text-3xl lg:text-4xl text-cyan-400 font-semibold tracking-wide">
+                        {/* Animated subtitle with gradient - SEO Optimized */}
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3, duration: 0.8 }}
+                            className="space-y-3"
+                        >
+                            <p className="text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 font-bold pt-2 flex items-center justify-center gap-2">
+                                <Sparkles className="text-cyan-400 animate-pulse" size={28} />
                                 Full Stack Web Developer & SaaS Builder
-                            </span>
-                        </motion.h1>
-
-                        <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto pt-4">
-                            Expert in <span className="text-cyan-400 font-semibold">React, TypeScript, Node.js</span> — Building modern web applications, SaaS platforms, and e-commerce solutions that drive business growth
-                        </p>
+                                <Sparkles className="text-cyan-400 animate-pulse" size={28} />
+                            </p>
+                            <p className="text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto pt-2 leading-relaxed">
+                                Expert in <span className="text-cyan-400 font-semibold">React, TypeScript, Node.js</span> — Building modern web applications, SaaS platforms, and e-commerce solutions that drive business growth
+                            </p>
+                        </motion.div>
                     </div>
 
-                    {/* Social Icons */}
-                    <div className="flex justify-center gap-6 pt-6">
+                    {/* Social Icons - Enhanced with better animations */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5, duration: 0.8 }}
+                        className="flex justify-center gap-6 pt-8"
+                    >
                         {/* GitHub */}
                         <motion.a
                             href="https://github.com/Sudharsan1-5"
                             target="_blank"
                             rel="noopener noreferrer"
-                            whileHover={{ scale: 1.3, rotate: 5, boxShadow: "0px 0px 20px rgba(34,211,238,0.7)" }}
-                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                            className="text-slate-300 hover:text-cyan-400 p-2 rounded-full transition-colors duration-300"
+                            whileHover={{
+                                scale: 1.3,
+                                rotate: 5,
+                                boxShadow: "0px 0px 25px rgba(34,211,238,0.8)"
+                            }}
+                            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                            className="text-slate-300 hover:text-cyan-400 p-3 rounded-full bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 transition-colors duration-300"
                             aria-label="GitHub Profile"
                         >
-                            <Github size={32} />
+                            <Github size={28} />
                         </motion.a>
 
                         {/* LinkedIn */}
@@ -310,12 +215,16 @@ const Hero: FC = () => {
                             href="https://linkedin.com/in/sudharsan-k-2027b1370"
                             target="_blank"
                             rel="noopener noreferrer"
-                            whileHover={{ scale: 1.3, rotate: -5, boxShadow: "0px 0px 20px rgba(0,191,255,0.7)" }}
-                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                            className="text-slate-300 hover:text-cyan-400 p-2 rounded-full transition-colors duration-300"
+                            whileHover={{
+                                scale: 1.3,
+                                rotate: -5,
+                                boxShadow: "0px 0px 25px rgba(0,191,255,0.8)"
+                            }}
+                            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                            className="text-slate-300 hover:text-cyan-400 p-3 rounded-full bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 transition-colors duration-300"
                             aria-label="LinkedIn Profile"
                         >
-                            <Linkedin size={32} />
+                            <Linkedin size={28} />
                         </motion.a>
 
                         {/* Twitter/X */}
@@ -323,61 +232,84 @@ const Hero: FC = () => {
                             href="https://x.com/SudharsanBuilds"
                             target="_blank"
                             rel="noopener noreferrer"
-                            whileHover={{ scale: 1.3, rotate: 5, boxShadow: "0px 0px 20px rgba(29,155,240,0.7)" }}
-                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                            className="text-slate-300 hover:text-cyan-400 p-2 rounded-full transition-colors duration-300"
+                            whileHover={{
+                                scale: 1.3,
+                                rotate: 5,
+                                boxShadow: "0px 0px 25px rgba(29,155,240,0.8)"
+                            }}
+                            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                            className="text-slate-300 hover:text-cyan-400 p-3 rounded-full bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 transition-colors duration-300"
                             aria-label="Twitter Profile"
                         >
-                            <Twitter size={32} />
+                            <Twitter size={28} />
                         </motion.a>
 
                         {/* Mail */}
                         <motion.a
                             href="#contact"
                             onClick={scrollToSection}
-                            whileHover={{ scale: 1.3, rotate: -5, boxShadow: "0px 0px 20px rgba(255,255,255,0.7)" }}
-                            transition={{ type: "spring", stiffness: 300, damping: 10 }}
-                            className="text-slate-300 hover:text-cyan-400 p-2 rounded-full transition-colors duration-300"
+                            whileHover={{
+                                scale: 1.3,
+                                rotate: -5,
+                                boxShadow: "0px 0px 25px rgba(255,255,255,0.8)"
+                            }}
+                            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                            className="text-slate-300 hover:text-cyan-400 p-3 rounded-full bg-slate-800/30 backdrop-blur-sm border border-slate-700/50 transition-colors duration-300"
                             aria-label="Contact via Email"
                         >
-                            <Mail size={32} />
+                            <Mail size={28} />
                         </motion.a>
-                    </div>
+                    </motion.div>
 
-                    {/* Hire Me Button */}
-                    <div className="pt-10">
+                    {/* Hire Me Button - Enhanced with better styling */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.7, duration: 0.8 }}
+                        className="pt-12"
+                    >
                         <motion.a
                             href="#contact"
                             onClick={scrollToSection}
-                            className="inline-block bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-12 py-5 rounded-full text-xl font-bold tracking-wide shadow-lg shadow-cyan-500/30"
+                            className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-600 text-white px-14 py-6 rounded-full text-xl font-bold tracking-wide shadow-xl shadow-cyan-500/40 border border-cyan-400/20"
                             whileHover={{
-                                scale: 1.05,
-                                y: -2,
-                                boxShadow: "0 0 35px rgba(6, 182, 212, 0.8)",
+                                scale: 1.08,
+                                y: -3,
+                                boxShadow: "0 0 45px rgba(6, 182, 212, 0.9), 0 10px 30px rgba(6, 182, 212, 0.4)",
                             }}
-                            whileTap={{ scale: 0.95 }}
-                            transition={{ type: "spring", stiffness: 300 }}
+                            whileTap={{ scale: 0.96 }}
+                            transition={{ type: "spring", stiffness: 400, damping: 15 }}
                         >
-                            Hire me
+                            <Sparkles size={24} className="animate-pulse" />
+                            Let's Work Together
+                            <Sparkles size={24} className="animate-pulse" />
                         </motion.a>
-                    </div>
+                    </motion.div>
                 </div>
             </div>
             
-            {/* --- Scroll Down Visual Cue (NEW) --- */}
+            {/* Scroll Down Visual Cue - Enhanced */}
             <motion.div
-                className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20"
+                className="absolute bottom-12 left-1/2 transform -translate-x-1/2 z-20 cursor-pointer"
                 initial={{ y: 0, opacity: 0 }}
-                // Simple bounce animation: moves down 10px, fades in and then out
-                animate={{ y: [0, 10, 0], opacity: [0, 1, 1, 0] }}
+                animate={{ y: [0, 12, 0], opacity: [0.5, 1, 0.5] }}
                 transition={{
-                    duration: 3,
+                    duration: 2.5,
                     repeat: Infinity,
                     ease: "easeInOut",
-                    delay: 2 // Wait for the main content to load
+                    delay: 1.5
+                }}
+                onClick={() => {
+                    const aboutSection = document.getElementById('about');
+                    if (aboutSection) {
+                        aboutSection.scrollIntoView({ behavior: 'smooth' });
+                    }
                 }}
             >
-                <ArrowDown size={32} className="text-cyan-400 drop-shadow-xl" />
+                <div className="flex flex-col items-center gap-1">
+                    <ArrowDown size={36} className="text-cyan-400 drop-shadow-[0_0_15px_rgba(34,211,238,0.8)]" />
+                    <span className="text-xs text-cyan-400/80 font-medium">Scroll to explore</span>
+                </div>
             </motion.div>
         </section>
     );
