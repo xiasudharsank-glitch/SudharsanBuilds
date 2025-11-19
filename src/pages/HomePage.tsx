@@ -8,7 +8,6 @@ const Projects = lazy(() => import('../components/Projects'));
 const Services = lazy(() => import('../components/Services'));
 const LocalTargeting = lazy(() => import('../components/LocalTargeting'));
 const Testimonials = lazy(() => import('../components/Testimonials'));
-const Blog = lazy(() => import('../components/Blog'));
 const FAQ = lazy(() => import('../components/FAQ'));
 const Contact = lazy(() => import('../components/Contact'));
 const AIChatbot = lazy(() => import('../components/AIChatbot'));
@@ -36,7 +35,7 @@ export default function HomePage() {
       </Suspense>
 
       <Suspense fallback={<SectionLoader />}>
-        <Services />
+        <Services limit={2} showViewAll={true} />
       </Suspense>
 
       <Suspense fallback={<SectionLoader />}>
@@ -45,10 +44,6 @@ export default function HomePage() {
 
       <Suspense fallback={<SectionLoader />}>
         <Testimonials limit={2} showViewAll={true} />
-      </Suspense>
-
-      <Suspense fallback={<SectionLoader />}>
-        <Blog limit={2} showViewAll={true} />
       </Suspense>
 
       <Suspense fallback={<SectionLoader />}>

@@ -4,6 +4,7 @@ import Navigation from './components/Navigation';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
+const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
@@ -26,6 +27,7 @@ function App() {
         <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/services" element={<ServicesPage />} />
             <Route path="/blog" element={<BlogPage />} />
             <Route path="/testimonials" element={<TestimonialsPage />} />
             <Route path="/faq" element={<FAQPage />} />
