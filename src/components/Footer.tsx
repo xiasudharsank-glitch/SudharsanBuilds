@@ -119,26 +119,6 @@ export default function Footer() {
                   sudharsanofficial0001@gmail.com
                 </a>
               </li>
-              <li className="flex items-start gap-2">
-                <Phone className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-1" />
-                <a
-                  href="tel:+916381556407"
-                  className="text-slate-400 hover:text-cyan-400 transition-colors"
-                >
-                  +91 63815 56407
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://wa.me/916381556407"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-4 py-2 rounded-lg font-semibold hover:shadow-lg transition-all duration-300 mt-2"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Chat on WhatsApp
-                </a>
-              </li>
             </ul>
           </div>
         </div>

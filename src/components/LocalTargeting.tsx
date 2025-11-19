@@ -16,7 +16,7 @@ export default function WhyFreelance() {
     {
       icon: <Video className="w-6 h-6" />,
       title: 'Direct Communication',
-      description: 'Work directly with the developer via WhatsApp, Email, or Zoom calls.'
+      description: 'Work directly with the developer via Email or Zoom calls.'
     },
     {
       icon: <Globe className="w-6 h-6" />,
@@ -194,7 +194,7 @@ export default function WhyFreelance() {
                 <Video className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-semibold">WhatsApp Call</p>
+                <p className="font-semibold">Video Call</p>
                 <p className="text-sm text-slate-300">Quick chat anytime</p>
               </div>
             </div>

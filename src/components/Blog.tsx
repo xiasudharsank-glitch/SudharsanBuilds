@@ -36,7 +36,7 @@ export default function Blog() {
 
         '**Step 4: Optimize for Local SEO**\nMake sure customers in Trichy can find you! Include location-specific keywords like "web developer trichy," "Trichy business," and "Tiruchirappalli services" throughout your website.',
 
-        '**Step 5: Leverage Social Media**\nCreate business profiles on Facebook, Instagram, and WhatsApp Business. These platforms are extremely popular in Trichy and help you connect with local customers directly.',
+        '**Step 5: Leverage Social Media**\nCreate business profiles on Facebook and Instagram. These platforms are extremely popular in Trichy and help you connect with local customers directly.',
 
         '**Step 6: Start Marketing**\nUse Google My Business to appear in local searches. Run targeted Facebook ads for Trichy and surrounding areas. Collaborate with local influencers and businesses.',
 
@@ -58,7 +58,7 @@ export default function Blog() {
 
         '**1. Mobile-First Design (Must-Have)**\nOver 80% of Indian users browse on mobile devices. Your website must look perfect and load fast on smartphones. This isn\'t optional anymore - Google penalizes non-mobile-friendly websites in search rankings.',
 
-        '**2. WhatsApp Integration (Cost: Free)**\nTrichy customers love WhatsApp! Add a "Chat on WhatsApp" button that allows instant communication. This feature alone can increase inquiries by 40-50%. It\'s free to implement and incredibly effective.',
+        '**2. Live Chat Integration (Cost: Minimal)**\nTrichy customers love instant communication! Add a live chat feature that allows instant communication. This feature alone can increase inquiries by 40-50%. It\'s easy to implement and incredibly effective.',
 
         '**3. Google Maps Integration (Cost: Free)**\nIf you have a physical location in Trichy, embed Google Maps. Customers need to find you easily. Add your exact address, photos, and business hours. This builds trust and drives foot traffic.',
 
@@ -92,13 +92,13 @@ export default function Blog() {
 
         '**Benefits of Direct Online Ordering:**\n• Keep 100% of profits (no 20-30% commission)\n• Build customer database for marketing\n• Control your brand experience\n• Accept advance orders\n• Reduce phone order errors',
 
-        '**What Your Restaurant Website Needs:**\n1. Digital menu with photos and prices\n2. Online ordering system with cart\n3. Payment gateway (Razorpay/PayPal)\n4. Order tracking system\n5. WhatsApp notifications\n6. Google Maps location',
+        '**What Your Restaurant Website Needs:**\n1. Digital menu with photos and prices\n2. Online ordering system with cart\n3. Payment gateway (Razorpay/PayPal)\n4. Order tracking system\n5. Email/SMS notifications\n6. Google Maps location',
 
         '**Case Study: Local Trichy Restaurant**\nA biryani restaurant in Trichy launched their own ordering website. Results after 3 months:\n• 30% increase in orders\n• Saved ₹45,000 in third-party commissions\n• Built customer database of 500+ regular customers\n• Reduced phone order mistakes by 90%',
 
         '**Cost of Restaurant Website**\nComplete restaurant website with online ordering: ₹50,000 (one-time)\nCompared to: ₹15,000+ monthly in Swiggy/Zomato commissions.',
 
-        '**Marketing Your Restaurant Online:**\n• Google My Business listing\n• Instagram food photos\n• Facebook ads targeting Trichy area\n• WhatsApp broadcast for offers\n• Customer reviews and ratings',
+        '**Marketing Your Restaurant Online:**\n• Google My Business listing\n• Instagram food photos\n• Facebook ads targeting Trichy area\n• Email newsletter for offers\n• Customer reviews and ratings',
 
         '**ROI Calculation**\nInvestment: ₹50,000\nMonthly commission savings: ₹15,000\nBreak-even: 3-4 months\nAfter that: Pure profit increase!',
 
@@ -134,7 +134,7 @@ export default function Blog() {
 
         '**8. Create Social Media Presence**\nGoogle considers social signals:\n• Facebook Business Page with Trichy location\n• Instagram with location tags\n• Regular posts about your business\n• Engage with local customers',
 
-        '**Quick Wins for Trichy Businesses:**\n• Add your phone number on every page\n• Include your address in footer\n• Create "Contact Us" page with map\n• Add WhatsApp chat button\n• Use local landmarks in descriptions',
+        '**Quick Wins for Trichy Businesses:**\n• Add your email on every page\n• Include your address in footer\n• Create "Contact Us" page with map\n• Add live chat widget\n• Use local landmarks in descriptions',
 
         '**How Long to See Results?**\n• Google Business Profile: 1-2 weeks\n• Local content: 1-3 months\n• Backlinks and reviews: 2-4 months\nSEO is a marathon, not a sprint!',
 
@@ -152,7 +152,7 @@ export default function Blog() {
       content: [
         'One of the most common questions I get: "How much does a website cost in Trichy?" Let me break down the pricing transparently so you know exactly what to expect.',
 
-        '**Landing Page: ₹15,000**\nPerfect for:\n• Freelancers and consultants\n• Service providers\n• Portfolio websites\n• Lead generation\n\nWhat you get:\n• 1-2 page website\n• Mobile responsive design\n• Contact form\n• WhatsApp integration\n• Google Analytics\n• SSL certificate\n• 1 year hosting\n• Basic SEO\nTimeline: 1-2 weeks',
+        '**Landing Page: ₹15,000**\nPerfect for:\n• Freelancers and consultants\n• Service providers\n• Portfolio websites\n• Lead generation\n\nWhat you get:\n• 1-2 page website\n• Mobile responsive design\n• Contact form\n• Live chat integration\n• Google Analytics\n• SSL certificate\n• 1 year hosting\n• Basic SEO\nTimeline: 1-2 weeks',
 
         '**Business Website: ₹30,000**\nPerfect for:\n• Small businesses\n• Professional services\n• Established companies\n• Multi-page presence\n\nWhat you get:\n• 5-10 pages\n• Custom design\n• CMS integration (easy updates)\n• Blog section\n• Advanced SEO\n• Analytics dashboard\n• Contact forms\n• Email setup\n• 1 year hosting\nTimeline: 3-4 weeks',
 
@@ -162,7 +162,7 @@ export default function Blog() {
 
         '**What Affects Website Cost?**\nFactors that increase cost:\n• Number of pages\n• Custom features\n• Third-party integrations\n• Content creation\n• Advanced animations\n• Custom designs',
 
-        '**What\'s Included in All Packages:**\n• Mobile-first responsive design\n• Fast loading speed (90+ PageSpeed score)\n• WhatsApp integration\n• SSL certificate (secure https)\n• Google Analytics\n• Contact forms\n• Social media integration\n• 1 year of technical support\n• Free minor updates for 6 months',
+        '**What\'s Included in All Packages:**\n• Mobile-first responsive design\n• Fast loading speed (90+ PageSpeed score)\n• Live chat integration\n• SSL certificate (secure https)\n• Google Analytics\n• Contact forms\n• Social media integration\n• 1 year of technical support\n• Free minor updates for 6 months',
 
         '**What\'s NOT Included:**\n• Domain name (₹500-1000/year)\n• Content writing (can add for ₹5000)\n• Logo design (can add for ₹5000)\n• Professional photography\n• Digital marketing services',
 

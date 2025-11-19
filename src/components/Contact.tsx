@@ -183,7 +183,7 @@ export default function Contact() {
           Get In <span className="text-cyan-600">Touch</span>
         </h2>
         <p className="text-center text-slate-600 mb-12 md:mb-16 text-lg">
-          Ready to start your project? Fill out the form and I'll contact you on WhatsApp within 24 hours!
+          Ready to start your project? Fill out the form and I'll get back to you within 24 hours!
         </p>
 
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8 md:gap-12">
@@ -191,7 +191,7 @@ export default function Contact() {
             <div>
               <h3 className="text-2xl md:text-3xl font-bold text-slate-900 mb-3 md:mb-4">Let's Work Together</h3>
               <p className="text-base md:text-lg text-slate-600 leading-relaxed">
-                Ready to bring your idea to life? Fill out the booking form and I'll get back to you within 24 hours on WhatsApp. Let's create something amazing together!
+                Ready to bring your idea to life? Fill out the booking form and I'll get back to you within 24 hours. Let's create something amazing together!
               </p>
             </div>
 
@@ -208,17 +208,6 @@ export default function Contact() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-slate-700">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center text-white">
-                  <MessageSquare className="w-6 h-6" />
-                </div>
-                <div>
-                  <p className="font-semibold">WhatsApp</p>
-                  <a href="https://wa.me/916381556407" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:text-cyan-700">
-                    +91 63815 56407
-                  </a>
-                </div>
-              </div>
             </div>
 
             <div>
@@ -293,10 +282,10 @@ export default function Contact() {
               )}
             </div>
 
-            {/* Phone/WhatsApp */}
+            {/* Phone */}
             <div>
               <label htmlFor="phone" className="block text-slate-700 font-semibold mb-2 text-sm md:text-base">
-                Phone/WhatsApp Number (Optional)
+                Phone Number (Optional)
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -477,7 +466,7 @@ export default function Contact() {
             <span className="text-xl md:text-2xl">✅</span>
             <div>
               <p className="font-bold text-base md:text-lg">Thank You!</p>
-              <p className="text-xs md:text-sm">We'll contact you on WhatsApp within 24 hours!</p>
+              <p className="text-xs md:text-sm">We'll get back to you within 24 hours!</p>
             </div>
           </motion.div>
         )}

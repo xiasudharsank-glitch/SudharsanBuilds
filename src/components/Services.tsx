@@ -217,7 +217,7 @@ export default function Services() {
         order_id: orderId,
         handler: function (response: any) {
           // Payment successful
-          alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you on WhatsApp within 24 hours to discuss your project.`);
+          alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours to discuss your project.`);
 
           // You can send this to your backend to verify and store
           console.log('Payment Response:', response);
@@ -242,7 +242,7 @@ export default function Services() {
       setIsPaymentLoading(false);
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Unable to process payment. Please contact us directly via WhatsApp or email.');
+      alert('Unable to process payment. Please contact us directly via email.');
       setIsPaymentLoading(false);
 
       // Fallback to contact form

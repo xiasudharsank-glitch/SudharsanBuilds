@@ -6,7 +6,6 @@ import Footer from './components/Footer';
 
 // Lazy load below-fold and heavy components for better initial load performance
 const Projects = lazy(() => import('./components/Projects'));
-const Process = lazy(() => import('./components/Process'));
 const Services = lazy(() => import('./components/Services'));
 const LocalTargeting = lazy(() => import('./components/LocalTargeting'));
 const Testimonials = lazy(() => import('./components/Testimonials'));
@@ -36,10 +35,6 @@ function App() {
       {/* Lazy load below-fold components with suspense boundaries */}
       <Suspense fallback={<SectionLoader />}>
         <Projects />
-      </Suspense>
-
-      <Suspense fallback={<SectionLoader />}>
-        <Process />
       </Suspense>
 
       <Suspense fallback={<SectionLoader />}>
