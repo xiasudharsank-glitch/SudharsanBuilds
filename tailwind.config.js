@@ -3,9 +3,26 @@ export default {
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
+      /* ========================================
+         🎨 PROFESSIONAL FONTS CONFIGURATION
+
+         TO CHANGE FONTS:
+         1. Update font names in src/index.css (lines 22-24)
+         2. That's it! Fonts will automatically update everywhere
+
+         Current Setup:
+         - sans (body): Inter
+         - heading: Poppins
+         - mono (code): JetBrains Mono
+         ======================================== */
+      fontFamily: {
+        sans: ['var(--font-body)'],
+        heading: ['var(--font-heading)'],
+        mono: ['var(--font-mono)'],
+      },
       // Mobile-first custom breakpoints for better responsiveness
       screens: {
-        'xs': '375px', // Small phones
+        'xs': '375px', // Small phones (iPhone SE)
         'sm': '640px', // Large phones
         'md': '768px', // Tablets
         'lg': '1024px', // Small laptops

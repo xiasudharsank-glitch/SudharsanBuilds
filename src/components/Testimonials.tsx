@@ -1,7 +1,13 @@
-import { Star } from 'lucide-react';
+import { Star, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
-export default function Testimonials() {
+interface TestimonialsProps {
+  limit?: number | null;
+  showViewAll?: boolean;
+}
+
+export default function Testimonials({ limit = null, showViewAll = false }: TestimonialsProps) {
   const testimonials = [
     {
       name: 'Priya Sharma',
@@ -60,8 +66,8 @@ export default function Testimonials() {
           Client <span className="text-cyan-400">Testimonials</span>
         </h2>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto">
-          {testimonials.map((testimonial, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 max-w-5xl mx-auto mb-12">
+          {(limit ? testimonials.slice(0, limit) : testimonials).map((testimonial, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -99,6 +105,22 @@ export default function Testimonials() {
             </motion.div>
           ))}
         </div>
+
+        {/* View All Button */}
+        {showViewAll && limit && testimonials.length > limit && (
+          <div className="text-center">
+            <Link to="/testimonials">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/50 transition-all"
+              >
+                View All Testimonials
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
