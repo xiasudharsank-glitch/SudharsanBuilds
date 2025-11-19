@@ -1,7 +1,7 @@
 import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { initEmailJS } from '../services/emailService';
 import { generateAndSendInvoice } from '../services/invoiceService';
 
@@ -34,11 +34,38 @@ export default function Services({ limit = null, showViewAll = false }: Services
     phone: '',
     projectDetails: ''
   });
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Initialize EmailJS on component mount
   useEffect(() => {
     initEmailJS();
   }, []);
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (showBookingModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [showBookingModal]);
+
+  // ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showBookingModal) {
+        handleCloseModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [showBookingModal]);
 
   const services: Service[] = [
     {
@@ -192,10 +219,20 @@ export default function Services({ limit = null, showViewAll = false }: Services
 
   const handleBooking = async (service: Service) => {
     if (service.ctaAction === 'quote' || !service.depositAmount) {
-      // Scroll to contact form for quotes
-      const contactSection = document.getElementById('contact');
-      if (contactSection) {
-        contactSection.scrollIntoView({ behavior: 'smooth' });
+      // Navigate to contact form for quotes
+      if (location.pathname !== '/') {
+        navigate('/');
+        setTimeout(() => {
+          const contactSection = document.getElementById('contact');
+          if (contactSection) {
+            contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 800);
+      } else {
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
       return;
     }
@@ -203,6 +240,18 @@ export default function Services({ limit = null, showViewAll = false }: Services
     // Show booking modal to collect customer details
     setSelectedService(service);
     setShowBookingModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowBookingModal(false);
+    setSelectedService(null);
+    // Reset customer details to prevent data persistence
+    setCustomerDetails({
+      name: '',
+      email: '',
+      phone: '',
+      projectDetails: ''
+    });
   };
 
   const handlePaymentProceed = async () => {
@@ -228,8 +277,7 @@ export default function Services({ limit = null, showViewAll = false }: Services
       return;
     }
 
-    // Close modal and start payment
-    setShowBookingModal(false);
+    // Start loading (keep modal open to show loading state)
     setIsPaymentLoading(true);
 
     try {
@@ -323,6 +371,9 @@ export default function Services({ limit = null, showViewAll = false }: Services
 
       const razorpay = new (window as any).Razorpay(options);
       razorpay.open();
+
+      // Close modal after Razorpay opens successfully
+      setShowBookingModal(false);
       setIsPaymentLoading(false);
     } catch (error) {
       if (import.meta.env.DEV) {
@@ -516,7 +567,10 @@ export default function Services({ limit = null, showViewAll = false }: Services
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setShowBookingModal(false)}
+            onClick={handleCloseModal}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="booking-modal-title"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -529,13 +583,14 @@ export default function Services({ limit = null, showViewAll = false }: Services
               <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-t-2xl">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">Complete Your Booking</h3>
+                    <h3 id="booking-modal-title" className="text-2xl font-bold mb-2">Complete Your Booking</h3>
                     <p className="text-cyan-50">{selectedService.name} - {selectedService.price}</p>
                     <p className="text-sm text-cyan-100 mt-1">Deposit: ₹{selectedService.depositAmount?.toLocaleString('en-IN')}</p>
                   </div>
                   <button
-                    onClick={() => setShowBookingModal(false)}
+                    onClick={handleCloseModal}
                     className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                    aria-label="Close modal"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -636,10 +691,11 @@ export default function Services({ limit = null, showViewAll = false }: Services
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4">
+                <div className="flex gap-4 md:gap-3 pt-4">
                   <button
-                    onClick={() => setShowBookingModal(false)}
-                    className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                    onClick={handleCloseModal}
+                    disabled={isPaymentLoading}
+                    className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50"
                   >
                     Cancel
                   </button>
@@ -648,7 +704,15 @@ export default function Services({ limit = null, showViewAll = false }: Services
                     disabled={isPaymentLoading}
                     className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
+                    {isPaymentLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : 'Proceed to Payment'}
                   </button>
                 </div>
               </div>

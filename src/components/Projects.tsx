@@ -270,9 +270,20 @@ export default function Projects() {
     setCurrentCarouselIndex(index);
   };
 
-  // Keyboard navigation for carousel
+  // Keyboard navigation for carousel and ESC to close
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
+      // ESC key closes modals
+      if (e.key === 'Escape') {
+        if (isProjectModalOpen) {
+          closeProjectModal();
+        } else if (isCategoryModalOpen) {
+          closeAllModals();
+        }
+        return;
+      }
+
+      // Arrow keys for carousel navigation
       if (isProjectModalOpen && selectedProject?.screenshots) {
         if (e.key === 'ArrowLeft') {
           prevImage();
@@ -284,7 +295,7 @@ export default function Projects() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isProjectModalOpen, selectedProject, currentCarouselIndex]);
+  }, [isProjectModalOpen, isCategoryModalOpen, selectedProject, currentCarouselIndex]);
 
   const closeAllModals = () => {
     setIsProjectModalOpen(false);
@@ -389,6 +400,9 @@ export default function Projects() {
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"
               onClick={closeAllModals}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="category-modal-title"
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -399,12 +413,13 @@ export default function Projects() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="sticky top-0 bg-slate-900 border-b border-slate-700 p-4 md:p-6 flex items-center justify-between z-10">
-                  <h3 className="text-2xl md:text-3xl font-bold text-white">
+                  <h3 id="category-modal-title" className="text-2xl md:text-3xl font-bold text-white">
                     {selectedCategory}
                   </h3>
                   <button
                     onClick={closeAllModals}
                     className="w-10 h-10 md:w-12 md:h-12 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                    aria-label="Close modal"
                   >
                     <X className="w-6 h-6 text-white" />
                   </button>
@@ -481,6 +496,9 @@ export default function Projects() {
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
               onClick={closeProjectModal}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="project-modal-title"
             >
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -491,12 +509,13 @@ export default function Projects() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="sticky top-0 bg-slate-900 border-b border-slate-700 p-4 md:p-6 flex items-center justify-between z-10">
-                  <h3 className="text-2xl md:text-3xl font-bold text-white">
+                  <h3 id="project-modal-title" className="text-2xl md:text-3xl font-bold text-white">
                     {selectedProject.title}
                   </h3>
                   <button
                     onClick={closeProjectModal}
                     className="w-10 h-10 md:w-12 md:h-12 bg-slate-800 hover:bg-slate-700 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+                    aria-label="Close modal"
                   >
                     <X className="w-6 h-6 text-white" />
                   </button>

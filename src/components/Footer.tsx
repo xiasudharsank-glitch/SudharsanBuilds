@@ -1,12 +1,28 @@
 import { Heart, Mail, MapPin, Github, Linkedin, Twitter } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    // If not on homepage, navigate first then scroll
+    if (location.pathname !== '/') {
+      navigate('/');
+      // Wait for navigation and lazy-loaded components to render
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 800);
+    } else {
+      // Already on homepage, just scroll
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 

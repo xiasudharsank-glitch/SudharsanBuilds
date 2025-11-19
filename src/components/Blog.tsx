@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BookOpen, Clock, Calendar, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 interface BlogPost {
   id: number;
@@ -21,6 +21,8 @@ interface BlogProps {
 
 export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const blogPosts: BlogPost[] = [
     {
@@ -186,11 +188,52 @@ export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
   ];
 
   const scrollToContact = () => {
-    const contactSection = document.getElementById('contact');
-    if (contactSection) {
-      contactSection.scrollIntoView({ behavior: 'smooth' });
+    // Close modal first
+    setSelectedPost(null);
+
+    // If not on homepage, navigate first
+    if (location.pathname !== '/') {
+      navigate('/');
+      // Wait for navigation and components to render
+      setTimeout(() => {
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 800);
+    } else {
+      // Already on homepage, just scroll
+      const contactSection = document.getElementById('contact');
+      if (contactSection) {
+        contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (selectedPost) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [selectedPost]);
+
+  // ESC key to close modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedPost) {
+        setSelectedPost(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [selectedPost]);
 
   return (
     <section id="blog" className="py-16 md:py-24 bg-slate-50">
@@ -299,6 +342,9 @@ export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
             exit={{ opacity: 0 }}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
             onClick={() => setSelectedPost(null)}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="blog-modal-title"
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -310,7 +356,7 @@ export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
               {/* Modal Header */}
               <div className="sticky top-0 bg-white border-b border-slate-200 p-6 flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
+                  <h2 id="blog-modal-title" className="text-2xl md:text-3xl font-bold text-slate-900 mb-2">
                     {selectedPost.title}
                   </h2>
                   <div className="flex items-center gap-4 text-sm text-slate-500">

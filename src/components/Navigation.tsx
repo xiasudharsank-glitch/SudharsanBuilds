@@ -33,18 +33,18 @@ export default function Navigation() {
       // If we're not on the homepage, navigate there first
       if (location.pathname !== '/') {
         navigate('/');
-        // Wait for navigation to complete, then scroll
+        // Wait for navigation and lazy-loaded components to render (800ms for Suspense)
         setTimeout(() => {
           const element = document.querySelector(href);
           if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
-        }, 100);
+        }, 800);
       } else {
         // Already on homepage, just scroll
         const element = document.querySelector(href);
         if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
     } else {
