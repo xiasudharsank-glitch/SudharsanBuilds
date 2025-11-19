@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { BookOpen, Clock, Calendar, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface BlogPost {
   id: number;
@@ -13,7 +14,12 @@ interface BlogPost {
   featured: boolean;
 }
 
-export default function Blog() {
+interface BlogProps {
+  limit?: number | null;
+  showViewAll?: boolean;
+}
+
+export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
 
   const blogPosts: BlogPost[] = [
@@ -209,7 +215,7 @@ export default function Blog() {
 
         {/* Blog Posts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mb-12">
-          {blogPosts.map((post, index) => (
+          {(limit ? blogPosts.slice(0, limit) : blogPosts).map((post, index) => (
             <motion.article
               key={post.id}
               initial={{ opacity: 0, y: 20 }}
@@ -266,6 +272,22 @@ export default function Blog() {
             </motion.article>
           ))}
         </div>
+
+        {/* View All Button */}
+        {showViewAll && limit && blogPosts.length > limit && (
+          <div className="text-center">
+            <Link to="/blog">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/50 transition-all"
+              >
+                View All Articles
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Blog Post Modal */}

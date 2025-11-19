@@ -1,13 +1,19 @@
 import { useState } from 'react';
-import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { HelpCircle, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 interface FAQItem {
   question: string;
   answer: string;
 }
 
-export default function FAQ() {
+interface FAQProps {
+  limit?: number | null;
+  showViewAll?: boolean;
+}
+
+export default function FAQ({ limit = null, showViewAll = false }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const faqs: FAQItem[] = [
@@ -87,8 +93,8 @@ export default function FAQ() {
         </motion.div>
 
         {/* FAQ List */}
-        <div className="max-w-3xl mx-auto space-y-4">
-          {faqs.map((faq, index) => (
+        <div className="max-w-3xl mx-auto space-y-4 mb-12">
+          {(limit ? faqs.slice(0, limit) : faqs).map((faq, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -131,6 +137,22 @@ export default function FAQ() {
             </motion.div>
           ))}
         </div>
+
+        {/* View All Button */}
+        {showViewAll && limit && faqs.length > limit && (
+          <div className="text-center mb-12">
+            <Link to="/faq">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/50 transition-all"
+              >
+                View All FAQs
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
+            </Link>
+          </div>
+        )}
 
         {/* CTA */}
         <motion.div

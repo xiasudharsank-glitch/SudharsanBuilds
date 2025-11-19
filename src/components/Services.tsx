@@ -1,7 +1,7 @@
-import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, ChevronDown, ChevronUp } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { useIsMobile } from '../hooks/useMobile';
+import { Link } from 'react-router-dom';
 
 interface Service {
   icon: React.ReactNode;
@@ -17,10 +17,13 @@ interface Service {
   popular?: boolean;
 }
 
-export default function Services() {
+interface ServicesProps {
+  limit?: number | null;
+  showViewAll?: boolean;
+}
+
+export default function Services({ limit = null, showViewAll = false }: ServicesProps) {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
-  const [showAllServices, setShowAllServices] = useState(false);
-  const isMobile = useIsMobile();
 
   const services: Service[] = [
     {
@@ -278,10 +281,8 @@ export default function Services() {
         </div>
 
         {/* Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {services
-            .slice(0, isMobile && !showAllServices ? 4 : services.length)
-            .map((service, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto mb-12">
+          {(limit ? services.slice(0, limit) : services).map((service, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -364,47 +365,20 @@ export default function Services() {
           ))}
         </div>
 
-        {/* View All Services Button - Mobile Only */}
-        {!showAllServices && services.length > 4 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-8 md:hidden flex justify-center"
-          >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowAllServices(true)}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/50 transition-all"
-            >
-              View All {services.length} Services
-              <ChevronDown className="w-5 h-5" />
-            </motion.button>
-          </motion.div>
-        )}
-
-        {/* Show Less Button - Mobile Only */}
-        {showAllServices && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-8 md:hidden flex justify-center"
-          >
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setShowAllServices(false);
-                // Scroll back to services section
-                document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-slate-600 to-slate-800 text-white font-bold rounded-xl shadow-lg hover:shadow-slate-500/50 transition-all"
-            >
-              Show Less
-              <ChevronUp className="w-5 h-5" />
-            </motion.button>
-          </motion.div>
+        {/* View All Services Button */}
+        {showViewAll && limit && services.length > limit && (
+          <div className="text-center mb-12">
+            <Link to="/services">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/50 transition-all"
+              >
+                View All {services.length} Services
+                <ArrowRight className="w-5 h-5" />
+              </motion.button>
+            </Link>
+          </div>
         )}
 
         {/* Trust Indicators */}
