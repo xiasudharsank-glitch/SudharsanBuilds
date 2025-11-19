@@ -101,14 +101,14 @@ export default function About() {
                 <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-4 md:mb-6">
                   Core Skills
                 </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                <div className="grid grid-cols-2 gap-3 md:gap-4">
                   {skills.map((skill, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-3 p-3 md:p-4 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1"
+                      className="flex items-center gap-2 md:gap-3 p-2.5 md:p-4 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1"
                     >
                       <div className="text-cyan-600 flex-shrink-0">{skill.icon}</div>
-                      <span className="text-slate-800 font-medium text-sm md:text-base">
+                      <span className="text-slate-800 font-medium text-xs sm:text-sm md:text-base leading-tight">
                         {skill.name}
                       </span>
                     </div>

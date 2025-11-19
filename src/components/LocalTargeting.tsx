@@ -96,7 +96,7 @@ export default function WhyFreelance() {
             Benefits of Working <span className="text-cyan-600">Remote</span>
           </motion.h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 max-w-6xl mx-auto">
             {benefits.map((benefit, index) => (
               <motion.div
                 key={index}
@@ -104,13 +104,13 @@ export default function WhyFreelance() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className="bg-white p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100"
+                className="bg-white p-4 md:p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 border border-slate-100"
               >
-                <div className="w-12 h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white mb-4">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-white mb-3 md:mb-4">
                   {benefit.icon}
                 </div>
-                <h4 className="text-lg font-bold text-slate-900 mb-2">{benefit.title}</h4>
-                <p className="text-slate-600 text-sm">{benefit.description}</p>
+                <h4 className="text-base md:text-lg font-bold text-slate-900 mb-2">{benefit.title}</h4>
+                <p className="text-slate-600 text-xs md:text-sm">{benefit.description}</p>
               </motion.div>
             ))}
           </div>
@@ -131,16 +131,16 @@ export default function WhyFreelance() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="bg-white p-8 md:p-12 rounded-2xl shadow-xl max-w-4xl mx-auto border border-slate-100"
+            className="bg-white p-6 md:p-12 rounded-2xl shadow-xl max-w-3xl mx-auto border border-slate-100"
           >
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               {whoIHelp.map((business, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg hover:bg-slate-50 transition-colors"
                 >
-                  <div className="w-2 h-2 bg-cyan-500 rounded-full flex-shrink-0"></div>
-                  <span className="text-slate-700 font-medium">{business}</span>
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-cyan-500 rounded-full flex-shrink-0 mt-1.5 md:mt-2"></div>
+                  <span className="text-slate-700 font-medium text-sm md:text-base leading-tight">{business}</span>
                 </div>
               ))}
             </div>

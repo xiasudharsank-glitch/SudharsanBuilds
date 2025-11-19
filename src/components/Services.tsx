@@ -555,48 +555,52 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
           </motion.div>
         )}
 
-        {/* Trust Indicators */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-16 text-center"
-        >
-          <div className="flex flex-wrap justify-center gap-6 md:gap-8">
-            <div className="flex items-center gap-2 text-slate-700">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6 text-green-600" />
+        {/* Trust Indicators - Only show on dedicated Services page */}
+        {showAll && (
+          <>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-16 text-center"
+            >
+              <div className="flex flex-wrap justify-center gap-6 md:gap-8">
+                <div className="flex items-center gap-2 text-slate-700">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  </div>
+                  <span className="font-semibold">100% Money Back Guarantee</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700">
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <span className="font-semibold">Fast Delivery</span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-700">
+                  <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center">
+                    <Code2 className="w-6 h-6 text-cyan-600" />
+                  </div>
+                  <span className="font-semibold">100% Remote Work</span>
+                </div>
               </div>
-              <span className="font-semibold">100% Money Back Guarantee</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-700">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <Clock className="w-6 h-6 text-blue-600" />
-              </div>
-              <span className="font-semibold">Fast Delivery</span>
-            </div>
-            <div className="flex items-center gap-2 text-slate-700">
-              <div className="w-10 h-10 bg-cyan-100 rounded-full flex items-center justify-center">
-                <Code2 className="w-6 h-6 text-cyan-600" />
-              </div>
-              <span className="font-semibold">100% Remote Work</span>
-            </div>
-          </div>
-        </motion.div>
+            </motion.div>
 
-        {/* Payment Note */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mt-12 text-center"
-        >
-          <p className="text-sm text-slate-600">
-            <strong>Secure payments via Razorpay</strong> - UPI, Cards, Net Banking accepted.
-            <br />
-            Can't pay deposit now? <a href="#contact" className="text-cyan-600 hover:underline">Contact me</a> to discuss your project first.
-          </p>
-        </motion.div>
+            {/* Payment Note */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="mt-12 text-center"
+            >
+              <p className="text-sm text-slate-600">
+                <strong>Secure payments via Razorpay</strong> - UPI, Cards, Net Banking accepted.
+                <br />
+                Can't pay deposit now? <a href="#contact" className="text-cyan-600 hover:underline">Contact me</a> to discuss your project first.
+              </p>
+            </motion.div>
+          </>
+        )}
       </div>
 
       {/* Booking Modal */}
