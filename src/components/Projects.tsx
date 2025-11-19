@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, Image as ImageIcon, ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, Image as ImageIcon, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProjectGallery from './ProjectGallery';
 
@@ -75,6 +75,13 @@ const PROJECTS: Project[] = [
     'Clear presentation of technical skills (Power BI, Tableau, SQL, Python) attracts relevant opportunities',
     'Organized layout makes it easy for recruiters to find key qualifications',
     'Mobile-responsive design accessible on all devices'
+  ],
+  screenshots: [
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Home+Page',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Skills+%26+Analytics',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Projects+Showcase',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Resume+Download',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Contact+Section'
   ]
   },
   {
@@ -108,6 +115,13 @@ const PROJECTS: Project[] = [
     'Mobile-responsive design ensures accessibility across all devices',
     'Portfolio attracts inquiries from marketing and sales-focused companies',
     'Professional credibility elevated through polished online presence'
+  ],
+  screenshots: [
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Hero+Section',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Marketing+Experience',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Sales+Achievements',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Campaigns+Portfolio',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Contact+CTA'
   ]
   },
   {
@@ -143,6 +157,13 @@ const PROJECTS: Project[] = [
     'Clean, professional design builds credibility with international employers',
     'Mobile-responsive layout accessible on all devices for global reach',
     'Increased visibility among German healthcare recruitment agencies'
+  ],
+  screenshots: [
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Professional+Profile',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Certifications',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Experience+Timeline',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Resume+Download',
+    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Contact+Form'
   ]
   },
   {
@@ -212,7 +233,14 @@ const PROJECTS: Project[] = [
       name: 'Prasanth Kumar',
       role: 'Founder, PSquare Menswear'
     },
-    keyAchievements: []
+    keyAchievements: [],
+    screenshots: [
+      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Product+Catalog',
+      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Product+Details',
+      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Shopping+Cart',
+      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Checkout+Process',
+      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Admin+Dashboard'
+    ]
   }
 ];
 
@@ -225,6 +253,7 @@ export default function Projects() {
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
 
   const myProjects = PROJECTS.filter(p => p.type === 'personal');
@@ -244,6 +273,7 @@ export default function Projects() {
 
   const openProjectModal = (project: Project) => {
     setSelectedProject(project);
+    setCurrentCarouselIndex(0); // Reset to first image
     setIsProjectModalOpen(true);
     // Don't close category modal - nested modals
   };
@@ -251,8 +281,45 @@ export default function Projects() {
   const closeProjectModal = () => {
     setIsProjectModalOpen(false);
     setSelectedProject(null);
+    setCurrentCarouselIndex(0);
     // Category modal stays open
   };
+
+  const nextImage = () => {
+    if (selectedProject?.screenshots) {
+      setCurrentCarouselIndex((prev) =>
+        prev === selectedProject.screenshots!.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevImage = () => {
+    if (selectedProject?.screenshots) {
+      setCurrentCarouselIndex((prev) =>
+        prev === 0 ? selectedProject.screenshots!.length - 1 : prev - 1
+      );
+    }
+  };
+
+  const goToImage = (index: number) => {
+    setCurrentCarouselIndex(index);
+  };
+
+  // Keyboard navigation for carousel
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (isProjectModalOpen && selectedProject?.screenshots) {
+        if (e.key === 'ArrowLeft') {
+          prevImage();
+        } else if (e.key === 'ArrowRight') {
+          nextImage();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isProjectModalOpen, selectedProject, currentCarouselIndex]);
 
   const closeAllModals = () => {
     setIsProjectModalOpen(false);
@@ -488,17 +555,81 @@ export default function Projects() {
                 </div>
 
                 <div className="p-4 md:p-8 space-y-8">
-                  <div className="aspect-video relative rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-700">
-                    <img
-                      src={previewCache[selectedProject.link] || getWebsitePreview(selectedProject.link)}
-                      alt={`${selectedProject.title} preview`}
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                      onLoad={(e) => handleImageLoad(selectedProject.link, (e.target as HTMLImageElement).src)}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = `https://via.placeholder.com/1200x675/1e293b/64748b?text=${encodeURIComponent(selectedProject.title)}`;
-                      }}
-                    />
+                  {/* Image Carousel */}
+                  <div className="relative">
+                    <div className="aspect-video relative rounded-xl overflow-hidden shadow-2xl border border-slate-700 bg-slate-700">
+                      <AnimatePresence mode="wait">
+                        <motion.img
+                          key={currentCarouselIndex}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          src={selectedProject.screenshots && selectedProject.screenshots.length > 0
+                            ? selectedProject.screenshots[currentCarouselIndex]
+                            : (previewCache[selectedProject.link] || getWebsitePreview(selectedProject.link))
+                          }
+                          alt={`${selectedProject.title} - Image ${currentCarouselIndex + 1}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = `https://via.placeholder.com/1200x675/1e293b/64748b?text=${encodeURIComponent(selectedProject.title)}`;
+                          }}
+                        />
+                      </AnimatePresence>
+
+                      {/* Navigation Arrows - Only show if there are screenshots */}
+                      {selectedProject.screenshots && selectedProject.screenshots.length > 1 && (
+                        <>
+                          {/* Left Arrow */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              prevImage();
+                            }}
+                            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all backdrop-blur-sm z-10 group"
+                            aria-label="Previous image"
+                          >
+                            <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          </button>
+
+                          {/* Right Arrow */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              nextImage();
+                            }}
+                            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all backdrop-blur-sm z-10 group"
+                            aria-label="Next image"
+                          >
+                            <ChevronRight className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          </button>
+
+                          {/* Image Counter */}
+                          <div className="absolute top-2 md:top-4 right-2 md:right-4 bg-black/60 backdrop-blur-sm text-white px-3 py-1 rounded-full text-sm font-medium">
+                            {currentCarouselIndex + 1} / {selectedProject.screenshots.length}
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Thumbnail Dots Indicator */}
+                    {selectedProject.screenshots && selectedProject.screenshots.length > 1 && (
+                      <div className="flex justify-center gap-2 mt-4">
+                        {selectedProject.screenshots.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => goToImage(index)}
+                            className={`transition-all ${
+                              index === currentCarouselIndex
+                                ? 'w-8 h-2 bg-cyan-500'
+                                : 'w-2 h-2 bg-slate-600 hover:bg-slate-500'
+                            } rounded-full`}
+                            aria-label={`Go to image ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
