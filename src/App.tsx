@@ -8,10 +8,14 @@ import Footer from './components/Footer';
 const Projects = lazy(() => import('./components/Projects'));
 const Process = lazy(() => import('./components/Process'));
 const Services = lazy(() => import('./components/Services'));
+const LocalTargeting = lazy(() => import('./components/LocalTargeting'));
 const Testimonials = lazy(() => import('./components/Testimonials'));
+const Blog = lazy(() => import('./components/Blog'));
+const FAQ = lazy(() => import('./components/FAQ'));
 const Contact = lazy(() => import('./components/Contact'));
 const AIChatbot = lazy(() => import('./components/AIChatbot'));
 const FloatingAvatar = lazy(() => import('./components/FloatingAvatar'));
+const WhatsAppButton = lazy(() => import('./components/WhatsAppButton'));
 
 // Loading fallback component for lazy-loaded sections
 const SectionLoader = () => (
@@ -44,7 +48,19 @@ function App() {
       </Suspense>
 
       <Suspense fallback={<SectionLoader />}>
+        <LocalTargeting />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader />}>
         <Testimonials />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader />}>
+        <Blog />
+      </Suspense>
+
+      <Suspense fallback={<SectionLoader />}>
+        <FAQ />
       </Suspense>
 
       <Suspense fallback={<SectionLoader />}>
@@ -60,6 +76,10 @@ function App() {
 
       <Suspense fallback={null}>
         <FloatingAvatar />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <WhatsAppButton />
       </Suspense>
     </div>
   );
