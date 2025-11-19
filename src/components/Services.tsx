@@ -1,7 +1,9 @@
-import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, ArrowRight } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, ArrowRight, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { initEmailJS } from '../services/emailService';
+import { generateAndSendInvoice } from '../services/invoiceService';
 
 interface Service {
   icon: React.ReactNode;
@@ -24,6 +26,19 @@ interface ServicesProps {
 
 export default function Services({ limit = null, showViewAll = false }: ServicesProps) {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
+  const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [customerDetails, setCustomerDetails] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    projectDetails: ''
+  });
+
+  // Initialize EmailJS on component mount
+  useEffect(() => {
+    initEmailJS();
+  }, []);
 
   const services: Service[] = [
     {
@@ -185,7 +200,36 @@ export default function Services({ limit = null, showViewAll = false }: Services
       return;
     }
 
-    // Handle Razorpay payment
+    // Show booking modal to collect customer details
+    setSelectedService(service);
+    setShowBookingModal(true);
+  };
+
+  const handlePaymentProceed = async () => {
+    if (!selectedService || !selectedService.depositAmount) return;
+
+    // Validate customer details
+    if (!customerDetails.name.trim() || !customerDetails.email.trim() || !customerDetails.phone.trim() || !customerDetails.projectDetails.trim()) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerDetails.email)) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    // Validate phone format
+    const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
+    if (!phoneRegex.test(customerDetails.phone.replace(/\s/g, ''))) {
+      alert('Please enter a valid Indian phone number');
+      return;
+    }
+
+    // Close modal and start payment
+    setShowBookingModal(false);
     setIsPaymentLoading(true);
 
     try {
@@ -197,18 +241,24 @@ export default function Services({ limit = null, showViewAll = false }: Services
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
-          amount: service.depositAmount * 100, // Convert to paise
+          amount: selectedService.depositAmount * 100, // Convert to paise
           currency: 'INR',
-          receipt: `deposit_${service.name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
+          receipt: `deposit_${selectedService.name.toLowerCase().replace(/\s+/g, '_')}_${Date.now()}`,
           notes: {
-            service_name: service.name,
-            service_price: service.price,
-            deposit_amount: service.depositAmount
+            service_name: selectedService.name,
+            service_price: selectedService.price,
+            deposit_amount: selectedService.depositAmount,
+            customer_name: customerDetails.name,
+            customer_email: customerDetails.email,
+            customer_phone: customerDetails.phone
           }
         })
       });
 
       const { orderId, amount } = await response.json();
+
+      // Extract total amount from service price
+      const totalAmount = selectedService.price.match(/\d+/g)?.map(Number)[0] || selectedService.depositAmount;
 
       // Load Razorpay checkout
       const options = {
@@ -216,19 +266,50 @@ export default function Services({ limit = null, showViewAll = false }: Services
         amount: amount,
         currency: 'INR',
         name: 'Sudharsan Builds',
-        description: `Deposit for ${service.name}`,
+        description: `Deposit for ${selectedService.name}`,
         order_id: orderId,
-        handler: function (response: any) {
-          // Payment successful
-          alert(`Payment successful! Payment ID: ${response.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours to discuss your project.`);
+        handler: async function (razorpayResponse: any) {
+          // Payment successful - Generate invoice and send emails
+          console.log('💳 Payment successful:', razorpayResponse);
 
-          // You can send this to your backend to verify and store
-          console.log('Payment Response:', response);
+          try {
+            // Generate invoice and send all emails (booking confirmation, invoice, owner alert)
+            const invoiceResult = await generateAndSendInvoice({
+              name: customerDetails.name,
+              email: customerDetails.email,
+              phone: customerDetails.phone,
+              service: selectedService.name,
+              amount: totalAmount,
+              depositAmount: selectedService.depositAmount!,
+              timeline: selectedService.timeline,
+              projectDetails: customerDetails.projectDetails,
+              razorpayPaymentId: razorpayResponse.razorpay_payment_id,
+              razorpayOrderId: razorpayResponse.razorpay_order_id,
+              razorpaySignature: razorpayResponse.razorpay_signature
+            });
+
+            if (invoiceResult.success) {
+              alert(`✅ Payment successful!\n\nInvoice ID: ${invoiceResult.invoiceId}\n\nThank you for your booking! You'll receive:\n• Booking confirmation email\n• Invoice with payment details\n\nI'll contact you within 24 hours to discuss your project.`);
+
+              // Reset customer details
+              setCustomerDetails({
+                name: '',
+                email: '',
+                phone: '',
+                projectDetails: ''
+              });
+            } else {
+              alert(`✅ Payment successful!\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours.\n\nNote: Email notification may be delayed. Please check your inbox.`);
+            }
+          } catch (error) {
+            console.error('Invoice generation error:', error);
+            alert(`✅ Payment successful!\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours to discuss your project.`);
+          }
         },
         prefill: {
-          name: '',
-          email: '',
-          contact: ''
+          name: customerDetails.name,
+          email: customerDetails.email,
+          contact: customerDetails.phone
         },
         theme: {
           color: '#0891b2'
@@ -424,6 +505,155 @@ export default function Services({ limit = null, showViewAll = false }: Services
           </p>
         </motion.div>
       </div>
+
+      {/* Booking Modal */}
+      <AnimatePresence>
+        {showBookingModal && selectedService && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => setShowBookingModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-t-2xl">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2">Complete Your Booking</h3>
+                    <p className="text-cyan-50">{selectedService.name} - {selectedService.price}</p>
+                    <p className="text-sm text-cyan-100 mt-1">Deposit: ₹{selectedService.depositAmount?.toLocaleString('en-IN')}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowBookingModal(false)}
+                    className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Body */}
+              <div className="p-6 space-y-4">
+                <p className="text-slate-600 text-sm">
+                  Please provide your details to complete the booking. You'll receive a confirmation email and invoice after payment.
+                </p>
+
+                {/* Name */}
+                <div>
+                  <label htmlFor="modal-name" className="block text-slate-700 font-semibold mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    id="modal-name"
+                    value={customerDetails.name}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="John Doe"
+                    required
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label htmlFor="modal-email" className="block text-slate-700 font-semibold mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    id="modal-email"
+                    value={customerDetails.email}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, email: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="john@example.com"
+                    required
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label htmlFor="modal-phone" className="block text-slate-700 font-semibold mb-2">
+                    Phone Number *
+                  </label>
+                  <input
+                    type="tel"
+                    id="modal-phone"
+                    value={customerDetails.phone}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, phone: e.target.value })}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    placeholder="+91 98765 43210"
+                    required
+                  />
+                </div>
+
+                {/* Project Details */}
+                <div>
+                  <label htmlFor="modal-details" className="block text-slate-700 font-semibold mb-2">
+                    Project Details *
+                  </label>
+                  <textarea
+                    id="modal-details"
+                    value={customerDetails.projectDetails}
+                    onChange={(e) => setCustomerDetails({ ...customerDetails, projectDetails: e.target.value })}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                    placeholder="Brief description of your project requirements..."
+                    required
+                  />
+                </div>
+
+                {/* Summary */}
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                  <h4 className="font-semibold text-slate-900 mb-3">Payment Summary</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Service:</span>
+                      <span className="font-semibold text-slate-900">{selectedService.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Total Amount:</span>
+                      <span className="font-semibold text-slate-900">{selectedService.price}</span>
+                    </div>
+                    <div className="flex justify-between border-t pt-2">
+                      <span className="text-slate-600">Deposit (Pay Now):</span>
+                      <span className="font-bold text-cyan-600 text-lg">₹{selectedService.depositAmount?.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-slate-600">Timeline:</span>
+                      <span className="font-semibold text-slate-900">{selectedService.timeline}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => setShowBookingModal(false)}
+                    className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handlePaymentProceed}
+                    disabled={isPaymentLoading}
+                    className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

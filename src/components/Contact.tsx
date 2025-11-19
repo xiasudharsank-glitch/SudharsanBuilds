@@ -118,7 +118,7 @@ export default function Contact() {
       }
 
       // Send via Formspree (email notification)
-      const formspreeId = import.meta.env.VITE_FORMSPREE_ID || 'xldpowyp';
+      const formspreeId = import.meta.env.VITE_FORMSPREE_ID || 'xeopodle';
       const res = await fetch(`https://formspree.io/f/${formspreeId}`, {
         method: "POST",
         headers: {
