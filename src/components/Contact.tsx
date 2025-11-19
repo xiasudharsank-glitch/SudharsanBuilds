@@ -73,7 +73,33 @@ export default function Contact() {
     setStatus("sending");
 
     try {
-      const formspreeId = import.meta.env.VITE_FORMSPREE_ID || 'xldpowyp';
+      // Store in Supabase
+      if (supabase) {
+        const { error: supabaseError } = await supabase
+          .from('inquiries')
+          .insert([
+            {
+              name: formData.name,
+              email: formData.email,
+              phone: formData.phone,
+              service: formData.service,
+              timeline: formData.timeline,
+              budget: formData.budget || null,
+              message: formData.message,
+              created_at: new Date().toISOString()
+            }
+          ]);
+
+        if (supabaseError) {
+          console.error("Supabase error:", supabaseError);
+        }
+      }
+
+      // Send via Formspree (email notification)
+      const formspreeId = import.meta.env.VITE_FORMSPREE_ID;
+      if (!formspreeId) {
+        throw new Error('Formspree ID not configured');
+      }
       const res = await fetch(`https://formspree.io/f/${formspreeId}`, {
         method: "POST",
         headers: {

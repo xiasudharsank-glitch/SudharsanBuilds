@@ -1,10 +1,71 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+// Rate limiting configuration
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 10; // Max 10 requests per minute per IP
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+// Clean up old entries every 5 minutes to prevent memory leak
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of rateLimitMap.entries()) {
+    if (now > value.resetTime) {
+      rateLimitMap.delete(key);
+    }
+  }
+}, 300000); // 5 minutes
+
+const checkRateLimit = (identifier: string): { allowed: boolean; remaining: number; resetTime: number } => {
+  const now = Date.now();
+  const record = rateLimitMap.get(identifier);
+
+  if (!record || now > record.resetTime) {
+    // Create new rate limit window
+    const resetTime = now + RATE_LIMIT_WINDOW_MS;
+    rateLimitMap.set(identifier, { count: 1, resetTime });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, resetTime };
+  }
+
+  // Check if limit exceeded
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0, resetTime: record.resetTime };
+  }
+
+  // Increment count
+  record.count++;
+  rateLimitMap.set(identifier, record);
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - record.count, resetTime: record.resetTime };
 };
+
+// Get allowed origin from environment variable, default to localhost for development
+const getAllowedOrigin = (requestOrigin: string | null): string => {
+  const allowedOrigins = [
+    Deno.env.get("ALLOWED_ORIGIN"), // Production domain from env
+    "http://localhost:5173", // Vite dev server
+    "http://localhost:3000", // Alternative dev port
+  ].filter(Boolean);
+
+  if (requestOrigin && allowedOrigins.includes(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  // Fallback to first allowed origin or restrict
+  return allowedOrigins[0] || "https://sudharsanbuilds.com";
+};
+
+const getCorsHeaders = (origin: string) => ({
+  "Access-Control-Allow-Origin": origin,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
+  "Access-Control-Max-Age": "86400", // 24 hours
+});
+
+const addRateLimitHeaders = (headers: Record<string, string>, rateLimit: { remaining: number; resetTime: number }) => ({
+  ...headers,
+  "X-RateLimit-Limit": RATE_LIMIT_MAX_REQUESTS.toString(),
+  "X-RateLimit-Remaining": rateLimit.remaining.toString(),
+  "X-RateLimit-Reset": rateLimit.resetTime.toString(),
+});
 
 interface RequestBody {
   message: string;
@@ -12,8 +73,39 @@ interface RequestBody {
 }
 
 Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0] ||
+                   req.headers.get("x-real-ip") ||
+                   "unknown";
+
+  const rateLimit = checkRateLimit(clientIp);
+
+  if (!rateLimit.allowed) {
+    const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000);
+    return new Response(
+      JSON.stringify({
+        error: "Too many requests. Please try again later.",
+        retryAfter
+      }),
+      {
+        status: 429,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "X-RateLimit-Limit": RATE_LIMIT_MAX_REQUESTS.toString(),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": rateLimit.resetTime.toString(),
+          "Retry-After": retryAfter.toString()
+        }
+      }
+    );
   }
 
   try {
@@ -164,7 +256,10 @@ Focus on: React, Node.js, TypeScript, SaaS development, e-commerce platforms.`;
       }),
       {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: addRateLimitHeaders(
+          { ...corsHeaders, "Content-Type": "application/json" },
+          rateLimit
+        ),
       }
     );
   } catch (error) {
