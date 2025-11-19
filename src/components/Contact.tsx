@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Send, Github, Linkedin, Twitter, AlertCircle, Phone, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from '@supabase/supabase-js';
+import { initEmailJS, sendContactFormEmail } from '../services/emailService';
 
 interface FormErrors {
   name?: string;
@@ -30,6 +31,11 @@ export default function Contact() {
   });
   const [status, setStatus] = useState("");
   const [errors, setErrors] = useState<FormErrors>({});
+
+  // Initialize EmailJS on component mount
+  useEffect(() => {
+    initEmailJS();
+  }, []);
 
   // Form validation
   const validateForm = (): boolean => {
@@ -117,26 +123,18 @@ export default function Contact() {
         }
       }
 
-      // Send via Formspree (email notification)
-      const formspreeId = import.meta.env.VITE_FORMSPREE_ID || 'xldpowyp';
-      const res = await fetch(`https://formspree.io/f/${formspreeId}`, {
-        method: "POST",
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          service: formData.service,
-          timeline: formData.timeline,
-          budget: formData.budget,
-          message: formData.message
-        })
+      // Send via EmailJS (email notification)
+      const emailSent = await sendContactFormEmail({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        service: formData.service,
+        timeline: formData.timeline,
+        budget: formData.budget,
+        message: formData.message
       });
 
-      if (res.ok) {
+      if (emailSent) {
         setStatus("success");
         setFormData({
           name: '',
