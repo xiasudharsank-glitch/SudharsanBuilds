@@ -164,7 +164,7 @@ export const sendNewBookingAlert = async (data: NewBookingAlertData): Promise<bo
  * Data is still saved to Supabase, you can check there
  * To enable: upgrade to EmailJS Personal plan and create contact_form template
  */
-export const sendContactFormEmail = async (formData: {
+export const sendContactFormEmail = async (_formData: {
   name: string;
   email: string;
   phone?: string;

@@ -16,6 +16,11 @@ export default function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // ✅ FIX: Close mobile menu on route change
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
   const navLinks = [
     { href: '#home', label: 'Home', type: 'section' },
     { href: '#about', label: 'About', type: 'section' },
@@ -33,15 +38,23 @@ export default function Navigation() {
       // If we're not on the homepage, navigate there first
       if (location.pathname !== '/') {
         navigate('/');
-        // Optimized timing: 500ms is enough for lazy components to load while feeling responsive
+        // ✅ FIX: Increased timeout to 800ms for more reliable lazy component loading
         setTimeout(() => {
           requestAnimationFrame(() => {
             const element = document.querySelector(href);
             if (element) {
               element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+              // If element still not found, try again after 200ms
+              setTimeout(() => {
+                const retryElement = document.querySelector(href);
+                if (retryElement) {
+                  retryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 200);
             }
           });
-        }, 500);
+        }, 800);
       } else {
         // Already on homepage, scroll immediately with requestAnimationFrame for smoothness
         requestAnimationFrame(() => {

@@ -1,8 +1,7 @@
-import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, ChevronDown, ChevronUp, X, ArrowRight } from 'lucide-react';
+import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useIsMobile } from '../hooks/useMobile';
 import { initEmailJS } from '../services/emailService';
 import { generateAndSendInvoice } from '../services/invoiceService';
 import { env, features } from '../utils/env';
@@ -12,6 +11,7 @@ interface Service {
   name: string;
   price: string;
   priceSubtext?: string;
+  totalAmount?: number; // Numeric total amount for calculations
   description: string;
   features: string[];
   timeline: string;
@@ -26,17 +26,43 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [customerDetails, setCustomerDetails] = useState({
     name: '',
     email: '',
     phone: '',
     projectDetails: ''
   });
-  const isMobile = useIsMobile();
 
   // Initialize EmailJS on component mount
   useEffect(() => {
     initEmailJS();
+  }, []);
+
+  // Lazy load Razorpay script when component mounts
+  useEffect(() => {
+    const loadRazorpay = () => {
+      // Check if already loaded
+      if (window.Razorpay) {
+        setRazorpayLoaded(true);
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
+        console.log('✅ Razorpay script loaded');
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load Razorpay script');
+        setRazorpayLoaded(false);
+      };
+      document.body.appendChild(script);
+    };
+
+    loadRazorpay();
   }, []);
 
   const services: Service[] = [
@@ -44,6 +70,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       icon: <Globe className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Landing Page',
       price: '₹15,000',
+      totalAmount: 15000,
       description: '1-2 page website, modern design, mobile responsive, perfect for launching quickly',
       features: [
         'Responsive Design',
@@ -62,6 +89,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       icon: <User className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Portfolio Website',
       price: '₹20,000',
+      totalAmount: 20000,
       description: 'Professional portfolio for freelancers, designers, developers & creatives',
       features: [
         'Project Showcase Gallery',
@@ -80,6 +108,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       icon: <Building2 className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Business Website',
       price: '₹30,000',
+      totalAmount: 30000,
       description: '5-10 pages, professional design, CMS integration, perfect for established businesses',
       features: [
         'Multi-page Layout (5-10 pages)',
@@ -99,6 +128,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       icon: <Briefcase className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Personal Brand Website',
       price: '₹25,000',
+      totalAmount: 25000,
       description: 'Build your personal brand with a professional website for coaches, consultants & professionals',
       features: [
         'About & Services Pages',
@@ -117,6 +147,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       icon: <ShoppingCart className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'E-Commerce Store',
       price: '₹50,000',
+      totalAmount: 50000,
       description: 'Complete online store with payment gateway, inventory management & admin panel',
       features: [
         'Product Catalog (Unlimited)',
@@ -136,6 +167,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       name: 'SaaS Product',
       price: '₹75,000+',
       priceSubtext: 'Starting from',
+      totalAmount: 75000,
       description: 'Full-featured SaaS platform with user management, subscriptions & admin dashboard',
       features: [
         'User Authentication',
@@ -155,6 +187,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       name: 'Web Application',
       price: '₹60,000+',
       priceSubtext: 'Starting from',
+      totalAmount: 60000,
       description: 'Custom web applications with complex features & functionality',
       features: [
         'Custom Requirements',
@@ -174,6 +207,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       name: 'Custom Development',
       price: '₹500-₹1000/hour',
       priceSubtext: 'Negotiable',
+      totalAmount: undefined, // Hourly rate - no fixed total
       description: 'Hourly-based custom projects, API integrations, complex features & maintenance',
       features: [
         'Custom Requirements',
@@ -220,10 +254,16 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       return;
     }
 
-    // Validate phone format
-    const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
+    // Validate phone format (international + Indian)
+    const phoneRegex = /^(\+?\d{1,3})?[-.\s]?(\(?\d{1,4}\)?)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
     if (!phoneRegex.test(customerDetails.phone.replace(/\s/g, ''))) {
-      alert('Please enter a valid phone number');
+      alert('Please enter a valid phone number (international or Indian format)');
+      return;
+    }
+
+    // ✅ FIX: Validate Razorpay script is loaded
+    if (!razorpayLoaded || !window.Razorpay) {
+      alert('Payment system is still loading. Please wait a moment and try again.');
       return;
     }
 
@@ -236,6 +276,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       if (!features.hasPayment) {
         throw new Error('Payment system is not configured. Please contact us directly.');
       }
+
+      // ✅ FIX: Use totalAmount field instead of parsing price string
+      const totalAmount = selectedService.totalAmount || selectedService.depositAmount;
 
       // Call Supabase Edge Function to create Razorpay order
       const response = await fetch(`${env.SUPABASE_URL}/functions/v1/create-payment-order`, {
@@ -251,6 +294,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
           notes: {
             service_name: selectedService.name,
             service_price: selectedService.price,
+            total_amount: totalAmount,
             deposit_amount: selectedService.depositAmount,
             customer_name: customerDetails.name,
             customer_email: customerDetails.email,
@@ -259,10 +303,11 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         })
       });
 
-      const { orderId, amount } = await response.json();
+      if (!response.ok) {
+        throw new Error('Failed to create payment order');
+      }
 
-      // Extract total amount from service price
-      const totalAmount = selectedService.price.match(/\d+/g)?.map(Number)[0] || selectedService.depositAmount;
+      const { orderId, amount } = await response.json();
 
       // Load Razorpay checkout
       const options = {
@@ -272,11 +317,34 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         name: 'Sudharsan Builds',
         description: `Deposit for ${selectedService.name}`,
         order_id: orderId,
-        handler: async function (razorpayResponse: any) {
-          // Payment successful - Generate invoice and send emails
+        handler: async function (razorpayResponse: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) {
           console.log('Payment Response:', razorpayResponse);
 
           try {
+            // ✅ CRITICAL FIX: Verify payment signature before processing
+            const verifyResponse = await fetch(`${env.SUPABASE_URL}/functions/v1/verify-payment`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: razorpayResponse.razorpay_order_id,
+                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                razorpay_signature: razorpayResponse.razorpay_signature
+              })
+            });
+
+            const verifyResult = await verifyResponse.json();
+
+            if (!verifyResult.success || !verifyResult.verified) {
+              console.error('Payment verification failed:', verifyResult);
+              alert('❌ Payment verification failed. Please contact support with Payment ID: ' + razorpayResponse.razorpay_payment_id);
+              return;
+            }
+
+            console.log('✅ Payment verified successfully');
+
             // Generate invoice and send all emails
             const invoiceResult = await generateAndSendInvoice({
               name: customerDetails.name,
@@ -306,8 +374,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               alert(`✅ Payment successful!\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours.\n\nNote: Email notification may be delayed. Please check your inbox.`);
             }
           } catch (error) {
-            console.error('Invoice generation error:', error);
-            alert(`✅ Payment successful!\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours to discuss your project.`);
+            console.error('Payment processing error:', error);
+            alert(`⚠️ Payment received but verification failed.\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nPlease contact support to confirm your booking.`);
           }
         },
         prefill: {
@@ -530,7 +598,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto"
+              className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] min-h-[300px] overflow-y-auto flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -643,21 +711,23 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                   </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => setShowBookingModal(false)}
-                    className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handlePaymentProceed}
-                    disabled={isPaymentLoading}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
-                  </button>
+                {/* Actions - Sticky at bottom for better UX */}
+                <div className="sticky bottom-0 bg-white pt-4 pb-2 mt-4 border-t border-slate-200">
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowBookingModal(false)}
+                      className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handlePaymentProceed}
+                      disabled={isPaymentLoading}
+                      className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>

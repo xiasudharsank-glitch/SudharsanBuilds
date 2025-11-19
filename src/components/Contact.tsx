@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, Send, Github, Linkedin, Twitter, AlertCircle, Phone, MessageSquare } from 'lucide-react';
+import { Mail, Send, Github, Linkedin, Twitter, AlertCircle, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from '@supabase/supabase-js';
 import { initEmailJS, sendContactFormEmail } from '../services/emailService';
@@ -57,10 +57,10 @@ export default function Contact() {
       newErrors.email = "Please enter a valid email";
     }
 
-    // Phone validation (Indian format) - OPTIONAL
-    const phoneRegex = /^(\+91)?[6-9]\d{9}$/;
+    // Phone validation (International + Indian format) - OPTIONAL
+    const phoneRegex = /^(\+?\d{1,3})?[-.\s]?(\(?\d{1,4}\)?)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$/;
     if (formData.phone.trim() && !phoneRegex.test(formData.phone.replace(/\s/g, ''))) {
-      newErrors.phone = "Please enter a valid Indian phone number";
+      newErrors.phone = "Please enter a valid phone number (international or Indian format)";
     }
 
     // Service validation

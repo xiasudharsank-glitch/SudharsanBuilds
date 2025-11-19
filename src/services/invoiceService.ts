@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 import { sendBookingConfirmation, sendInvoiceEmail, sendNewBookingAlert } from './emailService';
 import { env } from '../utils/env';
 
@@ -46,10 +47,13 @@ export interface Invoice {
 }
 
 /**
- * Generate a unique invoice ID
+ * Generate a unique invoice ID using UUID
+ * Format: INV-{timestamp}-{short-uuid}
  */
 export const generateInvoiceId = (): string => {
-  return `INV-${Date.now()}`;
+  const timestamp = Date.now();
+  const uuid = uuidv4().split('-')[0]; // Use first segment of UUID
+  return `INV-${timestamp}-${uuid}`;
 };
 
 /**
@@ -140,60 +144,84 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
     const whatsappNumber = env.WHATSAPP_NUMBER || '919876543210';
     const upiId = env.UPI_ID || 'sudharsan@upi';
 
-    // Send booking confirmation email to customer
-    const bookingConfirmationSent = await sendBookingConfirmation({
-      customer_name: paymentData.name,
-      customer_email: paymentData.email,
-      customer_phone: paymentData.phone,
-      service_type: paymentData.service,
-      amount: paymentData.amount,
-      deposit_amount: paymentData.depositAmount,
-      timeline: paymentData.timeline,
-      whatsapp_link: `https://wa.me/${whatsappNumber}`,
-      your_email: yourEmail,
-    });
+    // ✅ FIX: Track email sending results
+    const emailResults = {
+      bookingConfirmation: false,
+      invoice: false,
+      ownerAlert: false
+    };
 
-    console.log('Booking confirmation sent:', bookingConfirmationSent);
+    // Send booking confirmation email to customer
+    try {
+      emailResults.bookingConfirmation = await sendBookingConfirmation({
+        customer_name: paymentData.name,
+        customer_email: paymentData.email,
+        customer_phone: paymentData.phone,
+        service_type: paymentData.service,
+        amount: paymentData.amount,
+        deposit_amount: paymentData.depositAmount,
+        timeline: paymentData.timeline,
+        whatsapp_link: `https://wa.me/${whatsappNumber}`,
+        your_email: yourEmail,
+      });
+      console.log('Booking confirmation sent:', emailResults.bookingConfirmation);
+    } catch (error) {
+      console.error('Failed to send booking confirmation:', error);
+    }
 
     // Send invoice email to customer
-    const invoiceSent = await sendInvoiceEmail({
-      customer_name: paymentData.name,
-      customer_email: paymentData.email,
-      invoice_id: invoiceId,
-      service_type: paymentData.service,
-      description: paymentData.projectDetails,
-      amount: paymentData.amount,
-      deposit_amount: paymentData.depositAmount,
-      remaining_amount: remainingAmount,
-      payment_status: remainingAmount > 0 ? 'Partially Paid' : 'Paid',
-      invoice_date: invoiceDate,
-      due_date: dueDate,
-      upi_id: upiId,
-    });
-
-    console.log('Invoice email sent:', invoiceSent);
+    try {
+      emailResults.invoice = await sendInvoiceEmail({
+        customer_name: paymentData.name,
+        customer_email: paymentData.email,
+        invoice_id: invoiceId,
+        service_type: paymentData.service,
+        description: paymentData.projectDetails,
+        amount: paymentData.amount,
+        deposit_amount: paymentData.depositAmount,
+        remaining_amount: remainingAmount,
+        payment_status: remainingAmount > 0 ? 'Partially Paid' : 'Paid',
+        invoice_date: invoiceDate,
+        due_date: dueDate,
+        upi_id: upiId,
+      });
+      console.log('Invoice email sent:', emailResults.invoice);
+    } catch (error) {
+      console.error('Failed to send invoice email:', error);
+    }
 
     // Send new booking alert to owner
-    const alertSent = await sendNewBookingAlert({
-      customer_name: paymentData.name,
-      customer_phone: paymentData.phone,
-      customer_email: paymentData.email,
-      service_type: paymentData.service,
-      amount: paymentData.amount,
-      deposit_amount: paymentData.depositAmount,
-      project_details: paymentData.projectDetails,
-      timeline: paymentData.timeline,
-      payment_status: 'Deposit Received',
-      whatsapp_link: `https://wa.me/${paymentData.phone.replace(/\D/g, '')}`,
-      your_email: yourEmail,
-    });
+    try {
+      emailResults.ownerAlert = await sendNewBookingAlert({
+        customer_name: paymentData.name,
+        customer_phone: paymentData.phone,
+        customer_email: paymentData.email,
+        service_type: paymentData.service,
+        amount: paymentData.amount,
+        deposit_amount: paymentData.depositAmount,
+        project_details: paymentData.projectDetails,
+        timeline: paymentData.timeline,
+        payment_status: 'Deposit Received',
+        whatsapp_link: `https://wa.me/${paymentData.phone.replace(/\D/g, '')}`,
+        your_email: yourEmail,
+      });
+      console.log('Booking alert sent to owner:', emailResults.ownerAlert);
+    } catch (error) {
+      console.error('Failed to send owner alert:', error);
+    }
 
-    console.log('Booking alert sent to owner:', alertSent);
+    // Determine overall success
+    const allEmailsSent = emailResults.bookingConfirmation && emailResults.invoice && emailResults.ownerAlert;
+    const anyEmailSent = emailResults.bookingConfirmation || emailResults.invoice || emailResults.ownerAlert;
 
     return {
-      success: true,
+      success: anyEmailSent, // Success if at least one email sent
       invoiceId: invoiceId,
-      message: 'Invoice generated and emails sent successfully!'
+      message: allEmailsSent
+        ? 'Invoice generated and all emails sent successfully!'
+        : anyEmailSent
+        ? 'Invoice generated. Some emails may have failed - please check your inbox.'
+        : 'Invoice generated but email notifications failed. Please contact support.'
     };
   } catch (error) {
     console.error('Error generating invoice:', error);
