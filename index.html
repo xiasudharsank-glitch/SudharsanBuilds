@@ -2,12 +2,325 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sudharsan Tech Portfolio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+
+    <!-- Performance Optimizations -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- DNS Prefetch for faster external resource loading -->
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+
+    <!-- Resource hints for critical assets -->
+    <link rel="preload" as="style" href="/src/index.css" />
+    <link rel="preload" as="script" href="/src/main.tsx" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Basic SEO -->
+    <title>Freelance Web Developer India | Affordable Website Development Services | Sudharsan</title>
+    <meta name="description" content="Professional freelance web developer serving clients across India. Affordable website development services: Landing Pages ₹15k, Business Websites ₹30k, E-Commerce ₹50k, SaaS & Portfolio sites. 100% Remote. Contact: +91 63815 56407" />
+    <meta name="keywords" content="freelance web developer india, web developer india, website developer india, remote web developer, affordable website india, freelance developer, indie developer india, react developer india, full stack developer india, ecommerce website india, portfolio website, saas developer india, website for business india, tamil nadu web developer" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="author" content="Sudharsan - Freelance Web Developer" />
+    <meta name="theme-color" content="#0891b2" />
+    <meta name="geo.region" content="IN" />
+    <meta name="geo.placename" content="India" />
+
+    <!-- Open Graph (Social Media Sharing) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Freelance Web Developer India | Affordable Website Development" />
+    <meta property="og:description" content="Professional freelance web developer serving clients across India. Landing Pages ₹15k, Business Websites ₹30k, E-Commerce ₹50k. 100% Remote. Fast, mobile-responsive designs." />
+    <meta property="og:image" content="https://sudharsanbuilds.com/og-image.jpg" />
+    <meta property="og:url" content="https://sudharsanbuilds.com" />
+    <meta property="og:site_name" content="Sudharsan - Freelance Web Developer" />
+    <meta property="og:locale" content="en_IN" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Freelance Web Developer India | Affordable Development" />
+    <meta name="twitter:description" content="Professional freelance web developer across India. Landing Pages ₹15k, Business Websites ₹30k, E-Commerce ₹50k. 100% Remote. Contact: +91 63815 56407" />
+    <meta name="twitter:image" content="https://sudharsanbuilds.com/og-image.jpg" />
+    <meta name="twitter:site" content="@SudharsanBuilds" />
+    <meta name="twitter:creator" content="@SudharsanBuilds" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://sudharsanbuilds.com" />
+
+    <!-- Favicon (using inline SVG) -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75' font-weight='bold' fill='%230891b2'>S</text></svg>" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><text y='135' font-size='135' font-weight='bold' fill='%230891b2'>S</text></svg>" />
+
+    <!-- JSON-LD Structured Data - Person -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Sudharsan",
+      "alternateName": "Sudharsan K",
+      "description": "Full Stack Web Developer specializing in modern web applications, SaaS platforms, and e-commerce solutions",
+      "jobTitle": "Full Stack Web Developer",
+      "url": "https://sudharsanbuilds.com",
+      "image": "https://sudharsanbuilds.com/professional-photo.jpg",
+      "sameAs": [
+        "https://github.com/Sudharsan1-5",
+        "https://linkedin.com/in/sudharsan-k-2027b1370",
+        "https://x.com/SudharsanBuilds"
+      ],
+      "knowsAbout": [
+        "Web Development",
+        "Full Stack Development",
+        "JavaScript",
+        "TypeScript",
+        "React",
+        "Node.js",
+        "SaaS Development",
+        "E-commerce Development",
+        "AI-Assisted Development",
+        "UI/UX Design",
+        "Modern Web Technologies"
+      ],
+      "hasOccupation": {
+        "@type": "Occupation",
+        "name": "Full Stack Web Developer",
+        "occupationLocation": {
+          "@type": "Country",
+          "name": "India"
+        },
+        "skills": "React, TypeScript, Node.js, Web Development, SaaS, E-commerce"
+      },
+      "alumniOf": {
+        "@type": "Organization",
+        "name": "Software Development"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data - Website -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "SudharsanBuilds",
+      "alternateName": "Sudharsan Portfolio",
+      "url": "https://sudharsanbuilds.com",
+      "description": "Professional portfolio of Sudharsan, a full stack web developer specializing in modern web applications and SaaS platforms",
+      "author": {
+        "@type": "Person",
+        "name": "Sudharsan"
+      },
+      "inLanguage": "en-US"
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data - Professional Service -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "ProfessionalService",
+      "name": "Sudharsan - Freelance Web Developer",
+      "alternateName": "SudharsanBuilds",
+      "description": "Professional freelance web development services across India. Affordable website development with transparent pricing: Landing Pages ₹15,000, Business Websites ₹30,000, E-Commerce ₹50,000, SaaS & Portfolio sites. 100% Remote work.",
+      "url": "https://sudharsanbuilds.com",
+      "telephone": "+916381556407",
+      "email": "sudharsanofficial0001@gmail.com",
+      "priceRange": "₹₹",
+      "currenciesAccepted": "INR",
+      "paymentAccepted": "UPI, Bank Transfer, Razorpay, Credit Card, Debit Card",
+      "address": {
+        "@type": "PostalAddress",
+        "addressRegion": "Tamil Nadu",
+        "addressCountry": "IN"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "India"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Web Development Services",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Landing Page Development",
+              "description": "1-2 page website with responsive design, contact form, and SEO optimization",
+              "provider": {
+                "@type": "Person",
+                "name": "Sudharsan"
+              }
+            },
+            "price": "15000",
+            "priceCurrency": "INR"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Business Website Development",
+              "description": "5-10 pages professional website with CMS integration and blog",
+              "provider": {
+                "@type": "Person",
+                "name": "Sudharsan"
+              }
+            },
+            "price": "30000",
+            "priceCurrency": "INR"
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "E-Commerce Store Development",
+              "description": "Complete online store with payment integration and inventory management",
+              "provider": {
+                "@type": "Person",
+                "name": "Sudharsan"
+              }
+            },
+            "price": "50000",
+            "priceCurrency": "INR"
+          }
+        ]
+      },
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": [
+          "Monday",
+          "Tuesday",
+          "Wednesday",
+          "Thursday",
+          "Friday",
+          "Saturday"
+        ],
+        "opens": "09:00",
+        "closes": "18:00"
+      },
+      "sameAs": [
+        "https://github.com/Sudharsan1-5",
+        "https://linkedin.com/in/sudharsan-k-2027b1370",
+        "https://x.com/SudharsanBuilds"
+      ],
+      "founder": {
+        "@type": "Person",
+        "name": "Sudharsan",
+        "jobTitle": "Web Developer"
+      }
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data - Breadcrumb -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": "https://sudharsanbuilds.com/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "About",
+          "item": "https://sudharsanbuilds.com/#about"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "Projects",
+          "item": "https://sudharsanbuilds.com/#projects"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Services",
+          "item": "https://sudharsanbuilds.com/#services"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "Contact",
+          "item": "https://sudharsanbuilds.com/#contact"
+        }
+      ]
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data - Portfolio -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "CreativeWork",
+      "name": "Sudharsan's Web Development Portfolio",
+      "description": "Professional portfolio showcasing web development projects including SaaS platforms, e-commerce solutions, and custom web applications",
+      "author": {
+        "@type": "Person",
+        "name": "Sudharsan",
+        "jobTitle": "Full Stack Web Developer"
+      },
+      "dateCreated": "2024-01-01",
+      "dateModified": "2025-11-18",
+      "genre": "Web Development Portfolio",
+      "inLanguage": "en-US"
+    }
+    </script>
+
+    <!-- JSON-LD Structured Data - Organization -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "SudharsanBuilds",
+      "url": "https://sudharsanbuilds.com",
+      "logo": "https://sudharsanbuilds.com/logo.png",
+      "founder": {
+        "@type": "Person",
+        "name": "Sudharsan"
+      },
+      "sameAs": [
+        "https://github.com/Sudharsan1-5",
+        "https://linkedin.com/in/sudharsan-k-2027b1370",
+        "https://x.com/SudharsanBuilds"
+      ],
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "contactType": "Customer Service",
+        "url": "https://sudharsanbuilds.com/#contact"
+      }
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
     <script type="module" src="/src/main.tsx"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+      // Register service worker for PWA capabilities and offline support
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((registration) => {
+              console.log('SW registered:', registration);
+            })
+            .catch((error) => {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
+    </script>
   </body>
 </html>

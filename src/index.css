@@ -2,20 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========== Mobile-First Performance Optimizations ========== */
 
-/* ========== Custom global styles ========== */
+/* Disable animations on mobile for better performance */
+@media (max-width: 768px) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 
-/* Slow spinning glow used for the profile card ring */
+  /* Re-enable critical transitions on mobile */
+  button, a, [role="button"] {
+    transition-duration: 0.2s !important;
+  }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ========== Base Optimizations ========== */
+
+@layer base {
+  /* Optimize font rendering */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: 'kern' 1;
+  }
+
+  /* Prevent horizontal scroll on mobile */
+  body {
+    overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  /* Optimize images for mobile */
+  img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+}
+
+/* ========== Custom Animations (Optimized) ========== */
+
+/* Slow spinning glow - disabled on mobile */
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
 .animate-spin-slow {
   animation: spin-slow 12s linear infinite;
 }
 
+/* Disable heavy animations on mobile */
+@media (max-width: 768px) {
+  .animate-spin-slow {
+    animation: none;
+  }
+}
 
-/* Add this after the above lines 👇 */
+/* ========== 3D Effects (Mobile-Optimized) ========== */
 
 .profile-container {
   perspective: 1000px;
@@ -27,9 +88,16 @@
   will-change: transform;
 }
 
-.profile-card:hover {
-  transform: rotateY(15deg) rotateX(5deg) scale(1.03);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+/* Disable 3D effects on mobile for better performance */
+@media (min-width: 769px) {
+  .profile-card:hover {
+    transform: rotateY(15deg) rotateX(5deg) scale(1.03);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  }
+
+  .profile-card:hover .profile-image {
+    transform: scale(1.05) translateZ(20px);
+  }
 }
 
 .profile-image {
@@ -38,7 +106,42 @@
   object-fit: cover;
 }
 
-.profile-card:hover .profile-image {
-  transform: scale(1.05) translateZ(20px);
+/* ========== Touch Optimizations ========== */
+
+@layer utilities {
+  /* Larger touch targets for mobile */
+  .touch-target {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Optimize for mobile scrolling */
+  .scroll-smooth-mobile {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+
+  /* GPU acceleration for smooth animations */
+  .gpu-accelerate {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+}
+
+/* ========== Reduced Blur Effects on Mobile ========== */
+
+@media (max-width: 768px) {
+  .blur-3xl {
+    filter: blur(40px) !important; /* Reduced from default */
+  }
+
+  .backdrop-blur-lg {
+    backdrop-filter: blur(8px) !important; /* Reduced from 16px */
+  }
+
+  .backdrop-blur-md {
+    backdrop-filter: blur(6px) !important; /* Reduced from 12px */
+  }
 }
 

@@ -18,6 +18,7 @@ export default function Navigation() {
     { href: '#about', label: 'About' },
     { href: '#projects', label: 'Projects' },
     { href: '#services', label: 'Services' },
+    { href: '#blog', label: 'Blog' },
     { href: '#contact', label: 'Contact' }
   ];
 
@@ -67,7 +68,8 @@ export default function Navigation() {
 
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="md:hidden text-white"
+            className="md:hidden text-white p-2 min-w-[44px] min-h-[44px] flex items-center justify-center touch-target"
+            aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
@@ -76,13 +78,13 @@ export default function Navigation() {
 
       {isMobileMenuOpen && (
         <div className="md:hidden bg-slate-900/95 backdrop-blur-lg border-t border-slate-800">
-          <div className="container mx-auto px-6 py-6 space-y-4">
+          <div className="container mx-auto px-6 py-6 space-y-2">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
                 onClick={(e) => scrollToSection(e, link.href)}
-                className="block text-slate-300 hover:text-cyan-400 transition-colors font-medium py-2"
+                className="block text-slate-300 hover:text-cyan-400 active:text-cyan-500 transition-colors font-medium py-3 px-2 min-h-[44px] touch-target rounded-lg hover:bg-slate-800/50"
               >
                 {link.label}
               </a>

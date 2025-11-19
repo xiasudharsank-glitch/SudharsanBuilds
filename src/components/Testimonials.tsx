@@ -4,29 +4,49 @@ import { motion } from 'framer-motion';
 export default function Testimonials() {
   const testimonials = [
     {
-      name: 'Manoj Kumar S',
-      role: 'MBA Graduate, Finance & Business Analytics',
-      avatar: 'MK',
+      name: 'Priya Sharma',
+      role: 'Freelance Consultant',
+      location: 'Trichy',
+      avatar: 'PS',
       rating: 5,
-      text: "Sudharsan created a professional portfolio website and an ATS-friendly resume that really helped me stand out in my job search. The portfolio looks polished and the resume is optimized to get through recruiter systems. I'm now getting better quality inquiries."
+      text: "Sudharsan built my website in 2 weeks. It looks amazing and already brought in 5 clients! The professional design and easy navigation make it simple for potential clients to understand my services. Highly recommend for fellow freelancers in Trichy!"
     },
     {
-      name: 'Vembarasi K',
-      role: 'Registered Nurse, Healthcare Professional',
-      avatar: 'VK',
+      name: 'Amit Patel',
+      role: 'E-commerce Startup Founder',
+      location: 'Chennai',
+      avatar: 'AP',
       rating: 5,
-      text: "Having a dedicated professional portfolio with a built-in resume download feature has definitely helped my job search in Germany. It's convenient for recruiters and shows I'm serious about the position. The polished design gives the right professional impression."
+      text: "Professional, responsive, and delivered on time. Highly recommended for startups! Our online store has been running smoothly since launch. The payment integration works flawlessly and the admin dashboard makes managing orders super easy."
     },
     {
       name: 'Senthil Kumar',
-      role: 'e-Sevai Maiyam Service Center, Trichy',
+      role: 'e-Sevai Service Center Owner',
+      location: 'Trichy',
       avatar: 'SK',
       rating: 5,
       text: "The website has been a game-changer for our e-Sevai business. Customers no longer call asking the same questions repeatedly—they find all the information they need online. The dynamic status showing if we're open or closed is perfect, and the Google Maps integration helps new customers find us easily."
     },
     {
+      name: 'Manoj Kumar S',
+      role: 'MBA Graduate, Business Analytics',
+      location: 'Bangalore',
+      avatar: 'MK',
+      rating: 5,
+      text: "Sudharsan created a professional portfolio website that really helped me stand out in my job search. The portfolio looks polished and the ATS-friendly resume feature is brilliant. I'm now getting better quality inquiries from top companies."
+    },
+    {
+      name: 'Vembarasi K',
+      role: 'Registered Nurse',
+      location: 'Germany',
+      avatar: 'VK',
+      rating: 5,
+      text: "Having a dedicated professional portfolio with a built-in resume download feature has definitely helped my job search in Germany. It's convenient for recruiters and shows I'm serious about the position. The polished design gives the right professional impression."
+    },
+    {
       name: 'Bharath Kumar',
       role: 'Marketing & Sales Executive',
+      location: 'Mumbai',
       avatar: 'BK',
       rating: 5,
       text: "A marketing professional needs a portfolio that sells their expertise, and that's what Sudharsan created for me. The website highlights my digital marketing campaigns, sales achievements, and strategic thinking. It's opened doors to conversations with companies looking for someone with my skillset."
@@ -60,6 +80,9 @@ export default function Testimonials() {
                   </h4>
                   <p className="text-cyan-400 text-xs md:text-sm truncate">
                     {testimonial.role}
+                  </p>
+                  <p className="text-slate-400 text-xs truncate">
+                    📍 {testimonial.location}
                   </p>
                 </div>
               </div>

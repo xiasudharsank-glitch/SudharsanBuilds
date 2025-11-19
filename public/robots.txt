@@ -1,0 +1,28 @@
+# SudharsanBuilds - Portfolio Website Robots.txt
+# Optimized for search engine crawling
+# Last Updated: 2025-11-18
+
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /*.json$
+Disallow: /.env
+Disallow: /api/
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0
+
+User-agent: Slurp
+Allow: /
+
+# Sitemap location
+Sitemap: https://sudharsanbuilds.com/sitemap.xml
+
+# No crawl delay - optimized for fast indexing
+Crawl-delay: 0
