@@ -1,4 +1,4 @@
-import { Heart, Mail, MapPin, Phone, Github, Linkedin, Twitter, MessageCircle } from 'lucide-react';
+import { Heart, Mail, MapPin, Github, Linkedin, Twitter } from 'lucide-react';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();

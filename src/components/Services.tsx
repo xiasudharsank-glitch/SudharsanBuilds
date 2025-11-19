@@ -270,8 +270,6 @@ export default function Services({ limit = null, showViewAll = false }: Services
         order_id: orderId,
         handler: async function (razorpayResponse: any) {
           // Payment successful - Generate invoice and send emails
-          console.log('💳 Payment successful:', razorpayResponse);
-
           try {
             // Generate invoice and send all emails (booking confirmation, invoice, owner alert)
             const invoiceResult = await generateAndSendInvoice({
@@ -302,7 +300,9 @@ export default function Services({ limit = null, showViewAll = false }: Services
               alert(`✅ Payment successful!\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours.\n\nNote: Email notification may be delayed. Please check your inbox.`);
             }
           } catch (error) {
-            console.error('Invoice generation error:', error);
+            if (import.meta.env.DEV) {
+              console.error('Invoice generation error:', error);
+            }
             alert(`✅ Payment successful!\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours to discuss your project.`);
           }
         },
@@ -325,7 +325,9 @@ export default function Services({ limit = null, showViewAll = false }: Services
       razorpay.open();
       setIsPaymentLoading(false);
     } catch (error) {
-      console.error('Payment error:', error);
+      if (import.meta.env.DEV) {
+        console.error('Payment error:', error);
+      }
       alert('Unable to process payment. Please contact us directly via email.');
       setIsPaymentLoading(false);
 

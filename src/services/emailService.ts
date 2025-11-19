@@ -58,10 +58,12 @@ export const sendBookingConfirmation = async (data: BookingConfirmationData): Pr
     };
 
     const response = await emailjs.send(serviceId, templateId, templateParams);
-    console.log('✅ Booking confirmation sent:', response.status);
     return response.status === 200;
   } catch (error) {
-    console.error('❌ Error sending booking confirmation:', error);
+    // Error logged for debugging in development only
+    if (import.meta.env.DEV) {
+      console.error('Error sending booking confirmation:', error);
+    }
     return false;
   }
 };
@@ -91,10 +93,12 @@ export const sendInvoiceEmail = async (data: InvoiceData): Promise<boolean> => {
     };
 
     const response = await emailjs.send(serviceId, templateId, templateParams);
-    console.log('✅ Invoice email sent:', response.status);
     return response.status === 200;
   } catch (error) {
-    console.error('❌ Error sending invoice email:', error);
+    // Error logged for debugging in development only
+    if (import.meta.env.DEV) {
+      console.error('Error sending invoice email:', error);
+    }
     return false;
   }
 };
@@ -122,10 +126,12 @@ export const sendOwnerBookingAlert = async (data: BookingConfirmationData & { pr
     };
 
     const response = await emailjs.send(serviceId, templateId, templateParams);
-    console.log('✅ Owner alert email sent:', response.status);
     return response.status === 200;
   } catch (error) {
-    console.error('❌ Error sending owner alert:', error);
+    // Error logged for debugging in development only
+    if (import.meta.env.DEV) {
+      console.error('Error sending owner alert:', error);
+    }
     return false;
   }
 };

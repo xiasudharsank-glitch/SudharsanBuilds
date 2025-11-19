@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, FC } from 'react';
+import { useState, useEffect, useRef, FC } from 'react';
 import { Bot } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -18,7 +18,6 @@ const FloatingAvatar: FC = () => {
     const [position, setPosition] = useState({ x: 0, y: 0 });
     // State for eye rotation (eye-tracking effect)
     const [eyeAngle, setEyeAngle] = useState(0);
-    const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const avatarRef = useRef<HTMLDivElement>(null);
     const animationFrameRef = useRef<number | null>(null);
 
@@ -39,9 +38,6 @@ const FloatingAvatar: FC = () => {
          */
         const handleMouseMove = (e: MouseEvent) => {
             if (!avatarRef.current) return;
-
-            // Store mouse position for eye tracking
-            setMousePos({ x: e.clientX, y: e.clientY });
 
             // Get avatar's center position on screen
             const rect = avatarRef.current.getBoundingClientRect();

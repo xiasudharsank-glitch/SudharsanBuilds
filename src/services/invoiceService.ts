@@ -75,8 +75,6 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
   message: string;
 }> => {
   try {
-    console.log('📧 Starting invoice generation and email flow...');
-
     // Generate invoice details
     const invoiceId = generateInvoiceId();
     const invoiceDate = new Date().toLocaleDateString('en-IN', {
@@ -108,8 +106,7 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
 
     // Save to Supabase
     if (supabase) {
-      console.log('💾 Saving invoice to Supabase...');
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('invoices')
         .insert([{
           invoice_id: invoiceData.invoice_id,
@@ -132,11 +129,11 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
         .select();
 
       if (error) {
-        console.error('❌ Supabase error saving invoice:', error);
+        if (import.meta.env.DEV) {
+          console.error('Supabase error saving invoice:', error);
+        }
         throw new Error('Failed to save invoice to database');
       }
-
-      console.log('✅ Invoice saved to Supabase:', data);
     }
 
     // Get configuration
@@ -145,8 +142,7 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
     const upiId = import.meta.env.VITE_UPI_ID || '6381556407@ptsbi';
 
     // Send booking confirmation email to customer
-    console.log('📧 Sending booking confirmation to customer...');
-    const bookingConfirmationSent = await sendBookingConfirmation({
+    await sendBookingConfirmation({
       customer_name: paymentData.name,
       customer_email: paymentData.email,
       customer_phone: paymentData.phone,
@@ -159,8 +155,7 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
     });
 
     // Send invoice email to customer
-    console.log('📧 Sending invoice to customer...');
-    const invoiceSent = await sendInvoiceEmail({
+    await sendInvoiceEmail({
       customer_name: paymentData.name,
       customer_email: paymentData.email,
       invoice_id: invoiceId,
@@ -176,8 +171,7 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
     });
 
     // Send new booking alert to owner (reuses booking template)
-    console.log('📧 Sending alert to owner...');
-    const alertSent = await sendOwnerBookingAlert({
+    await sendOwnerBookingAlert({
       customer_name: paymentData.name,
       customer_email: paymentData.email,
       customer_phone: paymentData.phone,
@@ -190,19 +184,15 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
       your_email: yourEmail,
     });
 
-    console.log('✅ Email flow complete!', {
-      bookingConfirmation: bookingConfirmationSent,
-      invoice: invoiceSent,
-      ownerAlert: alertSent
-    });
-
     return {
       success: true,
       invoiceId: invoiceId,
       message: 'Invoice generated and emails sent successfully!'
     };
   } catch (error) {
-    console.error('❌ Error in invoice generation:', error);
+    if (import.meta.env.DEV) {
+      console.error('Error in invoice generation:', error);
+    }
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Failed to generate invoice'
@@ -215,7 +205,6 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
  */
 export const getInvoiceById = async (invoiceId: string): Promise<Invoice | null> => {
   if (!supabase) {
-    console.error('Supabase not initialized');
     return null;
   }
 
@@ -227,13 +216,17 @@ export const getInvoiceById = async (invoiceId: string): Promise<Invoice | null>
       .single();
 
     if (error) {
-      console.error('Error fetching invoice:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching invoice:', error);
+      }
       return null;
     }
 
     return data as Invoice;
   } catch (error) {
-    console.error('Error getting invoice:', error);
+    if (import.meta.env.DEV) {
+      console.error('Error getting invoice:', error);
+    }
     return null;
   }
 };
@@ -243,7 +236,6 @@ export const getInvoiceById = async (invoiceId: string): Promise<Invoice | null>
  */
 export const getCustomerInvoices = async (customerEmail: string): Promise<Invoice[]> => {
   if (!supabase) {
-    console.error('Supabase not initialized');
     return [];
   }
 
@@ -255,13 +247,17 @@ export const getCustomerInvoices = async (customerEmail: string): Promise<Invoic
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error fetching customer invoices:', error);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching customer invoices:', error);
+      }
       return [];
     }
 
     return data as Invoice[];
   } catch (error) {
-    console.error('Error getting customer invoices:', error);
+    if (import.meta.env.DEV) {
+      console.error('Error getting customer invoices:', error);
+    }
     return [];
   }
 };

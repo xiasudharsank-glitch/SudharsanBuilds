@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import Navigation from './components/Navigation';
+import ErrorBoundary from './components/ErrorBoundary';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -8,6 +9,7 @@ const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Loading fallback component for lazy-loaded pages
 const PageLoader = () => (
@@ -21,20 +23,23 @@ const PageLoader = () => (
 
 function App() {
   return (
-    <Router>
-      <div className="min-h-screen">
-        <Navigation />
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/services" element={<ServicesPage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/testimonials" element={<TestimonialsPage />} />
-            <Route path="/faq" element={<FAQPage />} />
-          </Routes>
-        </Suspense>
-      </div>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <div className="min-h-screen">
+          <Navigation />
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/testimonials" element={<TestimonialsPage />} />
+              <Route path="/faq" element={<FAQPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Routes>
+          </Suspense>
+        </div>
+      </Router>
+    </ErrorBoundary>
   );
 }
 

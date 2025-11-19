@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { Github, Linkedin, Mail, Twitter, ArrowDown, Sparkles } from 'lucide-react';
-import { motion, useTransform, useSpring, useReducedMotion } from "framer-motion";
+import { motion, useSpring, useReducedMotion } from "framer-motion";
 
 // --- 1. TYPES ---
 type MousePosition = { x: number; y: number };

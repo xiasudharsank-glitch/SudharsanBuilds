@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Mail, Send, Github, Linkedin, Twitter, AlertCircle, Phone, MessageSquare } from 'lucide-react';
+import { Mail, Send, Github, Linkedin, Twitter, AlertCircle, Phone } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from '@supabase/supabase-js';
 
 interface FormErrors {
   name?: string;
@@ -11,11 +10,6 @@ interface FormErrors {
   timeline?: string;
   message?: string;
 }
-
-// Initialize Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -82,7 +76,6 @@ export default function Contact() {
 
     // Honeypot check (bot protection)
     if (formData.honeypot) {
-      console.warn("Honeypot field filled - likely a bot");
       return;
     }
 
@@ -95,29 +88,7 @@ export default function Contact() {
     setStatus("sending");
 
     try {
-      // Store in Supabase
-      if (supabase) {
-        const { error: supabaseError } = await supabase
-          .from('inquiries')
-          .insert([
-            {
-              name: formData.name,
-              email: formData.email,
-              phone: formData.phone,
-              service: formData.service,
-              timeline: formData.timeline,
-              budget: formData.budget || null,
-              message: formData.message,
-              created_at: new Date().toISOString()
-            }
-          ]);
-
-        if (supabaseError) {
-          console.error("Supabase error:", supabaseError);
-        }
-      }
-
-      // Send via Formspree (email notification)
+      // Send via Formspree (primary contact form delivery)
       const formspreeId = import.meta.env.VITE_FORMSPREE_ID || 'xeopodle';
       const res = await fetch(`https://formspree.io/f/${formspreeId}`, {
         method: "POST",
@@ -155,7 +126,9 @@ export default function Contact() {
         setTimeout(() => setStatus(""), 5000);
       }
     } catch (error) {
-      console.error("Form submission error:", error);
+      if (import.meta.env.DEV) {
+        console.error("Form submission error:", error);
+      }
       setStatus("error");
       setTimeout(() => setStatus(""), 5000);
     }

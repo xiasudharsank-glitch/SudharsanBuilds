@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, Image as ImageIcon, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProjectGallery from './ProjectGallery';
 
@@ -75,13 +75,6 @@ const PROJECTS: Project[] = [
     'Clear presentation of technical skills (Power BI, Tableau, SQL, Python) attracts relevant opportunities',
     'Organized layout makes it easy for recruiters to find key qualifications',
     'Mobile-responsive design accessible on all devices'
-  ],
-  screenshots: [
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Home+Page',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Skills+%26+Analytics',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Projects+Showcase',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Resume+Download',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Contact+Section'
   ]
   },
   {
@@ -115,13 +108,6 @@ const PROJECTS: Project[] = [
     'Mobile-responsive design ensures accessibility across all devices',
     'Portfolio attracts inquiries from marketing and sales-focused companies',
     'Professional credibility elevated through polished online presence'
-  ],
-  screenshots: [
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Hero+Section',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Marketing+Experience',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Sales+Achievements',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Campaigns+Portfolio',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Contact+CTA'
   ]
   },
   {
@@ -157,13 +143,6 @@ const PROJECTS: Project[] = [
     'Clean, professional design builds credibility with international employers',
     'Mobile-responsive layout accessible on all devices for global reach',
     'Increased visibility among German healthcare recruitment agencies'
-  ],
-  screenshots: [
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Professional+Profile',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Certifications',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Experience+Timeline',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Resume+Download',
-    'https://via.placeholder.com/1200x800/1e293b/64748b?text=Contact+Form'
   ]
   },
   {
@@ -233,14 +212,7 @@ const PROJECTS: Project[] = [
       name: 'Prasanth Kumar',
       role: 'Founder, PSquare Menswear'
     },
-    keyAchievements: [],
-    screenshots: [
-      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Product+Catalog',
-      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Product+Details',
-      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Shopping+Cart',
-      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Checkout+Process',
-      'https://via.placeholder.com/1200x800/1e293b/64748b?text=Admin+Dashboard'
-    ]
+    keyAchievements: []
   }
 ];
 
@@ -252,7 +224,6 @@ export default function Projects() {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
 
@@ -263,12 +234,6 @@ export default function Projects() {
     setSelectedCategory(category);
     setIsCategoryModalOpen(true);
     document.body.style.overflow = 'hidden';
-  };
-
-  const closeCategoryModal = () => {
-    setIsCategoryModalOpen(false);
-    setSelectedCategory(null);
-    document.body.style.overflow = 'unset';
   };
 
   const openProjectModal = (project: Project) => {
@@ -327,12 +292,6 @@ export default function Projects() {
     setSelectedProject(null);
     setSelectedCategory(null);
     document.body.style.overflow = 'unset';
-  };
-
-  const openGallery = (project: Project, index: number = 0) => {
-    setSelectedProject(project);
-    setCurrentImageIndex(index);
-    setIsGalleryOpen(true);
   };
 
   const closeGallery = () => {
@@ -469,21 +428,10 @@ export default function Projects() {
                           loading="lazy"
                           onLoad={(e) => handleImageLoad(project.link, (e.target as HTMLImageElement).src)}
                           onError={(e) => {
-                            (e.target as HTMLImageElement).src = `https://via.placeholder.com/600x400/1e293b/64748b?text=${encodeURIComponent(project.title)}`;
+                            const fallbackColor = project.type === 'personal' ? '0891b2' : '9333ea';
+                            (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect fill='%23${fallbackColor}' width='600' height='400'/%3E%3Ctext fill='white' font-family='Arial' font-size='24' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3E${encodeURIComponent(project.title)}%3C/text%3E%3C/svg%3E`;
                           }}
                         />
-                        {project.screenshots && project.screenshots.length > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openGallery(project);
-                            }}
-                            className="absolute top-2 left-2 bg-black/60 text-white p-1.5 rounded-md hover:bg-black/80 transition-colors flex items-center gap-1 text-xs"
-                          >
-                            <ImageIcon size={14} />
-                            <span>{project.screenshots?.length || 0}</span>
-                          </button>
-                        )}
                       </div>
                       <div className="p-6">
                         <div className="flex justify-between items-start mb-2">
@@ -738,7 +686,7 @@ export default function Projects() {
           images={selectedProject.screenshots}
           isOpen={isGalleryOpen}
           onClose={closeGallery}
-          initialIndex={currentImageIndex}
+          initialIndex={0}
         />
       )}
       </div>

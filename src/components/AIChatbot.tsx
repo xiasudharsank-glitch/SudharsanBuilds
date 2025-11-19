@@ -390,8 +390,8 @@ export default function AIChatbot() {
                                   </ol>
                                 ),
                                 li: ({ children }) => <li className="ml-2">{children}</li>,
-                                code: ({ children, inline }) =>
-                                  inline ? (
+                                code: ({ children, ...props }: any) =>
+                                  props.inline ? (
                                     <code className="bg-slate-800/50 px-2 py-0.5 rounded text-cyan-300 font-mono text-xs">
                                       {children}
                                     </code>
