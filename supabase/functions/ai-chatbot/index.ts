@@ -55,24 +55,6 @@ Focus on: React, Node.js, TypeScript, SaaS development, e-commerce platforms.`;
       );
     }
 
-<<<<<<< HEAD
-    const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "mistral-small-latest",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        temperature: 0.8,
-        top_p: 0.95,
-        max_tokens: 600,
-      }),
-=======
     // Convert conversation history to Gemini format
     // Ensure strict user/model alternation
     const geminiContents = [];
@@ -96,7 +78,6 @@ Focus on: React, Node.js, TypeScript, SaaS development, e-commerce platforms.`;
     geminiContents.push({
       role: "user",
       parts: [{ text: message }],
->>>>>>> claude/mobile-optimize-payment-01CctJ5P1R6GpepCvjeefJx5
     });
 
     const response = await fetch(
