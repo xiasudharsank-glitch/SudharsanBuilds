@@ -1,6 +1,7 @@
-import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, ChevronDown, ChevronUp } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
+import { useIsMobile } from '../hooks/useMobile';
 
 interface Service {
   icon: React.ReactNode;
@@ -18,6 +19,8 @@ interface Service {
 
 export default function Services() {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
+  const [showAllServices, setShowAllServices] = useState(false);
+  const isMobile = useIsMobile();
 
   const services: Service[] = [
     {
@@ -276,7 +279,9 @@ export default function Services() {
 
         {/* Services Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {services.map((service, index) => (
+          {services
+            .slice(0, isMobile && !showAllServices ? 4 : services.length)
+            .map((service, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
@@ -358,6 +363,49 @@ export default function Services() {
             </motion.div>
           ))}
         </div>
+
+        {/* View All Services Button - Mobile Only */}
+        {!showAllServices && services.length > 4 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-8 md:hidden flex justify-center"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowAllServices(true)}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-xl shadow-lg hover:shadow-cyan-500/50 transition-all"
+            >
+              View All {services.length} Services
+              <ChevronDown className="w-5 h-5" />
+            </motion.button>
+          </motion.div>
+        )}
+
+        {/* Show Less Button - Mobile Only */}
+        {showAllServices && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-8 md:hidden flex justify-center"
+          >
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                setShowAllServices(false);
+                // Scroll back to services section
+                document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-slate-600 to-slate-800 text-white font-bold rounded-xl shadow-lg hover:shadow-slate-500/50 transition-all"
+            >
+              Show Less
+              <ChevronUp className="w-5 h-5" />
+            </motion.button>
+          </motion.div>
+        )}
 
         {/* Trust Indicators */}
         <motion.div

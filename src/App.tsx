@@ -15,7 +15,6 @@ const FAQ = lazy(() => import('./components/FAQ'));
 const Contact = lazy(() => import('./components/Contact'));
 const AIChatbot = lazy(() => import('./components/AIChatbot'));
 const FloatingAvatar = lazy(() => import('./components/FloatingAvatar'));
-const WhatsAppButton = lazy(() => import('./components/WhatsAppButton'));
 
 // Loading fallback component for lazy-loaded sections
 const SectionLoader = () => (
@@ -76,10 +75,6 @@ function App() {
 
       <Suspense fallback={null}>
         <FloatingAvatar />
-      </Suspense>
-
-      <Suspense fallback={null}>
-        <WhatsAppButton />
       </Suspense>
     </div>
   );
