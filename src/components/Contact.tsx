@@ -7,6 +7,7 @@ import 'react-phone-number-input/style.css';
 import { initEmailJS } from '../services/emailService';
 import { env } from '../utils/env';
 import { sanitizeFormData } from '../utils/sanitize';
+import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
 
 interface FormErrors {
   name?: string;
@@ -42,6 +43,15 @@ export default function Contact() {
     initEmailJS();
   }, []);
 
+  // ✅ FIX: Auto-clear status with proper cleanup
+  useEffect(() => {
+    if (status && status !== "sending") {
+      const duration = status === "success" ? 7000 : 5000;
+      const timer = setTimeout(() => setStatus(""), duration);
+      return () => clearTimeout(timer);
+    }
+  }, [status]);
+
   // Form validation
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
@@ -61,21 +71,10 @@ export default function Contact() {
       newErrors.email = "Please enter a valid email";
     }
 
-    // ✅ FIX #7: Enhanced phone validation matching server-side constraint
+    // ✅ FIX: Enhanced phone validation using shared utility
     // Only validate if phone is provided (not empty) - phone is OPTIONAL
-    if (formData.phone && formData.phone.trim()) {
-      // Remove all non-digit characters except leading '+'
-      const cleanPhone = formData.phone.replace(/[^\d+]/g, '');
-
-      // Server-side regex: ^\+?[1-9]\d{7,14}$
-      // - Optional '+' at start
-      // - First digit must be 1-9 (not 0)
-      // - Total 8-15 digits (including first digit)
-      const phoneRegex = /^\+?[1-9]\d{7,14}$/;
-
-      if (!phoneRegex.test(cleanPhone)) {
-        newErrors.phone = "Please enter a valid phone number (8-15 digits, no leading zero)";
-      }
+    if (formData.phone && formData.phone.trim() && !validatePhone(formData.phone)) {
+      newErrors.phone = "Please enter a valid phone number (8-15 digits, no leading zero)";
     }
 
     // Service validation
@@ -115,7 +114,6 @@ export default function Contact() {
 
     if (!validateForm()) {
       setStatus("error");
-      setTimeout(() => setStatus(""), 5000);
       return;
     }
 
@@ -170,15 +168,12 @@ export default function Contact() {
           honeypot: ''
         });
         setErrors({});
-        setTimeout(() => setStatus(""), 7000);
       } else {
         setStatus("error");
-        setTimeout(() => setStatus(""), 5000);
       }
     } catch (error) {
       console.error("❌ Form submission error:", error);
       setStatus("error");
-      setTimeout(() => setStatus(""), 5000);
     }
   };
 

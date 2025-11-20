@@ -199,6 +199,13 @@ export default function Projects() {
   const myProjects = PROJECTS.filter(p => p.type === 'personal');
   const clientProjects = PROJECTS.filter(p => p.type === 'client' || p.type === 'freelance');
 
+  // ✅ FIX: Cleanup body overflow on unmount
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, []);
+
   const openCategoryModal = (category: CategoryType) => {
     setSelectedCategory(category);
     setIsCategoryModalOpen(true);
@@ -522,25 +529,27 @@ export default function Projects() {
                       {/* Navigation Arrows - Only show if there are screenshots */}
                       {selectedProject.screenshots && selectedProject.screenshots.length > 1 && (
                         <>
-                          {/* Left Arrow */}
+                          {/* ✅ FIX: Left Arrow with disabled state */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               prevImage();
                             }}
-                            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all backdrop-blur-sm z-10 group"
+                            disabled={currentCarouselIndex === 0}
+                            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/60 hover:bg-black/80 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center transition-all backdrop-blur-sm z-10 group"
                             aria-label="Previous image"
                           >
                             <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform" />
                           </button>
 
-                          {/* Right Arrow */}
+                          {/* ✅ FIX: Right Arrow with disabled state */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               nextImage();
                             }}
-                            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all backdrop-blur-sm z-10 group"
+                            disabled={currentCarouselIndex === selectedProject.screenshots!.length - 1}
+                            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-black/60 hover:bg-black/80 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-full flex items-center justify-center transition-all backdrop-blur-sm z-10 group"
                             aria-label="Next image"
                           >
                             <ChevronRight className="w-6 h-6 group-hover:scale-110 transition-transform" />
