@@ -107,7 +107,7 @@ const FloatingAvatar: FC<FloatingAvatarProps> = ({ onClick }) => {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [position.x, position.y]);
+    }, []); // ✅ FIX: Remove position from dependencies to prevent infinite loop
 
     return (
         <motion.div

@@ -1,12 +1,13 @@
 import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react'; // ✅ FIX: Add useCallback
 import { useNavigate } from 'react-router-dom';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { initEmailJS } from '../services/emailService';
 import { generateAndSendInvoice } from '../services/invoiceService';
 import { env, features } from '../utils/env';
+import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
 
 interface Service {
   icon: React.ReactNode;
@@ -55,30 +56,33 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     initEmailJS();
   }, []);
 
-  // Lazy load Razorpay script when component mounts
+  // ✅ FIX: Lazy load Razorpay script with proper cleanup
   useEffect(() => {
-    const loadRazorpay = () => {
-      // Check if already loaded
-      if (window.Razorpay) {
-        setRazorpayLoaded(true);
-        return;
-      }
+    // Check if already loaded
+    if (window.Razorpay) {
+      setRazorpayLoaded(true);
+      return;
+    }
 
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => {
-        setRazorpayLoaded(true);
-        console.log('✅ Razorpay script loaded');
-      };
-      script.onerror = () => {
-        console.error('❌ Failed to load Razorpay script');
-        setRazorpayLoaded(false);
-      };
-      document.body.appendChild(script);
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => {
+      setRazorpayLoaded(true);
+      console.log('✅ Razorpay script loaded');
     };
+    script.onerror = () => {
+      console.error('❌ Failed to load Razorpay script');
+      setRazorpayLoaded(false);
+    };
+    document.body.appendChild(script);
 
-    loadRazorpay();
+    // ✅ FIX: Cleanup - remove script on unmount
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
   }, []);
 
   // ✅ ACCESSIBILITY: Focus first input when modal opens
@@ -334,22 +338,11 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       return;
     }
 
-    // ✅ FIX #7: Enhanced phone validation matching server-side constraint - OPTIONAL
+    // ✅ FIX: Enhanced phone validation using shared utility - OPTIONAL
     // Only validate if phone is provided (phone field is optional)
-    if (customerDetails.phone && customerDetails.phone.trim()) {
-      // Remove all non-digit characters except leading '+'
-      const cleanPhone = customerDetails.phone.replace(/[^\d+]/g, '');
-
-      // Server-side regex: ^\+?[1-9]\d{7,14}$
-      // - Optional '+' at start
-      // - First digit must be 1-9 (not 0)
-      // - Total 8-15 digits (including first digit)
-      const phoneRegex = /^\+?[1-9]\d{7,14}$/;
-
-      if (!phoneRegex.test(cleanPhone)) {
-        alert('Please enter a valid phone number (8-15 digits, no leading zero)');
-        return;
-      }
+    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
+      alert('Please enter a valid phone number (8-15 digits, no leading zero)');
+      return;
     }
 
     // ✅ FIX: Validate Razorpay script is loaded
