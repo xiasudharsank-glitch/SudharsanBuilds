@@ -660,15 +660,87 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
 // ✅ Dark Mode Context
 const THEME_STORAGE_KEY = 'ai-chat-theme';
 const CHAT_HISTORY_KEY = 'ai-chat-history';
+const USER_ID_KEY = 'ai-chat-user-id'; // ✅ Phase 2: Persistent user ID
+const MESSAGE_COUNT_KEY = 'ai-chat-message-count';
+const MESSAGE_COUNT_DATE_KEY = 'ai-chat-message-count-date';
+
+// ✅ Phase 2: Generate or retrieve persistent user ID
+const getUserId = (): string => {
+  let userId = localStorage.getItem(USER_ID_KEY);
+  if (!userId) {
+    // Generate unique user ID
+    userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem(USER_ID_KEY, userId);
+  }
+  return userId;
+};
 
 export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   const location = useLocation();
+
+  // ✅ Phase 2: Persistent User ID
+  const [userId] = useState<string>(getUserId());
 
   // ✅ Theme state
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem(THEME_STORAGE_KEY);
     return saved ? JSON.parse(saved) : true; // Default dark
   });
+
+  // ✅ Phase 2: Function Call Execution
+  const executeFunctionCall = (functionName: string, args: any) => {
+    console.log(`🔧 Executing function: ${functionName}`, args);
+
+    switch (functionName) {
+      case 'scrollToSection':
+        const sectionId = args.section;
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Close chat to show the section
+          setTimeout(() => {
+            handleCloseChat();
+          }, 500);
+        }
+        break;
+
+      case 'openContactForm':
+        // Scroll to contact section
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          contactSection.scrollIntoView({ behavior: 'smooth' });
+          // Prefill message if provided
+          if (args.prefillMessage) {
+            setTimeout(() => {
+              const messageInput = document.querySelector('textarea[name="message"]') as HTMLTextAreaElement;
+              if (messageInput) {
+                messageInput.value = args.prefillMessage;
+              }
+            }, 800);
+          }
+          // Close chat after navigating
+          setTimeout(() => {
+            handleCloseChat();
+          }, 1000);
+        }
+        break;
+
+      case 'showServiceDetails':
+        // Scroll to services section
+        const servicesSection = document.getElementById('services');
+        if (servicesSection) {
+          servicesSection.scrollIntoView({ behavior: 'smooth' });
+          // Close chat to show services
+          setTimeout(() => {
+            handleCloseChat();
+          }, 500);
+        }
+        break;
+
+      default:
+        console.warn(`Unknown function: ${functionName}`);
+    }
+  };
 
   const [chatState, setChatState] = useState<ChatState>({
     isOpen: false,
@@ -1099,8 +1171,10 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         },
         body: JSON.stringify({
           message: messageText,
-          context, // ✅ Send page context
-          conversationHistory: messages.slice(-4).map((msg) => ({
+          context, // ✅ Phase 1: Page context
+          pageSummary, // ✅ Phase 1: Actual page content
+          userId, // ✅ Phase 2: Persistent user ID
+          conversationHistory: messages.slice(-6).map((msg) => ({
             role: msg.role,
             content: msg.content,
           })),
@@ -1112,13 +1186,20 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       if (data.success && data.message) {
         const assistantMessageId = (Date.now() + 1).toString();
 
+        // ✅ Phase 2: Handle function calls from AI
+        if (data.functionCall) {
+          console.log('🎯 AI requested function call:', data.functionCall);
+          executeFunctionCall(data.functionCall.name, data.functionCall.args);
+          // Show the message along with executing the function
+        }
+
         // ✅ Phase 1: Generate smart follow-up suggestions
         const followUps = getFollowUpSuggestions(messageText, data.message, context);
 
         const assistantMessage: Message = {
           id: assistantMessageId,
           role: 'assistant',
-          content: data.message,
+          content: data.message || '✨ Taking you there now!',
           serviceCards: intent.showCards ? intent.filteredServices : undefined,
           projectCards: projectIntent.showProjects ? projectIntent.filteredProjects : undefined, // ✅ Phase 1: Add project cards
           followUpSuggestions: followUps, // ✅ Phase 1: Add follow-up suggestions
@@ -1136,7 +1217,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
           setMessages(prev => prev.map(msg =>
             msg.id === assistantMessageId ? { ...msg, isStreaming: false } : msg
           ));
-        }, data.message.length * 15 + 100); // Calculate based on text length
+        }, (data.message?.length || 20) * 15 + 100); // Calculate based on text length
       } else {
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
