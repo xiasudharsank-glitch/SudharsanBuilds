@@ -2,49 +2,16 @@ import { useState, useEffect } from 'react';
 import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProjectGallery from './ProjectGallery';
-
-type ProjectStatus = 'completed' | 'in-progress' | 'on-hold';
-type ProjectType = 'client' | 'personal' | 'open-source' | 'freelance';
-
-type TechStack = {
-  name: string;
-  icon?: string;
-};
-
-type ClientTestimonial = {
-  text: string;
-  name: string;
-  role: string;
-};
-
-type Project = {
-  id: string;
-  title: string;
-  description: string;
-  link: string;
-  image?: string;
-  type: ProjectType;
-  status: ProjectStatus;
-  techStack: TechStack[];
-  tags: string[];
-  startDate: string;
-  endDate?: string;
-  role: string;
-  keyAchievements?: string[];
-  challenges?: string[];
-  githubUrl?: string;
-  caseStudyUrl?: string;
-  featured: boolean;
-  clientName?: string;
-  clientTestimonial?: ClientTestimonial;
-  screenshots?: string[];
-};
+import { PROJECTS_DATA, type Project, type ProjectType } from '../data/projectsData';
 
 const getWebsitePreview = (url: string) => {
   return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
 };
 
-const PROJECTS: Project[] = [
+const PROJECTS: Project[] = PROJECTS_DATA; // Use shared data
+
+// Unused - kept for backward compatibility
+const _PROJECTS: Project[] = [
   {
   id: 'manoj-kumar-portfolio',
   title: 'Finance & Business Analytics Professional Portfolio',
