@@ -14,6 +14,7 @@ interface FormErrors {
   phone?: string;
   service?: string;
   timeline?: string;
+  budget?: string;
   message?: string;
 }
 
@@ -60,9 +61,9 @@ export default function Contact() {
       newErrors.email = "Please enter a valid email";
     }
 
-    // Phone validation (International format via react-phone-number-input) - OPTIONAL
-    // The library handles validation internally, but we check if it's provided
-    if (formData.phone.trim() && formData.phone.length < 8) {
+    // Phone validation (International format via react-phone-number-input) - TRULY OPTIONAL
+    // Only validate if phone is provided (not empty)
+    if (formData.phone && formData.phone.trim() && formData.phone.length < 8) {
       newErrors.phone = "Please enter a valid international phone number";
     }
 
@@ -74,6 +75,11 @@ export default function Contact() {
     // Timeline validation
     if (!formData.timeline) {
       newErrors.timeline = "Please select a timeline";
+    }
+
+    // Budget validation
+    if (!formData.budget) {
+      newErrors.budget = "Please select a budget range";
     }
 
     // Message validation
@@ -383,20 +389,37 @@ export default function Contact() {
               )}
             </div>
 
-            {/* Budget (Optional) */}
+            {/* Budget */}
             <div>
               <label htmlFor="budget" className="block text-slate-700 font-semibold mb-2 text-sm md:text-base">
-                Budget (Optional)
+                Budget Range *
               </label>
-              <input
-                type="text"
+              <select
                 id="budget"
                 name="budget"
                 value={formData.budget}
                 onChange={handleChange}
-                className="w-full px-3 py-2.5 md:px-4 md:py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all text-sm md:text-base"
-                placeholder="₹20,000 - ₹50,000"
-              />
+                required
+                aria-invalid={!!errors.budget}
+                aria-describedby={errors.budget ? "budget-error" : undefined}
+                className={`w-full px-3 py-2.5 md:px-4 md:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm md:text-base ${
+                  errors.budget ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-cyan-500'
+                }`}
+              >
+                <option value="">Select your budget range</option>
+                <option value="Under ₹15,000">Under ₹15,000</option>
+                <option value="₹15,000 - ₹25,000">₹15,000 - ₹25,000</option>
+                <option value="₹25,000 - ₹40,000">₹25,000 - ₹40,000</option>
+                <option value="₹40,000 - ₹60,000">₹40,000 - ₹60,000</option>
+                <option value="₹60,000 - ₹1,00,000">₹60,000 - ₹1,00,000</option>
+                <option value="Above ₹1,00,000">Above ₹1,00,000</option>
+                <option value="Not sure yet">Not sure yet</option>
+              </select>
+              {errors.budget && (
+                <p id="budget-error" className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" /> {errors.budget}
+                </p>
+              )}
             </div>
 
             {/* Project Details */}

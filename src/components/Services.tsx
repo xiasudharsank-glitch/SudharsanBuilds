@@ -257,9 +257,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
   const handlePaymentProceed = async () => {
     if (!selectedService || !selectedService.depositAmount) return;
 
-    // Validate customer details
-    if (!customerDetails.name.trim() || !customerDetails.email.trim() || !customerDetails.phone.trim() || !customerDetails.projectDetails.trim()) {
-      alert('Please fill in all required fields');
+    // Validate customer details (phone is optional)
+    if (!customerDetails.name.trim() || !customerDetails.email.trim() || !customerDetails.projectDetails.trim()) {
+      alert('Please fill in all required fields (name, email, project details)');
       return;
     }
 
@@ -270,8 +270,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       return;
     }
 
-    // Validate phone format (international - handled by PhoneInput library)
-    if (customerDetails.phone.length < 8) {
+    // Validate phone format (international - handled by PhoneInput library) - OPTIONAL
+    // Only validate if phone is provided
+    if (customerDetails.phone && customerDetails.phone.trim() && customerDetails.phone.length < 8) {
       alert('Please enter a valid international phone number');
       return;
     }
@@ -288,15 +289,22 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
     try {
       // Check if payment feature is available
-      if (!features.hasPayment) {
+      if (!features.hasPayment || !env.SUPABASE_URL || env.SUPABASE_URL === '') {
         throw new Error('Payment system is not configured. Please contact us directly.');
       }
 
       // ✅ FIX: Use totalAmount field instead of parsing price string
       const totalAmount = selectedService.totalAmount || selectedService.depositAmount;
 
+      const createOrderUrl = `${env.SUPABASE_URL}/functions/v1/create-payment-order`;
+
+      // Additional validation: ensure URL is valid
+      if (!createOrderUrl.startsWith('http')) {
+        throw new Error('Invalid payment configuration');
+      }
+
       // Call Supabase Edge Function to create Razorpay order
-      const response = await fetch(`${env.SUPABASE_URL}/functions/v1/create-payment-order`, {
+      const response = await fetch(createOrderUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -337,7 +345,14 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
           try {
             // ✅ CRITICAL FIX: Verify payment signature before processing
-            const verifyResponse = await fetch(`${env.SUPABASE_URL}/functions/v1/verify-payment`, {
+            const verifyUrl = `${env.SUPABASE_URL}/functions/v1/verify-payment`;
+
+            // Validate URL before fetch
+            if (!verifyUrl.startsWith('http')) {
+              throw new Error('Payment verification unavailable');
+            }
+
+            const verifyResponse = await fetch(verifyUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -678,7 +693,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                 {/* Phone */}
                 <div>
                   <label htmlFor="modal-phone" className="block text-slate-700 font-semibold mb-2">
-                    Phone Number *
+                    Phone Number (Optional)
                   </label>
                   <PhoneInput
                     international
@@ -691,8 +706,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                       '--PhoneInput-color--focus': '#06b6d4',
                     } as React.CSSProperties}
                     numberInputProps={{
-                      className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500',
-                      required: true
+                      className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500'
                     }}
                   />
                 </div>

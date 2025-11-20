@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HelpCircle, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -16,6 +16,28 @@ interface FAQProps {
 
 export default function FAQ({ limit = null, showViewAll = false, showContactCTA = true }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [attentionPulse, setAttentionPulse] = useState(true);
+
+  // Engaging first FAQ animation - toggles automatically to draw attention
+  useEffect(() => {
+    if (limit !== null && limit > 0) { // Only on homepage
+      const interval = setInterval(() => {
+        setOpenIndex((prev) => (prev === 0 ? null : 0));
+      }, 3000); // Toggle every 3 seconds
+
+      // Stop after 2 cycles (6 seconds)
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        setAttentionPulse(false);
+        setOpenIndex(0); // Leave it open
+      }, 6000);
+
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
+    }
+  }, [limit]);
 
   const faqs: FAQItem[] = [
     {
@@ -80,15 +102,15 @@ export default function FAQ({ limit = null, showViewAll = false, showContactCTA 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12 md:mb-16"
+          className="text-center mb-10 md:mb-16"
         >
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <HelpCircle className="w-8 h-8 text-cyan-600" />
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900">
-              Frequently Asked <span className="text-cyan-600">Questions</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-3 md:mb-4">
+            <HelpCircle className="w-7 h-7 md:w-8 md:h-8 text-cyan-600 flex-shrink-0" />
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 leading-tight text-center">
+              Frequently Asked <span className="text-cyan-600 block sm:inline">Questions</span>
             </h2>
           </div>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto px-4">
             Common questions about website development and my services
           </p>
         </motion.div>
@@ -102,36 +124,53 @@ export default function FAQ({ limit = null, showViewAll = false, showContactCTA 
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.05 }}
-              className="bg-white border-2 border-slate-200 rounded-xl overflow-hidden hover:border-cyan-500 transition-colors"
+              className={`bg-white border-2 rounded-xl overflow-hidden transition-all duration-300 ${
+                index === 0 && attentionPulse
+                  ? 'border-cyan-500 shadow-lg shadow-cyan-500/20'
+                  : 'border-slate-200 hover:border-cyan-500'
+              }`}
+              animate={
+                index === 0 && attentionPulse
+                  ? { scale: [1, 1.02, 1], borderColor: ['rgb(6, 182, 212)', 'rgb(8, 145, 178)', 'rgb(6, 182, 212)'] }
+                  : {}
+              }
             >
               <button
                 onClick={() => toggleFAQ(index)}
-                className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
+                className="w-full px-4 md:px-6 py-4 md:py-5 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
               >
-                <span className="text-lg font-semibold text-slate-900 pr-4">
+                <span className="text-base md:text-lg font-semibold text-slate-900 pr-3 md:pr-4 leading-snug">
                   {faq.question}
                 </span>
-                <div className="flex-shrink-0">
-                  {openIndex === index ? (
-                    <ChevronUp className="w-6 h-6 text-cyan-600" />
-                  ) : (
-                    <ChevronDown className="w-6 h-6 text-slate-400" />
-                  )}
-                </div>
+                <motion.div
+                  className="flex-shrink-0"
+                  animate={{ rotate: openIndex === index ? 180 : 0 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                >
+                  <ChevronDown className={`w-5 h-5 md:w-6 md:h-6 ${openIndex === index ? 'text-cyan-600' : 'text-slate-400'}`} />
+                </motion.div>
               </button>
 
-              <AnimatePresence>
+              <AnimatePresence initial={false}>
                 {openIndex === index && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{
+                      height: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] },
+                      opacity: { duration: 0.3 }
+                    }}
                     className="overflow-hidden"
                   >
-                    <div className="px-6 pb-5 pt-2 text-slate-700 leading-relaxed bg-slate-50 border-t border-slate-200">
+                    <motion.div
+                      initial={{ y: -10 }}
+                      animate={{ y: 0 }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
+                      className="px-4 md:px-6 pb-4 md:pb-5 pt-2 text-sm md:text-base text-slate-700 leading-relaxed bg-slate-50 border-t border-slate-200"
+                    >
                       {faq.answer}
-                    </div>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>

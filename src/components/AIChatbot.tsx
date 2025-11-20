@@ -80,11 +80,16 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
     try {
       // Check if AI chat feature is available
-      if (!features.hasAIChat) {
+      if (!features.hasAIChat || !env.SUPABASE_URL || env.SUPABASE_URL === '') {
         throw new Error('AI chat system is not configured');
       }
 
       const apiUrl = `${env.SUPABASE_URL}/functions/v1/ai-chatbot`;
+
+      // Additional validation: ensure URL is valid
+      if (!apiUrl.startsWith('http')) {
+        throw new Error('Invalid API configuration');
+      }
 
       const response = await fetch(apiUrl, {
         method: 'POST',
