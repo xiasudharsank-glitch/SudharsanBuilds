@@ -187,6 +187,35 @@ export default function Contact() {
     }
   };
 
+  // ✅ NEW: Handle Enter key to move to next field
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const form = e.currentTarget.form;
+      if (!form) return;
+
+      const formElements = Array.from(form.elements) as HTMLElement[];
+      const currentIndex = formElements.indexOf(e.currentTarget as HTMLElement);
+
+      // Find next focusable element (skip hidden honeypot and buttons)
+      let nextIndex = currentIndex + 1;
+      while (nextIndex < formElements.length) {
+        const nextElement = formElements[nextIndex] as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+        if (
+          nextElement &&
+          !nextElement.disabled &&
+          nextElement.tabIndex !== -1 &&
+          nextElement.type !== 'submit' &&
+          (nextElement.tagName === 'INPUT' || nextElement.tagName === 'TEXTAREA' || nextElement.tagName === 'SELECT')
+        ) {
+          e.preventDefault();
+          nextElement.focus();
+          return;
+        }
+        nextIndex++;
+      }
+    }
+  };
+
   return (
     <section id="contact" className="py-20 md:py-28 bg-gradient-to-b from-white via-slate-50 to-slate-100 border-t-4 border-cyan-500/20">
       <div className="container mx-auto px-4 md:px-6">
@@ -252,6 +281,7 @@ export default function Contact() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 required
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? "name-error" : undefined}
@@ -278,6 +308,7 @@ export default function Contact() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 required
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? "email-error" : undefined}
@@ -335,6 +366,7 @@ export default function Contact() {
                 name="service"
                 value={formData.service}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 required
                 aria-invalid={!!errors.service}
                 aria-describedby={errors.service ? "service-error" : undefined}
@@ -369,6 +401,7 @@ export default function Contact() {
                 name="timeline"
                 value={formData.timeline}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 required
                 aria-invalid={!!errors.timeline}
                 aria-describedby={errors.timeline ? "timeline-error" : undefined}
@@ -399,6 +432,7 @@ export default function Contact() {
                 name="budget"
                 value={formData.budget}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 required
                 aria-invalid={!!errors.budget}
                 aria-describedby={errors.budget ? "budget-error" : undefined}
@@ -432,6 +466,13 @@ export default function Contact() {
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
+                onKeyDown={(e) => {
+                  // Shift+Enter: new line, Enter: submit form (last field)
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    e.currentTarget.form?.requestSubmit();
+                  }
+                }}
                 required
                 rows={4}
                 aria-invalid={!!errors.message}

@@ -254,6 +254,24 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     setShowBookingModal(true);
   };
 
+  // ✅ NEW: Handle Enter key to move to next field in booking modal
+  const handleModalKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      const modalContainer = e.currentTarget.closest('.booking-modal-form');
+      if (!modalContainer) return;
+
+      const formElements = Array.from(modalContainer.querySelectorAll('input[type="text"], input[type="email"], textarea')) as HTMLElement[];
+      const currentIndex = formElements.indexOf(e.currentTarget as HTMLElement);
+
+      // Find next focusable element
+      const nextElement = formElements[currentIndex + 1];
+      if (nextElement) {
+        e.preventDefault();
+        nextElement.focus();
+      }
+    }
+  };
+
   const handlePaymentProceed = async () => {
     if (!selectedService || !selectedService.depositAmount) return;
 
@@ -666,7 +684,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 space-y-4">
+              <div className="booking-modal-form p-6 space-y-4">
                 <p className="text-slate-600 text-sm">
                   Please provide your details to complete the booking. You'll receive a confirmation email and invoice after payment.
                 </p>
@@ -681,6 +699,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     id="modal-name"
                     value={customerDetails.name}
                     onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })}
+                    onKeyDown={handleModalKeyDown}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="John Doe"
                     required
@@ -697,6 +716,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     id="modal-email"
                     value={customerDetails.email}
                     onChange={(e) => setCustomerDetails({ ...customerDetails, email: e.target.value })}
+                    onKeyDown={handleModalKeyDown}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
                     placeholder="john@example.com"
                     required
@@ -733,6 +753,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     id="modal-details"
                     value={customerDetails.projectDetails}
                     onChange={(e) => setCustomerDetails({ ...customerDetails, projectDetails: e.target.value })}
+                    onKeyDown={(e) => {
+                      // Shift+Enter: new line, Enter: proceed to payment (last field)
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handlePaymentProceed();
+                      }
+                    }}
                     rows={4}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
                     placeholder="Brief description of your project requirements..."
