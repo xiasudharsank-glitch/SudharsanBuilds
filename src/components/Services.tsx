@@ -568,14 +568,18 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               {/* CTA Button */}
               <button
                 onClick={() => handleBooking(service)}
-                disabled={isPaymentLoading}
+                disabled={isPaymentLoading || (service.ctaAction === 'book' && !razorpayLoaded)}
                 className={`w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-base transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
                   service.ctaAction === 'book'
                     ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-500/50'
                     : 'bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:shadow-slate-500/50'
                 }`}
               >
-                {isPaymentLoading ? 'Processing...' : service.ctaText}
+                {isPaymentLoading
+                  ? 'Processing...'
+                  : (service.ctaAction === 'book' && !razorpayLoaded)
+                  ? 'Loading payment system...'
+                  : service.ctaText}
               </button>
             </motion.div>
           ))}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { BookOpen, Clock, Calendar, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 
 interface BlogPost {
   id: number;
@@ -235,6 +236,21 @@ export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
     return () => window.removeEventListener('keydown', handleEscape);
   }, [selectedPost]);
 
+  // ✅ FIX: Safe content rendering with DOMPurify sanitization
+  const formatBlogContent = (paragraph: string): string => {
+    // First apply formatting transformations
+    const formatted = paragraph
+      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold text-lg block mt-4 mb-2">$1</strong>')
+      .replace(/•/g, '•');
+
+    // Then sanitize with DOMPurify to prevent XSS
+    return DOMPurify.sanitize(formatted, {
+      ALLOWED_TAGS: ['strong', 'em', 'b', 'i', 'br', 'p'],
+      ALLOWED_ATTR: ['class'],
+      KEEP_CONTENT: true,
+    });
+  };
+
   return (
     <section id="blog" className="py-16 md:py-24 bg-slate-50">
       <div className="container mx-auto px-4 md:px-6">
@@ -385,9 +401,7 @@ export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
                     key={idx}
                     className="text-slate-700 leading-relaxed mb-6 whitespace-pre-line"
                     dangerouslySetInnerHTML={{
-                      __html: paragraph
-                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-slate-900 font-bold text-lg block mt-4 mb-2">$1</strong>')
-                        .replace(/•/g, '•')
+                      __html: formatBlogContent(paragraph)
                     }}
                   />
                 ))}

@@ -107,36 +107,50 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
       due_date: dueDate,
     };
 
-    // Save to Supabase
+    // ✅ FIX: Save to Supabase with proper error handling
+    // ⚠️ SECURITY WARNING: Sensitive data (email, phone) stored as plain text
+    // TODO: Implement encryption for PII data using Supabase Vault or client-side encryption
+    // See SECURITY.md for recommendations
+    let invoiceSavedToDatabase = false;
     if (supabase) {
-      const { data, error } = await supabase
-        .from('invoices')
-        .insert([{
-          invoice_id: invoiceData.invoice_id,
-          customer_name: invoiceData.customer_name,
-          customer_email: invoiceData.customer_email,
-          customer_phone: invoiceData.customer_phone,
-          service: invoiceData.service,
-          total_amount: invoiceData.total_amount,
-          deposit_paid: invoiceData.deposit_paid,
-          remaining_amount: invoiceData.remaining_amount,
-          status: invoiceData.status,
-          payment_id: invoiceData.payment_id,
-          order_id: invoiceData.order_id,
-          project_details: invoiceData.project_details,
-          timeline: invoiceData.timeline,
-          invoice_date: invoiceData.invoice_date,
-          due_date: invoiceData.due_date,
-          created_at: new Date().toISOString()
-        }])
-        .select();
+      try {
+        const { data, error } = await supabase
+          .from('invoices')
+          .insert([{
+            invoice_id: invoiceData.invoice_id,
+            customer_name: invoiceData.customer_name,
+            customer_email: invoiceData.customer_email, // ⚠️ Plain text - should encrypt
+            customer_phone: invoiceData.customer_phone, // ⚠️ Plain text - should encrypt
+            service: invoiceData.service,
+            total_amount: invoiceData.total_amount,
+            deposit_paid: invoiceData.deposit_paid,
+            remaining_amount: invoiceData.remaining_amount,
+            status: invoiceData.status,
+            payment_id: invoiceData.payment_id,
+            order_id: invoiceData.order_id,
+            project_details: invoiceData.project_details,
+            timeline: invoiceData.timeline,
+            invoice_date: invoiceData.invoice_date,
+            due_date: invoiceData.due_date,
+            created_at: new Date().toISOString()
+          }])
+          .select();
 
-      if (error) {
-        console.error('Supabase error saving invoice:', error);
-        throw new Error('Failed to save invoice to database');
+        if (error) {
+          console.error('❌ Supabase error saving invoice:', error);
+          invoiceSavedToDatabase = false;
+          // Don't throw - continue to send emails even if database save fails
+        } else {
+          console.log('✅ Invoice saved to Supabase:', data);
+          invoiceSavedToDatabase = true;
+        }
+      } catch (dbError) {
+        console.error('❌ Exception saving invoice to database:', dbError);
+        invoiceSavedToDatabase = false;
+        // Continue execution - emails can still be sent
       }
-
-      console.log('Invoice saved to Supabase:', data);
+    } else {
+      console.warn('⚠️ Supabase not configured - invoice not saved to database');
     }
 
     // Get configuration
@@ -210,18 +224,30 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
       console.error('Failed to send owner alert:', error);
     }
 
-    // Determine overall success
+    // ✅ FIX: Determine overall success including database status
     const allEmailsSent = emailResults.bookingConfirmation && emailResults.invoice && emailResults.ownerAlert;
     const anyEmailSent = emailResults.bookingConfirmation || emailResults.invoice || emailResults.ownerAlert;
 
+    // Build success message with database status
+    let message = '';
+    if (allEmailsSent && invoiceSavedToDatabase) {
+      message = 'Invoice generated and all emails sent successfully!';
+    } else if (anyEmailSent && invoiceSavedToDatabase) {
+      message = 'Invoice generated. Some emails may have failed - please check your inbox.';
+    } else if (allEmailsSent && !invoiceSavedToDatabase) {
+      message = '⚠️ Emails sent successfully, but invoice could not be saved to database. We have a record via email.';
+    } else if (anyEmailSent && !invoiceSavedToDatabase) {
+      message = '⚠️ Some emails sent, but invoice could not be saved to database. Please contact support.';
+    } else if (!anyEmailSent && invoiceSavedToDatabase) {
+      message = '⚠️ Invoice saved to database, but email notifications failed. Please contact support.';
+    } else {
+      message = '❌ Invoice generated but both database save and email notifications failed. Please contact support immediately.';
+    }
+
     return {
-      success: anyEmailSent, // Success if at least one email sent
+      success: anyEmailSent || invoiceSavedToDatabase, // Success if at least one operation succeeded
       invoiceId: invoiceId,
-      message: allEmailsSent
-        ? 'Invoice generated and all emails sent successfully!'
-        : anyEmailSent
-        ? 'Invoice generated. Some emails may have failed - please check your inbox.'
-        : 'Invoice generated but email notifications failed. Please contact support.'
+      message: message
     };
   } catch (error) {
     console.error('Error generating invoice:', error);

@@ -25,20 +25,44 @@ const useIsMobile = (): boolean => {
 };
 
 // --- 3. Custom Hook for Mouse Position (For 3D Parallax and Blob movement) - Desktop Only ---
+// ✅ FIX: Throttled to prevent excessive re-renders (60 fps max)
 const useMousePosition = (enabled: boolean = true): MousePosition => {
     const [mousePosition, setMousePosition] = useState<MousePosition>({ x: 0, y: 0 });
 
     useEffect(() => {
         if (!enabled) return;
 
+        let animationFrameId: number | null = null;
+        let lastUpdateTime = 0;
+        const throttleMs = 16; // ~60fps
+
         const updateMousePosition = (e: MouseEvent) => {
-            setMousePosition({ x: e.clientX, y: e.clientY });
+            const currentTime = Date.now();
+
+            // Cancel previous frame if it hasn't been processed yet
+            if (animationFrameId !== null) {
+                return; // Skip this update if previous one is still queued
+            }
+
+            // Throttle updates to max 60fps
+            if (currentTime - lastUpdateTime < throttleMs) {
+                return;
+            }
+
+            animationFrameId = requestAnimationFrame(() => {
+                setMousePosition({ x: e.clientX, y: e.clientY });
+                lastUpdateTime = currentTime;
+                animationFrameId = null;
+            });
         };
 
-        window.addEventListener('mousemove', updateMousePosition);
+        window.addEventListener('mousemove', updateMousePosition, { passive: true });
 
         return () => {
             window.removeEventListener('mousemove', updateMousePosition);
+            if (animationFrameId !== null) {
+                cancelAnimationFrame(animationFrameId);
+            }
         };
     }, [enabled]);
 

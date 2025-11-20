@@ -781,6 +781,10 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // ✅ FIX: Track current speech utterance for cleanup
+  const currentUtteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  // ✅ FIX: Track current API request for cancellation (prevents race conditions)
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -817,6 +821,25 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     }
   }, []);
 
+  // ✅ FIX: Cleanup speech synthesis and API requests on component unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any ongoing speech when component unmounts
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+      // Stop any ongoing voice recognition
+      if (recognition) {
+        recognition.stop();
+      }
+      // Abort any ongoing API requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
+  }, [recognition]);
+
   // ✅ Toggle Dark Mode
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -824,12 +847,40 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
   };
 
-  // ✅ Save Chat History
+  // ✅ Save Chat History - FIX: Handle quota exceeded errors properly
   const saveChatHistory = (msgs: Message[]) => {
     try {
       localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(msgs));
     } catch (error) {
-      console.error('Failed to save chat history:', error);
+      // ✅ FIX: Handle QuotaExceededError specifically
+      if (error instanceof Error &&
+          (error.name === 'QuotaExceededError' ||
+           error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+        console.warn('⚠️ LocalStorage quota exceeded. Attempting cleanup...');
+
+        try {
+          // Attempt 1: Save only last 20 messages
+          const trimmedMessages = msgs.slice(-20);
+          localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(trimmedMessages));
+          console.log('✅ Chat history trimmed to last 20 messages');
+
+          // Notify user
+          setTimeout(() => {
+            alert('⚠️ Storage limit reached. Older chat history has been removed to save new messages.');
+          }, 100);
+        } catch (retryError) {
+          // Attempt 2: Clear chat history completely
+          console.error('❌ Still out of space. Clearing chat history...');
+          try {
+            localStorage.removeItem(CHAT_HISTORY_KEY);
+            alert('⚠️ Unable to save chat history due to storage limits. Please export your chat or clear browser data.');
+          } catch (clearError) {
+            console.error('❌ Failed to clear storage:', clearError);
+          }
+        }
+      } else {
+        console.error('Failed to save chat history:', error);
+      }
     }
   };
 
@@ -906,7 +957,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     }
   };
 
-  // ✅ Read Aloud
+  // ✅ Read Aloud - FIX: Proper cleanup to prevent memory leaks
   const readAloud = (content: string, messageId: string) => {
     if (!('speechSynthesis' in window)) {
       alert('Text-to-speech not supported in this browser.');
@@ -916,13 +967,15 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     // Stop if already speaking
     if (isSpeaking && currentSpeakingId === messageId) {
       window.speechSynthesis.cancel();
+      currentUtteranceRef.current = null;
       setIsSpeaking(false);
       setCurrentSpeakingId(null);
       return;
     }
 
-    // Stop any ongoing speech
+    // Stop any ongoing speech and clean up previous utterance
     window.speechSynthesis.cancel();
+    currentUtteranceRef.current = null;
 
     const utterance = new SpeechSynthesisUtterance(content);
     utterance.rate = 0.9;
@@ -937,13 +990,17 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     utterance.onend = () => {
       setIsSpeaking(false);
       setCurrentSpeakingId(null);
+      currentUtteranceRef.current = null;
     };
 
     utterance.onerror = () => {
       setIsSpeaking(false);
       setCurrentSpeakingId(null);
+      currentUtteranceRef.current = null;
     };
 
+    // Store reference for cleanup
+    currentUtteranceRef.current = utterance;
     window.speechSynthesis.speak(utterance);
   };
 
@@ -960,10 +1017,12 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   };
 
   const handleCloseChat = () => {
-    // Stop any ongoing speech
+    // Stop any ongoing speech and clean up
     if (isSpeaking) {
       window.speechSynthesis.cancel();
+      currentUtteranceRef.current = null;
       setIsSpeaking(false);
+      setCurrentSpeakingId(null);
     }
 
     setChatState({
@@ -1114,6 +1173,15 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       return;
     }
 
+    // ✅ FIX: Abort previous request if user sends new message
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // ✅ FIX: Create new AbortController for this request
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     // ✅ Detect intent for service cards
     const intent = detectIntent(messageText);
 
@@ -1179,6 +1247,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
             content: msg.content,
           })),
         }),
+        signal: abortController.signal, // ✅ FIX: Add abort signal to prevent race conditions
       });
 
       const data = await response.json();
@@ -1229,6 +1298,12 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         saveChatHistory(finalMessages);
       }
     } catch (error) {
+      // ✅ FIX: Don't show error if request was aborted (user sent new message)
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request aborted - user sent new message');
+        return; // Silent abort, user already sent new message
+      }
+
       console.error('Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -1240,6 +1315,10 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       saveChatHistory(finalMessages);
     } finally {
       setIsLoading(false);
+      // ✅ FIX: Clear abort controller ref after request completes
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+      }
     }
   };
 
