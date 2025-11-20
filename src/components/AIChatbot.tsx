@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, X, Minimize2, Maximize2, Sparkles, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Mic, MicOff, Volume2, VolumeX, Download, Search, Trash2, Moon, Sun, Zap, MessageSquare, BookOpen, DollarSign, Clock, Globe, Building2, ShoppingCart, Code2, User, Briefcase, Rocket, Layers, CheckCircle2 } from 'lucide-react';
+import { Send, X, Minimize2, Maximize2, Sparkles, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Mic, MicOff, Volume2, VolumeX, Download, Search, Trash2, Moon, Sun, Zap, MessageSquare, BookOpen, DollarSign, Clock, Globe, Building2, ShoppingCart, Code2, User, Briefcase, Rocket, Layers, CheckCircle2, ExternalLink, FolderOpen, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { env } from '../utils/env';
 import { useLocation } from 'react-router-dom';
+import { PROJECTS_DATA, type Project } from '../data/projectsData';
 
 // Service data structure
 interface Service {
@@ -26,8 +27,12 @@ interface Message {
   content: string;
   reaction?: 'up' | 'down' | null;
   context?: string; // Page context when message was sent
+  pageSummary?: string; // ✅ Phase 1: True page content summary
   serviceCards?: Service[]; // Service cards to display
+  projectCards?: Project[]; // ✅ Phase 1: Project cards to display
+  followUpSuggestions?: string[]; // ✅ Phase 1: Smart follow-up questions
   isStreaming?: boolean; // Whether text is currently streaming
+  timestamp?: Date; // Timestamp of message
 }
 
 interface ChatState {
@@ -165,6 +170,120 @@ const detectIntent = (message: string): { showCards: boolean; filteredServices?:
   return { showCards: false };
 };
 
+// ✅ Phase 1: Project intent detection - detects if user is asking about projects/portfolio
+const detectProjectIntent = (message: string): { showProjects: boolean; filteredProjects?: Project[] } => {
+  const lowerMessage = message.toLowerCase();
+
+  // Portfolio/Projects queries
+  if (lowerMessage.match(/project|portfolio|work|showcase|example|built|created|recent work/i)) {
+    return { showProjects: true, filteredProjects: PROJECTS_DATA.filter(p => p.featured).slice(0, 3) };
+  }
+
+  // Specific project type queries
+  if (lowerMessage.match(/client.*(work|project)/i)) {
+    return { showProjects: true, filteredProjects: PROJECTS_DATA.filter(p => p.type === 'client' || p.type === 'freelance') };
+  }
+  if (lowerMessage.match(/personal.*(work|project)/i)) {
+    return { showProjects: true, filteredProjects: PROJECTS_DATA.filter(p => p.type === 'personal') };
+  }
+
+  // Show all projects
+  if (lowerMessage.match(/show.*all.*project|view.*all.*project|see.*all.*project/i)) {
+    return { showProjects: true, filteredProjects: PROJECTS_DATA };
+  }
+
+  return { showProjects: false };
+};
+
+// ✅ Phase 1: True page summarization - reads actual DOM content
+const getPageSummary = (pathname: string): string => {
+  try {
+    // Get the main content area
+    const mainContent = document.querySelector('main') || document.body;
+
+    // Extract key headings
+    const headings = Array.from(mainContent.querySelectorAll('h1, h2, h3'))
+      .slice(0, 5)
+      .map(h => h.textContent?.trim())
+      .filter(Boolean);
+
+    // Extract key paragraphs (first sentence of each)
+    const paragraphs = Array.from(mainContent.querySelectorAll('p'))
+      .slice(0, 3)
+      .map(p => {
+        const text = p.textContent?.trim() || '';
+        return text.split('.')[0] + '.';
+      })
+      .filter(text => text.length > 20 && text.length < 200);
+
+    // Build summary
+    const summary = [
+      `Current page: ${pathname}`,
+      headings.length > 0 ? `Key sections: ${headings.join(', ')}` : '',
+      paragraphs.length > 0 ? `Content: ${paragraphs.join(' ')}` : ''
+    ].filter(Boolean).join(' | ');
+
+    return summary || `Viewing ${pathname} page`;
+  } catch (error) {
+    console.error('Error getting page summary:', error);
+    return `Viewing ${pathname} page`;
+  }
+};
+
+// ✅ Phase 1: Smart follow-up suggestions based on message context
+const getFollowUpSuggestions = (userMessage: string, assistantMessage: string, context: string): string[] => {
+  const lowerUserMsg = userMessage.toLowerCase();
+  const lowerAssistantMsg = assistantMessage.toLowerCase();
+
+  // Service-related follow-ups
+  if (lowerUserMsg.match(/service|pricing|cost|price/i)) {
+    return [
+      "What's included in the pricing?",
+      "Do you offer payment plans?",
+      "How long does it take?",
+      "Can I see examples of your work?"
+    ];
+  }
+
+  // Project-related follow-ups
+  if (lowerUserMsg.match(/project|portfolio|work|example/i)) {
+    return [
+      "What services do you offer?",
+      "How much does a similar project cost?",
+      "What technologies do you use?",
+      "Can you customize this for me?"
+    ];
+  }
+
+  // Timeline-related follow-ups
+  if (lowerUserMsg.match(/how long|timeline|duration|time/i)) {
+    return [
+      "What's the process like?",
+      "Can we start immediately?",
+      "What information do you need?",
+      "What about maintenance?"
+    ];
+  }
+
+  // Process-related follow-ups
+  if (lowerUserMsg.match(/process|workflow|how.*work/i)) {
+    return [
+      "What do I need to prepare?",
+      "How do we communicate?",
+      "What's the payment structure?",
+      "Can I request changes?"
+    ];
+  }
+
+  // Default follow-ups
+  return [
+    "Tell me about your services",
+    "Show me your projects",
+    "What are your rates?",
+    "How can we get started?"
+  ];
+};
+
 // Streaming effect hook for typewriter animation
 const useStreamingText = (finalText: string, isActive: boolean, speed: number = 15) => {
   const [displayedText, setDisplayedText] = useState('');
@@ -258,8 +377,95 @@ const ServiceCardInChat = ({ service, isDarkMode }: { service: Service; isDarkMo
   );
 };
 
+// ✅ Phase 1: Project Card Component - Mini version for chat
+const ProjectCardInChat = ({ project, isDarkMode }: { project: Project; isDarkMode: boolean }) => {
+  const handleViewProject = () => {
+    // Open project in new tab
+    window.open(project.link, '_blank', 'noopener,noreferrer');
+  };
+
+  const getStatusColor = () => {
+    switch (project.status) {
+      case 'completed':
+        return 'bg-green-900/50 text-green-400';
+      case 'in-progress':
+        return 'bg-blue-900/50 text-blue-400';
+      case 'on-hold':
+        return 'bg-amber-900/50 text-amber-400';
+      default:
+        return 'bg-slate-700 text-slate-300';
+    }
+  };
+
+  const getTypeIcon = () => {
+    switch (project.type) {
+      case 'client':
+      case 'freelance':
+        return <Briefcase className="w-4 h-4" />;
+      case 'personal':
+        return <FolderOpen className="w-4 h-4" />;
+      default:
+        return <Code2 className="w-4 h-4" />;
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className={`${isDarkMode ? 'bg-slate-800/90' : 'bg-white'} p-4 rounded-xl border ${isDarkMode ? 'border-slate-600/50 hover:border-purple-500/50' : 'border-slate-200 hover:border-purple-400'} transition-all shadow-lg backdrop-blur-sm`}
+    >
+      {/* Title & Status */}
+      <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-start gap-2 flex-1">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center text-white flex-shrink-0">
+            {getTypeIcon()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className={`font-bold text-sm leading-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              {project.title}
+            </h4>
+          </div>
+        </div>
+        <span className={`px-2 py-0.5 text-xs rounded-full whitespace-nowrap ${getStatusColor()}`}>
+          {project.status === 'in-progress' ? 'In Progress' : project.status === 'on-hold' ? 'On Hold' : 'Completed'}
+        </span>
+      </div>
+
+      {/* Description */}
+      <p className={`text-xs mb-3 leading-relaxed line-clamp-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>
+        {project.description}
+      </p>
+
+      {/* Tech Stack (show only 3) */}
+      <div className="flex flex-wrap gap-1.5 mb-3">
+        {project.techStack.slice(0, 3).map((tech, idx) => (
+          <span key={idx} className={`px-2 py-0.5 text-xs rounded-full ${isDarkMode ? 'bg-purple-900/50 text-purple-300' : 'bg-purple-100 text-purple-700'}`}>
+            {tech.name}
+          </span>
+        ))}
+        {project.techStack.length > 3 && (
+          <span className={`px-2 py-0.5 text-xs rounded-full ${isDarkMode ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-600'}`}>
+            +{project.techStack.length - 3}
+          </span>
+        )}
+      </div>
+
+      {/* CTA Button */}
+      <button
+        onClick={handleViewProject}
+        className="w-full py-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg text-xs font-bold hover:shadow-lg hover:shadow-purple-500/30 transition-all flex items-center justify-center gap-1.5"
+      >
+        View Project
+        <ExternalLink className="w-3 h-3" />
+      </button>
+    </motion.div>
+  );
+};
+
 // Message Bubble Component with Streaming
-const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMessage, readAloud, isSpeaking, currentSpeakingId }: {
+const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMessage, readAloud, isSpeaking, currentSpeakingId, onFollowUpClick }: {
   message: Message;
   isStreaming: boolean;
   isDarkMode: boolean;
@@ -268,6 +474,7 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
   readAloud: (content: string, id: string) => void;
   isSpeaking: boolean;
   currentSpeakingId: string | null;
+  onFollowUpClick?: (suggestion: string) => void; // ✅ Phase 1: Callback for follow-up clicks
 }) => {
   const { displayedText } = useStreamingText(message.content, isStreaming, 15);
   const contentToShow = isStreaming ? displayedText : message.content;
@@ -391,6 +598,59 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
           {message.serviceCards.map((service, idx) => (
             <ServiceCardInChat key={idx} service={service} isDarkMode={isDarkMode} />
           ))}
+        </motion.div>
+      )}
+
+      {/* ✅ Phase 1: Render Project Cards if present */}
+      {message.projectCards && message.projectCards.length > 0 && !isStreaming && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 gap-3 ml-0"
+        >
+          {message.projectCards.map((project, idx) => (
+            <ProjectCardInChat key={idx} project={project} isDarkMode={isDarkMode} />
+          ))}
+        </motion.div>
+      )}
+
+      {/* ✅ Phase 1: Render Smart Follow-Up Suggestions if present */}
+      {message.followUpSuggestions && message.followUpSuggestions.length > 0 && !isStreaming && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="mt-3"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Lightbulb className={`w-3 h-3 ${isDarkMode ? 'text-amber-400' : 'text-amber-500'}`} />
+            <span className={`text-xs font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              You might also want to ask:
+            </span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {message.followUpSuggestions.slice(0, 4).map((suggestion, idx) => (
+              <motion.button
+                key={idx}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 + idx * 0.05 }}
+                onClick={() => {
+                  if (onFollowUpClick) {
+                    onFollowUpClick(suggestion);
+                  }
+                }}
+                className={`px-3 py-1.5 text-xs rounded-lg transition-all ${
+                  isDarkMode
+                    ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-300 border border-slate-600/50'
+                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-300'
+                }`}
+              >
+                {suggestion}
+              </motion.button>
+            ))}
+          </div>
         </motion.div>
       )}
     </div>
@@ -785,13 +1045,21 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     // ✅ Detect intent for service cards
     const intent = detectIntent(messageText);
 
+    // ✅ Phase 1: Detect project intent
+    const projectIntent = detectProjectIntent(messageText);
+
     const context = getPageContext();
+
+    // ✅ Phase 1: Get page summary for better AI context
+    const pageSummary = getPageSummary(location.pathname);
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
       content: messageText,
       context,
+      pageSummary, // Include page summary
+      timestamp: new Date(),
     };
 
     const newMessages = [...messages, userMessage];
@@ -843,12 +1111,19 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
       if (data.success && data.message) {
         const assistantMessageId = (Date.now() + 1).toString();
+
+        // ✅ Phase 1: Generate smart follow-up suggestions
+        const followUps = getFollowUpSuggestions(messageText, data.message, context);
+
         const assistantMessage: Message = {
           id: assistantMessageId,
           role: 'assistant',
           content: data.message,
           serviceCards: intent.showCards ? intent.filteredServices : undefined,
+          projectCards: projectIntent.showProjects ? projectIntent.filteredProjects : undefined, // ✅ Phase 1: Add project cards
+          followUpSuggestions: followUps, // ✅ Phase 1: Add follow-up suggestions
           isStreaming: true,
+          timestamp: new Date(),
         };
         const finalMessages = [...newMessages, assistantMessage];
         setMessages(finalMessages);
@@ -1248,6 +1523,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                       readAloud={readAloud}
                       isSpeaking={isSpeaking}
                       currentSpeakingId={currentSpeakingId}
+                      onFollowUpClick={handleSendMessage} // ✅ Phase 1: Pass callback for follow-ups
                     />
                   ))}
 
