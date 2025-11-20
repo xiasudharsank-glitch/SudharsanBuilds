@@ -374,9 +374,9 @@ const Hero: FC = () => {
                 </div>
             </div>
             
-            {/* Scroll Down Visual Cue - Clean and Prominent */}
+            {/* Scroll Down Visual Cue - Clean and Prominent - Properly positioned below CTAs */}
             <motion.div
-                className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 cursor-pointer"
+                className="absolute bottom-6 sm:bottom-8 md:bottom-10 left-1/2 transform -translate-x-1/2 z-10 cursor-pointer"
                 initial={{ opacity: 0 }}
                 animate={{
                     opacity: 1,
@@ -398,7 +398,7 @@ const Hero: FC = () => {
                     }
                 }}
             >
-                <div className="flex flex-col items-center gap-2 bg-slate-800/40 backdrop-blur-sm px-4 py-3 rounded-2xl border border-cyan-500/30 hover:border-cyan-400/60 transition-all">
+                <div className="flex flex-col items-center gap-2 bg-slate-800/60 backdrop-blur-md px-4 py-3 rounded-2xl border border-cyan-500/40 hover:border-cyan-400/70 hover:bg-slate-800/80 transition-all shadow-lg">
                     <span className="text-xs text-cyan-400 font-semibold uppercase tracking-wider">Explore</span>
                     <ArrowDown size={24} className="text-cyan-400" />
                 </div>

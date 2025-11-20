@@ -288,20 +288,33 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     setIsPaymentLoading(true);
 
     try {
-      // Check if payment feature is available
-      if (!features.hasPayment || !env.SUPABASE_URL || env.SUPABASE_URL === '') {
-        throw new Error('Payment system is not configured. Please contact us directly.');
+      // ✅ CRITICAL FIX: Check env vars BEFORE any URL construction
+      if (!env.SUPABASE_URL ||
+          env.SUPABASE_URL === '' ||
+          !env.SUPABASE_URL.startsWith('http') ||
+          env.SUPABASE_URL.includes('your-project') ||
+          env.SUPABASE_URL.includes('YOUR_') ||
+          !env.SUPABASE_ANON_KEY ||
+          env.SUPABASE_ANON_KEY === '' ||
+          !env.RAZORPAY_KEY_ID ||
+          env.RAZORPAY_KEY_ID === '') {
+        console.error('❌ Payment system not configured - missing or invalid environment variables');
+        alert('⚠️ Payment system is not configured yet.\n\nPlease contact us directly via email:\nsudharsanofficial0001@gmail.com');
+        setIsPaymentLoading(false);
+
+        // Scroll to contact form
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          contactSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        return; // Stop execution - don't construct URL or call fetch
       }
 
       // ✅ FIX: Use totalAmount field instead of parsing price string
       const totalAmount = selectedService.totalAmount || selectedService.depositAmount;
 
+      // Now it's safe to construct the URL
       const createOrderUrl = `${env.SUPABASE_URL}/functions/v1/create-payment-order`;
-
-      // Additional validation: ensure URL is valid
-      if (!createOrderUrl.startsWith('http')) {
-        throw new Error('Invalid payment configuration');
-      }
 
       // Call Supabase Edge Function to create Razorpay order
       const response = await fetch(createOrderUrl, {
@@ -344,13 +357,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
           console.log('Payment Response:', razorpayResponse);
 
           try {
-            // ✅ CRITICAL FIX: Verify payment signature before processing
-            const verifyUrl = `${env.SUPABASE_URL}/functions/v1/verify-payment`;
-
-            // Validate URL before fetch
-            if (!verifyUrl.startsWith('http')) {
-              throw new Error('Payment verification unavailable');
+            // ✅ CRITICAL FIX: Check env vars before constructing verify URL
+            if (!env.SUPABASE_URL || !env.SUPABASE_URL.startsWith('http')) {
+              throw new Error('Payment verification unavailable - invalid configuration');
             }
+
+            // Now safe to construct URL
+            const verifyUrl = `${env.SUPABASE_URL}/functions/v1/verify-payment`;
 
             const verifyResponse = await fetch(verifyUrl, {
               method: 'POST',

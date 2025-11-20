@@ -79,17 +79,28 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     setIsLoading(true);
 
     try {
-      // Check if AI chat feature is available
-      if (!features.hasAIChat || !env.SUPABASE_URL || env.SUPABASE_URL === '') {
-        throw new Error('AI chat system is not configured');
+      // ✅ CRITICAL FIX: Check env vars BEFORE any URL construction
+      if (!env.SUPABASE_URL ||
+          env.SUPABASE_URL === '' ||
+          !env.SUPABASE_URL.startsWith('http') ||
+          env.SUPABASE_URL.includes('your-project') ||
+          env.SUPABASE_URL.includes('YOUR_') ||
+          !env.SUPABASE_ANON_KEY ||
+          env.SUPABASE_ANON_KEY === '') {
+        console.error('❌ AI chat not configured - missing or invalid environment variables');
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: '⚠️ AI chat is not configured yet. Please contact us directly via email for assistance.',
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setIsLoading(false);
+        return; // Stop execution - don't construct URL or call fetch
       }
 
+      // Now it's safe to construct the URL
       const apiUrl = `${env.SUPABASE_URL}/functions/v1/ai-chatbot`;
-
-      // Additional validation: ensure URL is valid
-      if (!apiUrl.startsWith('http')) {
-        throw new Error('Invalid API configuration');
-      }
 
       const response = await fetch(apiUrl, {
         method: 'POST',
