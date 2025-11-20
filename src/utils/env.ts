@@ -26,8 +26,14 @@ interface EnvConfig {
 function getEnvVar(key: string, required: boolean = true): string | undefined {
   const value = import.meta.env[`VITE_${key}`];
 
-  // Check if value is missing or is a placeholder
-  const isMissing = !value || value === '' || value.includes('YOUR_') || value.includes('_HERE');
+  // Check if value is missing or is a placeholder (including common placeholder patterns)
+  const isMissing = !value ||
+                    value === '' ||
+                    value.includes('YOUR_') ||
+                    value.includes('_HERE') ||
+                    value.includes('your-project') ||
+                    value.includes('your_') ||
+                    value.includes('xxxxx');
 
   if (required && isMissing) {
     const errorMsg = `❌ Missing required environment variable: VITE_${key}`;

@@ -425,7 +425,7 @@ export default function Projects() {
                   </button>
                 </div>
 
-                <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="p-4 md:p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {getProjectsByCategory(selectedCategory).map((project) => (
                     <motion.div
                       key={project.id}
@@ -631,6 +631,38 @@ export default function Projects() {
                     </div>
 
                     <div className="lg:col-span-1 space-y-6">
+                      {/* Sticky Action Buttons - Always visible at top on desktop, inline on mobile */}
+                      <div className="lg:sticky lg:top-4 flex flex-col space-y-3 bg-slate-900 lg:bg-transparent p-4 lg:p-0 -mx-4 lg:mx-0 shadow-xl lg:shadow-none border-b lg:border-b-0 border-slate-700 lg:border-transparent mb-6 lg:mb-0 z-10">
+                        <a
+                          href={selectedProject.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg shadow-lg text-white bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 transition-all transform hover:scale-105"
+                        >
+                          Visit Project <ExternalLink size={20} className="ml-2" />
+                        </a>
+                        {selectedProject.githubUrl && (
+                          <a
+                            href={selectedProject.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full inline-flex items-center justify-center px-4 py-3 border border-slate-600 text-base font-medium rounded-lg shadow-sm text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
+                          >
+                            View on GitHub <Github size={20} className="ml-2" />
+                          </a>
+                        )}
+                        {selectedProject.caseStudyUrl && (
+                          <a
+                            href={selectedProject.caseStudyUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full inline-flex items-center justify-center px-4 py-3 border border-slate-600 text-base font-medium rounded-lg shadow-sm text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
+                          >
+                            Read Case Study <BookOpen size={20} className="ml-2" />
+                          </a>
+                        )}
+                      </div>
+
                       <div className="space-y-3 p-4 bg-slate-800 rounded-lg">
                         <h4 className="text-xl font-semibold text-white mb-3">Project Info</h4>
 
@@ -659,37 +691,6 @@ export default function Projects() {
                             </span>
                           ))}
                         </div>
-                      </div>
-
-                      <div className="flex flex-col space-y-3">
-                        <a
-                          href={selectedProject.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-cyan-600 hover:bg-cyan-700 transition-colors"
-                        >
-                          Visit Project <ExternalLink size={20} className="ml-2" />
-                        </a>
-                        {selectedProject.githubUrl && (
-                          <a
-                            href={selectedProject.githubUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center px-4 py-3 border border-slate-600 text-base font-medium rounded-lg shadow-sm text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
-                          >
-                            View on GitHub <Github size={20} className="ml-2" />
-                          </a>
-                        )}
-                        {selectedProject.caseStudyUrl && (
-                          <a
-                            href={selectedProject.caseStudyUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="w-full inline-flex items-center justify-center px-4 py-3 border border-slate-600 text-base font-medium rounded-lg shadow-sm text-slate-300 bg-slate-800 hover:bg-slate-700 transition-colors"
-                          >
-                            Read Case Study <BookOpen size={20} className="ml-2" />
-                          </a>
-                        )}
                       </div>
                     </div>
                   </div>
