@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, X, Minimize2, Maximize2, Sparkles, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Mic, MicOff, Volume2, VolumeX, Download, Search, Trash2, Moon, Sun, Zap, MessageSquare, BookOpen, DollarSign, Clock } from 'lucide-react';
+import { Send, X, Minimize2, Maximize2, Sparkles, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Mic, MicOff, Volume2, VolumeX, Download, Search, Trash2, Moon, Sun, Zap, MessageSquare, BookOpen, DollarSign, Clock, Globe, Building2, ShoppingCart, Code2, User, Briefcase, Rocket, Layers, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -7,12 +7,27 @@ import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { env } from '../utils/env';
 import { useLocation } from 'react-router-dom';
 
+// Service data structure
+interface Service {
+  icon: React.ReactNode;
+  name: string;
+  price: string;
+  totalAmount?: number;
+  description: string;
+  features: string[];
+  timeline: string;
+  ctaText: string;
+  depositAmount?: number;
+}
+
 interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   reaction?: 'up' | 'down' | null;
   context?: string; // Page context when message was sent
+  serviceCards?: Service[]; // Service cards to display
+  isStreaming?: boolean; // Whether text is currently streaming
 }
 
 interface ChatState {
@@ -25,6 +40,362 @@ interface AIChatbotProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Services data - matches Services.tsx
+const SERVICES_DATA: Service[] = [
+  {
+    icon: <Globe className="w-6 h-6" />,
+    name: 'Landing Page',
+    price: '₹15,000',
+    totalAmount: 15000,
+    description: '1-2 page website, modern design, mobile responsive',
+    features: ['Responsive Design', 'Contact Form', 'Google Analytics', 'SSL Certificate', 'Fast Loading', 'Basic SEO'],
+    timeline: '1-2 weeks',
+    ctaText: 'Book Now - Pay ₹5,000 Deposit',
+    depositAmount: 5000,
+  },
+  {
+    icon: <User className="w-6 h-6" />,
+    name: 'Portfolio Website',
+    price: '₹20,000',
+    totalAmount: 20000,
+    description: 'Professional portfolio for freelancers, designers & developers',
+    features: ['Project Gallery', 'About & Skills', 'Resume Download', 'Contact Form', 'Testimonials', 'Mobile Responsive'],
+    timeline: '2-3 weeks',
+    ctaText: 'Book Now - Pay ₹7,000 Deposit',
+    depositAmount: 7000,
+  },
+  {
+    icon: <Building2 className="w-6 h-6" />,
+    name: 'Business Website',
+    price: '₹30,000',
+    totalAmount: 30000,
+    description: '5-10 pages, professional design, CMS integration',
+    features: ['5-10 Pages', 'CMS Integration', 'Blog Section', 'Advanced Analytics', 'SEO Optimization', 'Contact Forms'],
+    timeline: '3-4 weeks',
+    ctaText: 'Book Now - Pay ₹10,000 Deposit',
+    depositAmount: 10000,
+  },
+  {
+    icon: <Briefcase className="w-6 h-6" />,
+    name: 'Personal Brand Website',
+    price: '₹25,000',
+    totalAmount: 25000,
+    description: 'Build your personal brand for coaches & consultants',
+    features: ['About & Services', 'Blog/Articles', 'Email Newsletter', 'Social Media Integration', 'Booking/Calendar', 'SEO & Analytics'],
+    timeline: '3 weeks',
+    ctaText: 'Book Now - Pay ₹8,000 Deposit',
+    depositAmount: 8000,
+  },
+  {
+    icon: <ShoppingCart className="w-6 h-6" />,
+    name: 'E-Commerce Store',
+    price: '₹50,000',
+    totalAmount: 50000,
+    description: 'Complete online store with payment gateway & admin panel',
+    features: ['Product Catalog', 'Shopping Cart', 'Razorpay/PayPal', 'Inventory Management', 'Order Tracking', 'Admin Dashboard'],
+    timeline: '4-6 weeks',
+    ctaText: 'Book Now - Pay ₹15,000 Deposit',
+    depositAmount: 15000,
+  },
+  {
+    icon: <Rocket className="w-6 h-6" />,
+    name: 'SaaS Product',
+    price: '₹75,000+',
+    totalAmount: 75000,
+    description: 'Full-featured SaaS platform with subscriptions',
+    features: ['User Authentication', 'Subscription Billing', 'Admin & User Dashboards', 'API Integration', 'Database Design', 'Scalable Architecture'],
+    timeline: '6-10 weeks',
+    ctaText: 'Book Now - Pay ₹20,000 Deposit',
+    depositAmount: 20000,
+  },
+  {
+    icon: <Layers className="w-6 h-6" />,
+    name: 'Web Application',
+    price: '₹60,000+',
+    totalAmount: 60000,
+    description: 'Custom web applications with complex features',
+    features: ['Custom Requirements', 'Database & Backend', 'User Management', 'Real-time Features', 'Third-party Integrations', 'Responsive Design'],
+    timeline: '5-8 weeks',
+    ctaText: 'Book Now - Pay ₹18,000 Deposit',
+    depositAmount: 18000,
+  },
+  {
+    icon: <Code2 className="w-6 h-6" />,
+    name: 'Custom Development',
+    price: '₹500-₹1000/hour',
+    description: 'Hourly-based custom projects & maintenance',
+    features: ['Custom Requirements', 'Full-stack Development', 'API Integration', 'Bug Fixes & Updates', 'Code Reviews', 'Ongoing Support'],
+    timeline: 'Flexible',
+    ctaText: 'Get Quote - Discuss Project',
+  },
+];
+
+// Intent detection - detects if user is asking about services, pricing, or specific categories
+const detectIntent = (message: string): { showCards: boolean; filteredServices?: Service[] } => {
+  const lowerMessage = message.toLowerCase();
+
+  // Specific service type queries
+  if (lowerMessage.match(/portfolio|personal.*(website|site)/i)) {
+    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('Portfolio') || s.name.includes('Personal Brand')) };
+  }
+  if (lowerMessage.match(/ecommerce|e-commerce|online store|shop/i)) {
+    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('E-Commerce')) };
+  }
+  if (lowerMessage.match(/saas|software.*service|subscription/i)) {
+    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('SaaS')) };
+  }
+  if (lowerMessage.match(/business.*(website|site)/i)) {
+    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('Business')) };
+  }
+  if (lowerMessage.match(/landing.*page|simple.*(website|site)/i)) {
+    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('Landing')) };
+  }
+
+  // General service/pricing queries
+  if (lowerMessage.match(/service|what.*offer|pricing|price|cost|how much|package|plan/i)) {
+    return { showCards: true, filteredServices: SERVICES_DATA.slice(0, 4) }; // Show top 4 popular services
+  }
+
+  // Show all services
+  if (lowerMessage.match(/show.*all|view.*all|see.*all.*service/i)) {
+    return { showCards: true, filteredServices: SERVICES_DATA };
+  }
+
+  return { showCards: false };
+};
+
+// Streaming effect hook for typewriter animation
+const useStreamingText = (finalText: string, isActive: boolean, speed: number = 15) => {
+  const [displayedText, setDisplayedText] = useState('');
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    if (!isActive || !finalText) {
+      setDisplayedText(finalText);
+      setIsComplete(true);
+      return;
+    }
+
+    setDisplayedText('');
+    setIsComplete(false);
+    let currentIndex = 0;
+
+    const interval = setInterval(() => {
+      if (currentIndex < finalText.length) {
+        setDisplayedText(finalText.slice(0, currentIndex + 1));
+        currentIndex++;
+      } else {
+        setIsComplete(true);
+        clearInterval(interval);
+      }
+    }, speed);
+
+    return () => clearInterval(interval);
+  }, [finalText, isActive, speed]);
+
+  return { displayedText, isComplete };
+};
+
+// Service Card Component - Mini version for chat
+const ServiceCardInChat = ({ service, isDarkMode }: { service: Service; isDarkMode: boolean }) => {
+  const handleBooking = () => {
+    // Scroll to services section on main page
+    const servicesSection = document.getElementById('services');
+    if (servicesSection) {
+      servicesSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.3 }}
+      className={`${isDarkMode ? 'bg-slate-800/90' : 'bg-white'} p-4 rounded-xl border ${isDarkMode ? 'border-slate-600/50 hover:border-cyan-500/50' : 'border-slate-200 hover:border-cyan-400'} transition-all shadow-lg backdrop-blur-sm`}
+    >
+      {/* Icon & Title */}
+      <div className="flex items-center gap-3 mb-2">
+        <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-lg flex items-center justify-center text-white">
+          {service.icon}
+        </div>
+        <div>
+          <h4 className={`font-bold text-sm ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{service.name}</h4>
+          <p className="text-cyan-400 font-bold text-lg">{service.price}</p>
+        </div>
+      </div>
+
+      {/* Description */}
+      <p className={`text-xs mb-3 leading-relaxed ${isDarkMode ? 'text-slate-300' : 'text-slate-600'}`}>{service.description}</p>
+
+      {/* Timeline */}
+      <div className="flex items-center gap-2 mb-3">
+        <Clock className="w-3 h-3 text-cyan-400" />
+        <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{service.timeline}</span>
+      </div>
+
+      {/* Features (show only 3) */}
+      <ul className="space-y-1 mb-3">
+        {service.features.slice(0, 3).map((feature, idx) => (
+          <li key={idx} className={`flex items-start gap-2 text-xs ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+            <CheckCircle2 className="w-3 h-3 text-green-400 flex-shrink-0 mt-0.5" />
+            <span>{feature}</span>
+          </li>
+        ))}
+        {service.features.length > 3 && (
+          <li className={`text-xs ml-5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>+{service.features.length - 3} more features</li>
+        )}
+      </ul>
+
+      {/* CTA Button */}
+      <button
+        onClick={handleBooking}
+        className="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg text-xs font-bold hover:shadow-lg hover:shadow-cyan-500/30 transition-all"
+      >
+        {service.ctaText}
+      </button>
+    </motion.div>
+  );
+};
+
+// Message Bubble Component with Streaming
+const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMessage, readAloud, isSpeaking, currentSpeakingId }: {
+  message: Message;
+  isStreaming: boolean;
+  isDarkMode: boolean;
+  addReaction: (id: string, reaction: 'up' | 'down') => void;
+  copyMessage: (id: string, content: string) => void;
+  readAloud: (content: string, id: string) => void;
+  isSpeaking: boolean;
+  currentSpeakingId: string | null;
+}) => {
+  const { displayedText } = useStreamingText(message.content, isStreaming, 15);
+  const contentToShow = isStreaming ? displayedText : message.content;
+
+  return (
+    <div className="space-y-3">
+      <motion.div
+        initial={{ opacity: 0, y: 10, scale: 0.9 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+      >
+        <motion.div
+          className={`max-w-xs md:max-w-sm px-4 py-3 rounded-2xl ${
+            message.role === 'user'
+              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-br-none shadow-lg'
+              : isDarkMode
+              ? 'bg-slate-700/80 text-slate-100 rounded-bl-none border border-slate-600/50 backdrop-blur-sm'
+              : 'bg-white text-slate-900 rounded-bl-none border border-slate-200 shadow-lg'
+          }`}
+        >
+          <div className="text-sm md:text-base leading-relaxed break-words">
+            {message.role === 'user' ? (
+              <p className="whitespace-pre-wrap">{message.content}</p>
+            ) : (
+              <div>
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => (
+                      <p className={`mb-2 last:mb-0 ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>{children}</p>
+                    ),
+                    strong: ({ children }) => (
+                      <strong className={`font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{children}</strong>
+                    ),
+                    code: ({ inline, className, children, ...props }: any) => {
+                      const match = /language-(\w+)/.exec(className || '');
+                      return !inline && match ? (
+                        <SyntaxHighlighter
+                          style={isDarkMode ? vscDarkPlus : vs}
+                          language={match[1]}
+                          PreTag="div"
+                          className="rounded my-2 text-xs"
+                          {...props}
+                        >
+                          {String(children).replace(/\n$/, '')}
+                        </SyntaxHighlighter>
+                      ) : (
+                        <code className={`${isDarkMode ? 'bg-slate-800/50 text-cyan-300' : 'bg-slate-200 text-cyan-600'} px-2 py-0.5 rounded font-mono text-xs`} {...props}>
+                          {children}
+                        </code>
+                      );
+                    },
+                  }}
+                >
+                  {contentToShow}
+                </ReactMarkdown>
+                {isStreaming && <span className="inline-block w-1 h-4 bg-cyan-400 ml-1 animate-pulse" />}
+              </div>
+            )}
+          </div>
+
+          {/* Message Actions & Timestamp (only for assistant messages) */}
+          {message.role === 'assistant' && !isStreaming && (
+            <div className="flex items-center justify-between mt-3 pt-2 border-t border-slate-600/30">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => copyMessage(message.id, message.content)}
+                  className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors`}
+                  title="Copy message"
+                >
+                  <Copy className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => readAloud(message.content, message.id)}
+                  className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors ${isSpeaking && currentSpeakingId === message.id ? 'text-cyan-400' : ''}`}
+                  title={isSpeaking && currentSpeakingId === message.id ? 'Stop reading' : 'Read aloud'}
+                >
+                  {isSpeaking && currentSpeakingId === message.id ? (
+                    <VolumeX className="w-3 h-3" />
+                  ) : (
+                    <Volume2 className="w-3 h-3" />
+                  )}
+                </button>
+                <button
+                  onClick={() => addReaction(message.id, 'up')}
+                  className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors ${message.reaction === 'up' ? 'text-green-400' : ''}`}
+                  title="Helpful"
+                >
+                  <ThumbsUp className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={() => addReaction(message.id, 'down')}
+                  className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors ${message.reaction === 'down' ? 'text-red-400' : ''}`}
+                  title="Not helpful"
+                >
+                  <ThumbsDown className="w-3 h-3" />
+                </button>
+              </div>
+              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                {message.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          )}
+
+          {message.role === 'user' && (
+            <p className="text-xs mt-2.5 text-cyan-100">
+              {message.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          )}
+        </motion.div>
+      </motion.div>
+
+      {/* Render Service Cards if present */}
+      {message.serviceCards && message.serviceCards.length > 0 && !isStreaming && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 gap-3 ml-0"
+        >
+          {message.serviceCards.map((service, idx) => (
+            <ServiceCardInChat key={idx} service={service} isDarkMode={isDarkMode} />
+          ))}
+        </motion.div>
+      )}
+    </div>
+  );
+};
 
 // ✅ Dark Mode Context
 const THEME_STORAGE_KEY = 'ai-chat-theme';
@@ -73,6 +444,9 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   // ✅ Rate Limiting State (free tier)
   const [messageCount, setMessageCount] = useState(0);
   const MESSAGE_LIMIT = 50; // Daily limit for free tier
+
+  // ✅ Streaming State (for typewriter effect)
+  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -408,6 +782,9 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       return;
     }
 
+    // ✅ Detect intent for service cards
+    const intent = detectIntent(messageText);
+
     const context = getPageContext();
 
     const userMessage: Message = {
@@ -465,14 +842,26 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       const data = await response.json();
 
       if (data.success && data.message) {
+        const assistantMessageId = (Date.now() + 1).toString();
         const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
+          id: assistantMessageId,
           role: 'assistant',
           content: data.message,
+          serviceCards: intent.showCards ? intent.filteredServices : undefined,
+          isStreaming: true,
         };
         const finalMessages = [...newMessages, assistantMessage];
         setMessages(finalMessages);
+        setStreamingMessageId(assistantMessageId);
         saveChatHistory(finalMessages);
+
+        // ✅ Stop streaming after text animation completes
+        setTimeout(() => {
+          setStreamingMessageId(null);
+          setMessages(prev => prev.map(msg =>
+            msg.id === assistantMessageId ? { ...msg, isStreaming: false } : msg
+          ));
+        }, data.message.length * 15 + 100); // Calculate based on text length
       } else {
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -849,176 +1238,17 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                   )}
 
                   {filteredMessages.map((message) => (
-                    <motion.div
+                    <MessageBubble
                       key={message.id}
-                      initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ duration: 0.3 }}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} group`}
-                    >
-                      <div className={`${message.role === 'assistant' ? 'max-w-[85%]' : 'max-w-xs md:max-w-sm'}`}>
-                        <motion.div
-                          className={`px-4 py-3 rounded-2xl ${
-                            message.role === 'user'
-                              ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white rounded-br-none shadow-lg'
-                              : isDarkMode
-                              ? 'bg-slate-700/80 text-slate-100 rounded-bl-none border border-slate-600/50 backdrop-blur-sm'
-                              : 'bg-white text-slate-900 rounded-bl-none border border-slate-300 shadow-sm'
-                          }`}
-                        >
-                          {message.context && (
-                            <div className="text-xs opacity-60 mb-1">📍 {message.context}</div>
-                          )}
-                          <div className="text-sm md:text-base leading-relaxed break-words">
-                            {message.role === 'user' ? (
-                              <p className="whitespace-pre-wrap">{message.content}</p>
-                            ) : (
-                              <ReactMarkdown
-                                components={{
-                                  p: ({ children }) => (
-                                    <p className="mb-2 last:mb-0">{children}</p>
-                                  ),
-                                  strong: ({ children }) => (
-                                    <strong className="font-bold">{children}</strong>
-                                  ),
-                                  em: ({ children }) => (
-                                    <em className="italic">{children}</em>
-                                  ),
-                                  ul: ({ children }) => (
-                                    <ul className="list-disc list-inside mb-2 space-y-1">
-                                      {children}
-                                    </ul>
-                                  ),
-                                  ol: ({ children }) => (
-                                    <ol className="list-decimal list-inside mb-2 space-y-1">
-                                      {children}
-                                    </ol>
-                                  ),
-                                  li: ({ children }) => <li className="ml-2">{children}</li>,
-                                  code: ({ inline, className, children, ...props }: any) => {
-                                    const match = /language-(\w+)/.exec(className || '');
-                                    return !inline && match ? (
-                                      <SyntaxHighlighter
-                                        style={isDarkMode ? vscDarkPlus : vs}
-                                        language={match[1]}
-                                        PreTag="div"
-                                        className="rounded my-2 text-xs"
-                                        {...props}
-                                      >
-                                        {String(children).replace(/\n$/, '')}
-                                      </SyntaxHighlighter>
-                                    ) : (
-                                      <code className={`${isDarkMode ? 'bg-slate-800/50 text-cyan-300' : 'bg-slate-200 text-cyan-600'} px-2 py-0.5 rounded font-mono text-xs`} {...props}>
-                                        {children}
-                                      </code>
-                                    );
-                                  },
-                                  blockquote: ({ children }) => (
-                                    <blockquote className="border-l-4 border-cyan-500 pl-3 my-2 italic opacity-80">
-                                      {children}
-                                    </blockquote>
-                                  ),
-                                  h1: ({ children }) => <h1 className="text-lg font-bold mt-2 mb-1">{children}</h1>,
-                                  h2: ({ children }) => <h2 className="text-base font-bold mt-2 mb-1">{children}</h2>,
-                                  h3: ({ children }) => <h3 className="text-sm font-bold mt-2 mb-1">{children}</h3>,
-                                  a: ({ children, href }) => (
-                                    <a
-                                      href={href}
-                                      className="text-cyan-400 hover:underline"
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                    >
-                                      {children}
-                                    </a>
-                                  ),
-                                }}
-                              >
-                                {message.content}
-                              </ReactMarkdown>
-                            )}
-                          </div>
-                        </motion.div>
-
-                        {/* Message Actions - AI messages only */}
-                        {message.role === 'assistant' && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="flex items-center gap-1 mt-2 ml-1"
-                          >
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => copyMessage(message.content, message.id)}
-                              className={`p-1.5 hover:${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-lg transition-colors group/btn`}
-                              title="Copy message"
-                            >
-                              {copiedId === message.id ? (
-                                <Check className="w-3.5 h-3.5 text-green-400" />
-                              ) : (
-                                <Copy className={`w-3.5 h-3.5 ${isDarkMode ? 'text-slate-400 group-hover/btn:text-slate-200' : 'text-slate-600 group-hover/btn:text-slate-900'}`} />
-                              )}
-                            </motion.button>
-
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => readAloud(message.content, message.id)}
-                              className={`p-1.5 hover:${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-lg transition-colors group/btn ${isSpeaking && currentSpeakingId === message.id ? (isDarkMode ? 'bg-slate-700' : 'bg-slate-200') : ''}`}
-                              title={isSpeaking && currentSpeakingId === message.id ? "Stop reading" : "Read aloud"}
-                            >
-                              {isSpeaking && currentSpeakingId === message.id ? (
-                                <VolumeX className="w-3.5 h-3.5 text-cyan-400" />
-                              ) : (
-                                <Volume2 className={`w-3.5 h-3.5 ${isDarkMode ? 'text-slate-400 group-hover/btn:text-slate-200' : 'text-slate-600 group-hover/btn:text-slate-900'}`} />
-                              )}
-                            </motion.button>
-
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => regenerateResponse(message.id)}
-                              className={`p-1.5 hover:${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-lg transition-colors group/btn`}
-                              title="Regenerate response"
-                              disabled={isLoading}
-                            >
-                              <RotateCw className={`w-3.5 h-3.5 ${isDarkMode ? 'text-slate-400 group-hover/btn:text-slate-200' : 'text-slate-600 group-hover/btn:text-slate-900'}`} />
-                            </motion.button>
-
-                            <div className={`w-px h-4 ${isDarkMode ? 'bg-slate-600' : 'bg-slate-300'} mx-1`} />
-
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => addReaction(message.id, 'up')}
-                              className={`p-1.5 hover:${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-lg transition-colors ${
-                                message.reaction === 'up' ? (isDarkMode ? 'bg-slate-700' : 'bg-slate-200') : ''
-                              }`}
-                              title="Helpful"
-                            >
-                              <ThumbsUp className={`w-3.5 h-3.5 ${
-                                message.reaction === 'up' ? 'text-green-400 fill-green-400' : (isDarkMode ? 'text-slate-400' : 'text-slate-600')
-                              }`} />
-                            </motion.button>
-
-                            <motion.button
-                              whileHover={{ scale: 1.1 }}
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => addReaction(message.id, 'down')}
-                              className={`p-1.5 hover:${isDarkMode ? 'bg-slate-700' : 'bg-slate-200'} rounded-lg transition-colors ${
-                                message.reaction === 'down' ? (isDarkMode ? 'bg-slate-700' : 'bg-slate-200') : ''
-                              }`}
-                              title="Not helpful"
-                            >
-                              <ThumbsDown className={`w-3.5 h-3.5 ${
-                                message.reaction === 'down' ? 'text-red-400 fill-red-400' : (isDarkMode ? 'text-slate-400' : 'text-slate-600')
-                              }`} />
-                            </motion.button>
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.div>
+                      message={message}
+                      isStreaming={message.isStreaming === true && streamingMessageId === message.id}
+                      isDarkMode={isDarkMode}
+                      addReaction={addReaction}
+                      copyMessage={(id, content) => copyMessage(content, id)}
+                      readAloud={readAloud}
+                      isSpeaking={isSpeaking}
+                      currentSpeakingId={currentSpeakingId}
+                    />
                   ))}
 
                   {/* Typing Indicator */}
