@@ -545,6 +545,7 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
                   onClick={() => copyMessage(message.id, message.content)}
                   className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors`}
                   title="Copy message"
+                  aria-label="Copy message to clipboard" // ✅ FIX: Add aria-label for accessibility
                 >
                   <Copy className="w-3 h-3" />
                 </button>
@@ -552,6 +553,7 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
                   onClick={() => readAloud(message.content, message.id)}
                   className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors ${isSpeaking && currentSpeakingId === message.id ? 'text-cyan-400' : ''}`}
                   title={isSpeaking && currentSpeakingId === message.id ? 'Stop reading' : 'Read aloud'}
+                  aria-label={isSpeaking && currentSpeakingId === message.id ? 'Stop reading message' : 'Read message aloud'} // ✅ FIX: Add aria-label for accessibility
                 >
                   {isSpeaking && currentSpeakingId === message.id ? (
                     <VolumeX className="w-3 h-3" />
@@ -563,6 +565,7 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
                   onClick={() => addReaction(message.id, 'up')}
                   className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors ${message.reaction === 'up' ? 'text-green-400' : ''}`}
                   title="Helpful"
+                  aria-label="Mark as helpful" // ✅ FIX: Add aria-label for accessibility
                 >
                   <ThumbsUp className="w-3 h-3" />
                 </button>
@@ -570,6 +573,7 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
                   onClick={() => addReaction(message.id, 'down')}
                   className={`p-1.5 rounded ${isDarkMode ? 'hover:bg-slate-600/50' : 'hover:bg-slate-100'} transition-colors ${message.reaction === 'down' ? 'text-red-400' : ''}`}
                   title="Not helpful"
+                  aria-label="Mark as not helpful" // ✅ FIX: Add aria-label for accessibility
                 >
                   <ThumbsDown className="w-3 h-3" />
                 </button>

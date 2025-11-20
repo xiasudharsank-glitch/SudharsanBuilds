@@ -102,9 +102,9 @@ export default function About() {
                   Core Skills
                 </h3>
                 <div className="grid grid-cols-2 gap-3 md:gap-4">
-                  {skills.map((skill, index) => (
+                  {skills.map((skill) => (
                     <div
-                      key={index}
+                      key={skill.name} // ✅ FIX: Use unique name instead of index
                       className="flex items-center gap-2 md:gap-3 p-2.5 md:p-4 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow duration-300 transform hover:-translate-y-1"
                     >
                       <div className="text-cyan-600 flex-shrink-0">{skill.icon}</div>
