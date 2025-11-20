@@ -160,21 +160,18 @@ export const sendNewBookingAlert = async (data: NewBookingAlertData): Promise<bo
 };
 
 /**
- * Contact form email - DISABLED for FREE plan
- * Data is still saved to Supabase, you can check there
- * To enable: upgrade to EmailJS Personal plan and create contact_form template
+ * Contact form email - REMOVED (not functional on FREE plan)
+ *
+ * ⚠️ This function has been removed to prevent misleading users.
+ * Contact form submissions are saved directly to Supabase database ONLY.
+ *
+ * To enable email notifications:
+ * 1. Upgrade to EmailJS Personal plan
+ * 2. Create a contact_form template in EmailJS dashboard
+ * 3. Re-implement this function with actual email sending
+ * 4. Update Contact.tsx to handle email notifications
+ *
+ * For now, all contact inquiries are saved to Supabase 'inquiries' table.
+ * Check Supabase Dashboard → Table Editor → inquiries to view submissions.
  */
-export const sendContactFormEmail = async (_formData: {
-  name: string;
-  email: string;
-  phone?: string;
-  service: string;
-  timeline: string;
-  budget?: string;
-  message: string;
-}): Promise<boolean> => {
-  // Skip email sending for FREE plan
-  // Data is already saved in Supabase
-  console.log('Contact form email skipped (FREE plan). Check Supabase for inquiry data.');
-  return true; // Return true so form still works
-};
+// Function intentionally removed - no longer exported

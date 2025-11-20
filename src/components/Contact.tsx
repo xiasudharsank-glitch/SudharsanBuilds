@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from '@supabase/supabase-js';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { initEmailJS, sendContactFormEmail } from '../services/emailService';
+import { initEmailJS } from '../services/emailService';
 import { env } from '../utils/env';
 import { sanitizeFormData } from '../utils/sanitize';
 
@@ -114,7 +114,8 @@ export default function Contact() {
       // ✅ SECURITY: Sanitize all user inputs before processing
       const sanitizedData = sanitizeFormData(formData);
 
-      // Store in Supabase (using sanitized data)
+      // ✅ FIX: Save to Supabase and check for success
+      let dataSaved = false;
       if (supabase) {
         const { error: supabaseError } = await supabase
           .from('inquiries')
@@ -132,22 +133,20 @@ export default function Contact() {
           ]);
 
         if (supabaseError) {
-          console.error("Supabase error:", supabaseError);
+          console.error("❌ Supabase error:", supabaseError);
+          dataSaved = false;
+        } else {
+          console.log("✅ Inquiry saved to database successfully");
+          dataSaved = true;
         }
+      } else {
+        console.error("❌ Supabase not configured");
       }
 
-      // Send via EmailJS (email notification with sanitized data)
-      const emailSent = await sendContactFormEmail({
-        name: sanitizedData.name,
-        email: sanitizedData.email,
-        phone: sanitizedData.phone,
-        service: sanitizedData.service,
-        timeline: sanitizedData.timeline,
-        budget: formData.budget,
-        message: formData.message
-      });
-
-      if (emailSent) {
+      // ✅ FIX: Show success/error based on actual database save
+      // Note: Email notifications are not sent (FREE plan limitation)
+      // All inquiries are saved to Supabase database only
+      if (dataSaved) {
         setStatus("success");
         setFormData({
           name: '',
@@ -166,7 +165,7 @@ export default function Contact() {
         setTimeout(() => setStatus(""), 5000);
       }
     } catch (error) {
-      console.error("Form submission error:", error);
+      console.error("❌ Form submission error:", error);
       setStatus("error");
       setTimeout(() => setStatus(""), 5000);
     }
@@ -538,8 +537,8 @@ export default function Contact() {
           >
             <span className="text-xl md:text-2xl">✅</span>
             <div>
-              <p className="font-bold text-base md:text-lg">Thank You!</p>
-              <p className="text-xs md:text-sm">We'll get back to you within 24 hours!</p>
+              <p className="font-bold text-base md:text-lg">Inquiry Submitted!</p>
+              <p className="text-xs md:text-sm">Your message has been saved. We'll review and respond soon!</p>
             </div>
           </motion.div>
         )}

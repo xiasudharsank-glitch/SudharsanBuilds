@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Briefcase } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
@@ -8,12 +8,45 @@ export default function Navigation() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // ✅ FIX #3 & #12: Track timeout IDs for cleanup
+  const timeoutIdsRef = useRef<Set<NodeJS.Timeout>>(new Set());
+
+  // ✅ FIX #12: Throttled scroll handler (prevents excessive re-renders)
   useEffect(() => {
+    let throttleTimeout: NodeJS.Timeout | null = null;
+    let lastScrollY = window.scrollY;
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      // Throttle to max once per 100ms
+      if (throttleTimeout) return;
+
+      throttleTimeout = setTimeout(() => {
+        const currentScrollY = window.scrollY;
+        // Only update state if scroll position actually changed significantly
+        if (Math.abs(currentScrollY - lastScrollY) > 10) {
+          setIsScrolled(currentScrollY > 50);
+          lastScrollY = currentScrollY;
+        }
+        throttleTimeout = null;
+      }, 100);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (throttleTimeout) {
+        clearTimeout(throttleTimeout);
+      }
+    };
+  }, []);
+
+  // ✅ FIX #3: Cleanup all pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      // Clear all pending timeouts when component unmounts
+      timeoutIdsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+      timeoutIdsRef.current.clear();
+    };
   }, []);
 
   // ✅ FIX: Close mobile menu on route change
@@ -38,23 +71,28 @@ export default function Navigation() {
       // If we're not on the homepage, navigate there first
       if (location.pathname !== '/') {
         navigate('/');
-        // ✅ FIX: Increased timeout to 800ms for more reliable lazy component loading
-        setTimeout(() => {
+        // ✅ FIX #3: Track timeout IDs for proper cleanup
+        const timeoutId1 = setTimeout(() => {
           requestAnimationFrame(() => {
             const element = document.querySelector(href);
             if (element) {
               element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              timeoutIdsRef.current.delete(timeoutId1);
             } else {
               // If element still not found, try again after 200ms
-              setTimeout(() => {
+              const timeoutId2 = setTimeout(() => {
                 const retryElement = document.querySelector(href);
                 if (retryElement) {
                   retryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
+                timeoutIdsRef.current.delete(timeoutId2);
               }, 200);
+              timeoutIdsRef.current.add(timeoutId2);
+              timeoutIdsRef.current.delete(timeoutId1);
             }
           });
         }, 800);
+        timeoutIdsRef.current.add(timeoutId1);
       } else {
         // Already on homepage, scroll immediately with requestAnimationFrame for smoothness
         requestAnimationFrame(() => {

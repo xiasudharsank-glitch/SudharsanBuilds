@@ -272,6 +272,42 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     }
   };
 
+  // ✅ FIX: Parse Razorpay errors and provide specific messages
+  const getRazorpayErrorMessage = (error: any): string => {
+    const errorCode = error?.error?.code;
+    const errorDescription = error?.error?.description;
+    const errorReason = error?.error?.reason;
+
+    // Specific Razorpay error codes
+    switch (errorCode) {
+      case 'BAD_REQUEST_ERROR':
+        return '❌ Invalid payment request. Please try again or contact support.';
+      case 'GATEWAY_ERROR':
+        return '❌ Payment gateway error. Please try a different payment method.';
+      case 'SERVER_ERROR':
+        return '❌ Server error occurred. Please try again in a moment.';
+      case 'NETWORK_ERROR':
+        return '❌ Network connection issue. Please check your internet and try again.';
+      default:
+        // Check for common error reasons
+        if (errorReason?.includes('payment_failed')) {
+          return '❌ Payment failed. Please check your payment details and try again.';
+        }
+        if (errorReason?.includes('card_declined')) {
+          return '❌ Card declined. Please try a different card or payment method.';
+        }
+        if (errorReason?.includes('insufficient_funds')) {
+          return '❌ Insufficient funds. Please use a different payment method.';
+        }
+        if (errorDescription?.toLowerCase().includes('timeout')) {
+          return '❌ Payment timeout. Please try again.';
+        }
+
+        // Generic fallback
+        return errorDescription || '❌ Payment failed. Please contact us directly via email.';
+    }
+  };
+
   const handlePaymentProceed = async () => {
     if (!selectedService || !selectedService.depositAmount) return;
 
@@ -455,11 +491,19 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       };
 
       const razorpay = new (window as any).Razorpay(options);
+      razorpay.on('payment.failed', function (response: any) {
+        // ✅ FIX: Handle Razorpay payment failures with specific messages
+        const errorMessage = getRazorpayErrorMessage(response);
+        alert(errorMessage + '\n\nNeed help? Contact us at:\nsudharsanofficial0001@gmail.com');
+        setIsPaymentLoading(false);
+      });
       razorpay.open();
       setIsPaymentLoading(false);
     } catch (error) {
+      // ✅ FIX: Provide specific error messages
       console.error('Payment error:', error);
-      alert('Unable to process payment. Please contact us directly via email.');
+      const errorMessage = getRazorpayErrorMessage(error);
+      alert(errorMessage + '\n\nNeed help? Contact us at:\nsudharsanofficial0001@gmail.com');
       setIsPaymentLoading(false);
 
       // Fallback to contact form

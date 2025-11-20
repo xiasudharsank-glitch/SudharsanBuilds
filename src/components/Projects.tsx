@@ -193,6 +193,8 @@ export default function Projects() {
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
+  // ✅ FIX #5: Track failed images to prevent infinite loop
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   const myProjects = PROJECTS.filter(p => p.type === 'personal');
   const clientProjects = PROJECTS.filter(p => p.type === 'client' || p.type === 'freelance');
@@ -410,8 +412,13 @@ export default function Projects() {
                           loading="lazy"
                           onLoad={(e) => handleImageLoad(project.link, (e.target as HTMLImageElement).src)}
                           onError={(e) => {
-                            const fallbackColor = project.type === 'personal' ? '0891b2' : '9333ea';
-                            (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect fill='%23${fallbackColor}' width='600' height='400'/%3E%3Ctext fill='white' font-family='Arial' font-size='24' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3E${encodeURIComponent(project.title)}%3C/text%3E%3C/svg%3E`;
+                            // ✅ FIX #5: Prevent infinite loop by tracking failed images
+                            const imageKey = `${project.link}-${project.title}`;
+                            if (!failedImages.has(imageKey)) {
+                              setFailedImages(prev => new Set(prev).add(imageKey));
+                              const fallbackColor = project.type === 'personal' ? '0891b2' : '9333ea';
+                              (e.target as HTMLImageElement).src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect fill='%23${fallbackColor}' width='600' height='400'/%3E%3Ctext fill='white' font-family='Arial' font-size='24' x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle'%3E${encodeURIComponent(project.title)}%3C/text%3E%3C/svg%3E`;
+                            }
                           }}
                         />
                       </div>
