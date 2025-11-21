@@ -95,78 +95,125 @@ export default function Contact() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // Honeypot check (bot protection)
-    if (formData.honeypot) {
-      console.warn("Honeypot field filled - likely a bot");
-      return;
-    }
+  // Honeypot check (bot protection)
+  if (formData.honeypot) {
+    console.warn("Honeypot field filled - likely a bot");
+    return;
+  }
 
-    if (!validateForm()) {
-      setStatus("error");
-      return;
-    }
+  if (!validateForm()) {
+    setStatus("error");
+    return;
+  }
 
-    setStatus("sending");
+  setStatus("sending");
 
-    try {
-      // ✅ SECURITY: Sanitize all user inputs before processing
-      const sanitizedData = sanitizeFormData(formData);
+  try {
+    // ✅ SECURITY: Sanitize all user inputs before processing
+    const sanitizedData = sanitizeFormData(formData);
 
-      // ✅ FIX: Save to Supabase and check for success
-      let dataSaved = false;
-      if (supabase) {
-        const { error: supabaseError } = await supabase
-          .from('inquiries')
-          .insert([
-            {
-              name: sanitizedData.name,
-              email: sanitizedData.email,
-              phone: sanitizedData.phone,
-              service: sanitizedData.service,
-              timeline: sanitizedData.timeline,
-              budget: sanitizedData.budget || null,
-              message: sanitizedData.message,
-              created_at: new Date().toISOString()
-            }
-          ]);
+    // ✅ FIX: Save to Supabase and check for success
+    let dataSaved = false;
+    if (supabase) {
+      const { error: supabaseError } = await supabase
+        .from('inquiries')
+        .insert([
+          {
+            name: sanitizedData.name,
+            email: sanitizedData.email,
+            phone: sanitizedData.phone,
+            service: sanitizedData.service,
+            timeline: sanitizedData.timeline,
+            budget: sanitizedData.budget || null,
+            message: sanitizedData.message,
+            created_at: new Date().toISOString()
+          }
+        ]);
 
-        if (supabaseError) {
-          console.error("❌ Supabase error:", supabaseError);
-          dataSaved = false;
-        } else {
-          console.log("✅ Inquiry saved to database successfully");
-          dataSaved = true;
-        }
+      if (supabaseError) {
+        console.error("❌ Supabase error:", supabaseError);
+        dataSaved = false;
       } else {
-        console.error("❌ Supabase not configured");
+        console.log("✅ Inquiry saved to database successfully");
+        dataSaved = true;
       }
+    } else {
+      console.error("❌ Supabase not configured");
+    }
 
-      // ✅ FIX: Show success/error based on actual database save
-      // Note: Email notifications are not sent (FREE plan limitation)
-      // All inquiries are saved to Supabase database only
-      if (dataSaved) {
-        setStatus("success");
-        setFormData({
-          name: '',
-          email: '',
-          phone: '',
-          service: '',
-          timeline: '',
-          budget: '',
-          message: '',
-          honeypot: ''
+    // ✅ NEW: Send email via Formspree
+    let emailSent = false;
+    if (dataSaved) {
+      try {
+        const formspreeResponse = await fetch('https://formspree.io/f/xeopodle', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: sanitizedData.name,
+            email: sanitizedData.email,
+            phone: sanitizedData.phone,
+            service: sanitizedData.service,
+            timeline: sanitizedData.timeline,
+            budget: sanitizedData.budget,
+            message: sanitizedData.message,
+          }),
         });
-        setErrors({});
-      } else {
-        setStatus("error");
+
+        if (formspreeResponse.ok) {
+          console.log("✅ Email sent via Formspree successfully");
+          emailSent = true;
+        } else {
+          console.error("❌ Formspree error:", formspreeResponse.statusText);
+          emailSent = false;
+        }
+      } catch (formspreeError) {
+        console.error("❌ Formspree submission error:", formspreeError);
+        emailSent = false;
       }
-    } catch (error) {
-      console.error("❌ Form submission error:", error);
+    }
+
+    // ✅ FIX: Show success/error based on both database save AND email
+    // Note: Email notifications are sent via Formspree
+    if (dataSaved && emailSent) {
+      setStatus("success");
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        service: '',
+        timeline: '',
+        budget: '',
+        message: '',
+        honeypot: ''
+      });
+      setErrors({});
+    } else if (dataSaved) {
+      // Database saved but email failed - still show success
+      console.warn("⚠️ Data saved but email sending failed");
+      setStatus("success");
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        service: '',
+        timeline: '',
+        budget: '',
+        message: '',
+        honeypot: ''
+      });
+      setErrors({});
+    } else {
       setStatus("error");
     }
-  };
+  } catch (error) {
+    console.error("❌ Form submission error:", error);
+    setStatus("error");
+  }
+};
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
