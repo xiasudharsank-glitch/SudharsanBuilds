@@ -1325,6 +1325,41 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
       const data = await response.json();
 
+      // ✅ PRODUCTION FIX: Enhanced error logging and handling
+      console.log('🔍 API Response:', {
+        status: response.status,
+        ok: response.ok,
+        success: data.success,
+        hasMessage: !!data.message,
+        hasError: !!data.error,
+        error: data.error,
+        userMessage: data.userMessage,
+      });
+
+      // ✅ PRODUCTION FIX: Handle backend errors with detailed messages
+      if (!response.ok || data.error) {
+        // Backend returned an error response - show the user-friendly message
+        const errorContent = data.userMessage || data.message || 'I encountered a temporary issue. Please try again in a moment.';
+
+        console.error('❌ Backend Error Response:', {
+          status: response.status,
+          errorCode: data.error,
+          technicalMessage: data.message,
+          userMessage: data.userMessage,
+          fullResponse: data,
+        });
+
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: errorContent,
+        };
+        const finalMessages = [...newMessages, errorMessage];
+        setMessages(finalMessages);
+        saveChatHistory(finalMessages);
+        return; // Exit early - don't continue to success block
+      }
+
       if (data.success && data.message) {
         // ✅ CRITICAL FIX #9: Only increment count after successful API response
         setMessageCount(prev => prev + 1);
@@ -1364,6 +1399,9 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
           ));
         }, (data.message?.length || 20) * 15 + 100); // Calculate based on text length
       } else {
+        // ✅ PRODUCTION FIX: This should rarely happen now that we check errors earlier
+        console.warn('⚠️ Unexpected response format:', data);
+
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
