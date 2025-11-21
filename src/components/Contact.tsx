@@ -288,11 +288,12 @@ export default function Contact() {
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 required
+                disabled={status === "sending"}
                 aria-invalid={!!errors.name}
                 aria-describedby={errors.name ? "name-error" : undefined}
                 className={`w-full px-3 py-2.5 md:px-4 md:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm md:text-base ${
                   errors.name ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-cyan-500'
-                }`}
+                } ${status === "sending" ? 'opacity-60 cursor-not-allowed' : ''}`}
                 placeholder="John Doe"
               />
               {errors.name && (
@@ -315,6 +316,7 @@ export default function Contact() {
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 required
+                disabled={status === "sending"}
                 aria-invalid={!!errors.email}
                 aria-describedby={errors.email ? "email-error" : undefined}
                 className={`w-full px-3 py-2.5 md:px-4 md:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm md:text-base ${
@@ -373,11 +375,12 @@ export default function Contact() {
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 required
+                disabled={status === "sending"}
                 aria-invalid={!!errors.service}
                 aria-describedby={errors.service ? "service-error" : undefined}
                 className={`w-full px-3 py-2.5 md:px-4 md:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm md:text-base ${
                   errors.service ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-cyan-500'
-                }`}
+                } ${status === "sending" ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <option value="">Select a service</option>
                 <option value="Landing Page (₹15,000)">Landing Page (₹15,000)</option>
@@ -408,11 +411,12 @@ export default function Contact() {
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 required
+                disabled={status === "sending"}
                 aria-invalid={!!errors.timeline}
                 aria-describedby={errors.timeline ? "timeline-error" : undefined}
                 className={`w-full px-3 py-2.5 md:px-4 md:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm md:text-base ${
                   errors.timeline ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-cyan-500'
-                }`}
+                } ${status === "sending" ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <option value="">Select a timeline</option>
                 <option value="ASAP (Rush)">ASAP (Rush)</option>
@@ -439,11 +443,12 @@ export default function Contact() {
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 required
+                disabled={status === "sending"}
                 aria-invalid={!!errors.budget}
                 aria-describedby={errors.budget ? "budget-error" : undefined}
                 className={`w-full px-3 py-2.5 md:px-4 md:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all text-sm md:text-base ${
                   errors.budget ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-cyan-500'
-                }`}
+                } ${status === "sending" ? 'opacity-60 cursor-not-allowed' : ''}`}
               >
                 <option value="">Select your budget range</option>
                 <option value="Under ₹15,000">Under ₹15,000</option>
@@ -471,6 +476,7 @@ export default function Contact() {
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
+                disabled={status === "sending"}
                 onKeyDown={(e) => {
                   // Shift+Enter: new line, Enter: submit form (last field)
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -484,7 +490,7 @@ export default function Contact() {
                 aria-describedby={errors.message ? "message-error" : undefined}
                 className={`w-full px-3 py-2.5 md:px-4 md:py-3 border rounded-lg focus:outline-none focus:ring-2 focus:border-transparent transition-all resize-none text-sm md:text-base ${
                   errors.message ? 'border-red-500 focus:ring-red-500' : 'border-slate-300 focus:ring-cyan-500'
-                }`}
+                } ${status === "sending" ? 'opacity-60 cursor-not-allowed' : ''}`}
                 placeholder="Tell me about your project requirements, goals, features you need..."
               />
               {errors.message && (

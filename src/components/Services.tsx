@@ -85,13 +85,47 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     };
   }, []);
 
-  // ✅ ACCESSIBILITY: Focus first input when modal opens
+  // ✅ P2 FIX: Focus management and escape key for modal
   useEffect(() => {
-    if (showBookingModal && firstInputRef.current) {
-      // Small delay to ensure modal is rendered
+    if (showBookingModal) {
+      // Focus first input
       setTimeout(() => {
         firstInputRef.current?.focus();
       }, 100);
+
+      // ✅ P2 FIX: Escape key handler
+      const handleEscape = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          setShowBookingModal(false);
+        }
+      };
+
+      // ✅ P2 FIX: Focus trap - keep focus inside modal
+      const handleTab = (e: KeyboardEvent) => {
+        if (e.key !== 'Tab' || !modalRef.current) return;
+
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0] as HTMLElement;
+        const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      };
+
+      document.addEventListener('keydown', handleEscape);
+      document.addEventListener('keydown', handleTab);
+
+      return () => {
+        document.removeEventListener('keydown', handleEscape);
+        document.removeEventListener('keydown', handleTab);
+      };
     }
   }, [showBookingModal]);
 
@@ -756,23 +790,29 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
             onClick={() => setShowBookingModal(false)}
           >
             <motion.div
+              ref={modalRef}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] min-h-[300px] overflow-y-auto flex flex-col"
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="modal-title"
             >
               {/* Modal Header */}
               <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-6 rounded-t-2xl">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-2xl font-bold mb-2">Complete Your Booking</h3>
+                    <h3 id="modal-title" className="text-2xl font-bold mb-2">Complete Your Booking</h3>
                     <p className="text-cyan-50">{selectedService.name} - {selectedService.price}</p>
                     <p className="text-sm text-cyan-100 mt-1">Deposit: ₹{selectedService.depositAmount?.toLocaleString('en-IN')}</p>
                   </div>
                   <button
                     onClick={() => setShowBookingModal(false)}
                     className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+                    aria-label="Close modal (Press Escape)"
+                    title="Close (Esc)"
                   >
                     <X className="w-6 h-6" />
                   </button>
@@ -791,6 +831,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     Full Name *
                   </label>
                   <input
+                    ref={firstInputRef}
                     type="text"
                     id="modal-name"
                     value={customerDetails.name}

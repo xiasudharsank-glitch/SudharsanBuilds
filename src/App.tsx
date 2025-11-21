@@ -16,12 +16,24 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 const AIChatbot = lazy(() => import('./components/AIChatbot'));
 const FloatingAvatar = lazy(() => import('./components/FloatingAvatar'));
 
-// Loading fallback component for lazy-loaded pages
+// ✅ P2 FIX: Enhanced page loader with better visual feedback
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50">
-    <div className="animate-pulse flex flex-col items-center gap-3">
-      <div className="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-      <p className="text-slate-600 text-lg">Loading...</p>
+    <div className="flex flex-col items-center gap-4">
+      {/* Animated spinner with double ring */}
+      <div className="relative">
+        <div className="w-16 h-16 border-4 border-slate-200 rounded-full"></div>
+        <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin absolute top-0"></div>
+      </div>
+      {/* Loading text with animated dots */}
+      <div className="flex flex-col items-center gap-2">
+        <p className="text-slate-700 text-base font-semibold">Loading page...</p>
+        <div className="flex gap-1">
+          <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+      </div>
     </div>
   </div>
 );

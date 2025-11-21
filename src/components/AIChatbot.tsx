@@ -863,49 +863,85 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
   };
 
-  // ✅ Save Chat History - FIX #6: Encrypt before saving with quota error handling
+  // ✅ P1 FIX: Save Chat History - Proactive message limit + better error handling
   const saveChatHistory = (msgs: Message[]) => {
     try {
+      // ✅ P1 FIX: Proactively limit to last 50 messages to prevent quota issues
+      const MAX_MESSAGES = 50;
+      let messagesToSave = msgs;
+
+      if (msgs.length > MAX_MESSAGES) {
+        console.log(`📦 Chat history exceeds ${MAX_MESSAGES} messages. Auto-trimming to prevent storage issues.`);
+        // Keep only the last MAX_MESSAGES messages
+        messagesToSave = msgs.slice(-MAX_MESSAGES);
+
+        // Update state to match what we're saving (prevents desync)
+        setMessages(messagesToSave);
+
+        // Show subtle notification (non-blocking)
+        setChatState(prev => ({
+          ...prev,
+          error: `Chat history auto-trimmed to last ${MAX_MESSAGES} messages to save space.`
+        }));
+
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          setChatState(prev => ({ ...prev, error: null }));
+        }, 5000);
+      }
+
       // ✅ FIX #6: Encrypt chat history using user ID as encryption key
       const encrypted = CryptoJS.AES.encrypt(
-        JSON.stringify(msgs),
-        userId // Use persistent user ID as encryption key
+        JSON.stringify(messagesToSave),
+        userId
       ).toString();
 
       localStorage.setItem(CHAT_HISTORY_KEY, encrypted);
     } catch (error) {
-      // ✅ FIX: Handle QuotaExceededError specifically
+      // ✅ P1 FIX: Better quota error handling without blocking alerts
       if (error instanceof Error &&
           (error.name === 'QuotaExceededError' ||
            error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
-        console.warn('⚠️ LocalStorage quota exceeded. Attempting cleanup...');
+        console.warn('⚠️ LocalStorage quota exceeded. Emergency cleanup...');
 
         try {
-          // Attempt 1: Save only last 20 messages (encrypted)
+          // Emergency: Save only last 20 messages
           const trimmedMessages = msgs.slice(-20);
           const encrypted = CryptoJS.AES.encrypt(
             JSON.stringify(trimmedMessages),
             userId
           ).toString();
           localStorage.setItem(CHAT_HISTORY_KEY, encrypted);
-          console.log('✅ Chat history trimmed to last 20 messages');
 
-          // Notify user
-          setTimeout(() => {
-            alert('⚠️ Storage limit reached. Older chat history has been removed to save new messages.');
-          }, 100);
+          // Update state
+          setMessages(trimmedMessages);
+
+          // Show error message in chat UI (non-blocking)
+          setChatState(prev => ({
+            ...prev,
+            error: '⚠️ Storage full! Trimmed to last 20 messages. Consider exporting chat history.'
+          }));
+
+          console.log('✅ Emergency trim: kept last 20 messages');
         } catch (retryError) {
-          // Attempt 2: Clear chat history completely
+          // Last resort: Clear history completely
           console.error('❌ Still out of space. Clearing chat history...');
           try {
             localStorage.removeItem(CHAT_HISTORY_KEY);
-            alert('⚠️ Unable to save chat history due to storage limits. Please export your chat or clear browser data.');
+            setChatState(prev => ({
+              ...prev,
+              error: '❌ Storage critical! Chat history cleared. Please free up browser storage.'
+            }));
           } catch (clearError) {
             console.error('❌ Failed to clear storage:', clearError);
           }
         }
       } else {
         console.error('Failed to save chat history:', error);
+        setChatState(prev => ({
+          ...prev,
+          error: 'Failed to save chat history. Your messages may not persist.'
+        }));
       }
     }
   };
