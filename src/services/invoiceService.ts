@@ -1,12 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
 import { v4 as uuidv4 } from 'uuid';
 import { sendBookingConfirmation, sendInvoiceEmail, sendNewBookingAlert } from './emailService';
 import { env } from '../utils/env';
-
-// Initialize Supabase client
-const supabase = env.SUPABASE_URL && env.SUPABASE_ANON_KEY
-  ? createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
-  : null;
+import { supabase } from './supabaseClient'; // ✅ FIX: Use singleton Supabase client
 
 if (!supabase) {
   console.error('❌ Supabase client not initialized - missing environment variables');

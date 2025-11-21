@@ -376,47 +376,35 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       return;
     }
 
-    // ✅ P0 FIX: Critical - Wait for Razorpay script with retry logic
+    // ✅ P0 FIX: Keep modal visible while loading Razorpay (prevents blank screen)
+    setIsPaymentLoading(true); // Show "Processing..." button state
+
     if (!razorpayLoaded || !window.Razorpay) {
-      setShowBookingModal(false);
-      setIsPaymentLoading(true);
-
-      // Wait up to 10 seconds for Razorpay to load
+      // Wait up to 15 seconds for Razorpay to load (keeping modal visible)
       let retries = 0;
-      const maxRetries = 20; // 20 * 500ms = 10 seconds
+      const maxRetries = 30; // 30 * 500ms = 15 seconds
 
-      const waitForRazorpay = async (): Promise<void> => {
-        while (retries < maxRetries) {
-          if (window.Razorpay && razorpayLoaded) {
-            // Razorpay is now loaded, continue with payment
-            break;
-          }
-          await new Promise(resolve => setTimeout(resolve, 500));
-          retries++;
+      while (retries < maxRetries) {
+        if (window.Razorpay && razorpayLoaded) {
+          // Razorpay is now loaded, continue with payment
+          break;
         }
+        await new Promise(resolve => setTimeout(resolve, 500));
+        retries++;
+      }
 
-        // Check if Razorpay loaded successfully
-        if (!window.Razorpay || !razorpayLoaded) {
-          // Timeout - Razorpay failed to load
-          setIsPaymentLoading(false);
-          setShowBookingModal(true); // Reopen modal
-          alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
-          return;
-        }
-        // If Razorpay loaded successfully, continue below
-      };
-
-      await waitForRazorpay();
-
-      // If we return early (timeout), stop execution
+      // Check if Razorpay loaded successfully
       if (!window.Razorpay || !razorpayLoaded) {
+        // Timeout - Razorpay failed to load
+        setIsPaymentLoading(false); // Reset button to normal state
+        // Keep modal open so user can see their data and try again
+        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
         return;
       }
-    } else {
-      // Close modal and start payment
-      setShowBookingModal(false);
-      setIsPaymentLoading(true);
     }
+
+    // Razorpay is ready - now close modal and proceed with payment
+    setShowBookingModal(false);
 
     try {
       // ✅ CRITICAL FIX: Check env vars BEFORE any URL construction
@@ -540,19 +528,28 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               razorpaySignature: razorpayResponse.razorpay_signature
             });
 
-            if (invoiceResult.success) {
-              alert(`✅ Payment successful!\n\nInvoice ID: ${invoiceResult.invoiceId}\n\nThank you for your booking! You'll receive:\n• Booking confirmation email\n• Invoice with payment details\n\nI'll contact you within 24 hours to discuss your project.`);
+            // ✅ P0 FIX: Navigate to confirmation page instead of alert
+            // Build URL with payment details
+            const confirmationUrl = new URLSearchParams({
+              invoiceId: invoiceResult.invoiceId || 'N/A',
+              paymentId: razorpayResponse.razorpay_payment_id,
+              service: selectedService.name,
+              name: customerDetails.name,
+              email: customerDetails.email,
+              deposit: selectedService.depositAmount!.toString(),
+              total: totalAmount.toString()
+            });
 
-              // Reset customer details
-              setCustomerDetails({
-                name: '',
-                email: '',
-                phone: '',
-                projectDetails: ''
-              });
-            } else {
-              alert(`✅ Payment successful!\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nThank you for your deposit! I'll contact you within 24 hours.\n\nNote: Email notification may be delayed. Please check your inbox.`);
-            }
+            // Reset customer details before navigation
+            setCustomerDetails({
+              name: '',
+              email: '',
+              phone: '',
+              projectDetails: ''
+            });
+
+            // Navigate to confirmation page
+            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
           } catch (error) {
             console.error('❌ Payment processing error:', error);
             alert(`⚠️ Payment received but verification failed.\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nPlease contact support to confirm your booking.`);
@@ -577,6 +574,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
           ondismiss: function() {
             console.log('ℹ️ Payment modal dismissed by user');
             setIsPaymentLoading(false);
+            // ✅ P0 FIX: Reopen modal WITHOUT clearing customerDetails
+            // User can retry payment with their data still filled in
             setShowBookingModal(true);
           }
         },
@@ -604,6 +603,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         const errorMessage = getRazorpayErrorMessage(response);
         alert(errorMessage + '\n\nNeed help? Contact us at:\nsudharsanofficial0001@gmail.com');
         setIsPaymentLoading(false);
+        // ✅ P0 FIX: Reopen modal WITHOUT clearing customerDetails
+        // User can retry payment with their data still filled in
         setShowBookingModal(true);
       });
       razorpay.open();

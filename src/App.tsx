@@ -10,6 +10,7 @@ const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
+const PaymentConfirmationPage = lazy(() => import('./pages/PaymentConfirmationPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // ✅ FIX: Lazy load global widgets (available on all pages)
@@ -99,6 +100,7 @@ function App() {
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/testimonials" element={<TestimonialsPage />} />
                 <Route path="/faq" element={<FAQPage />} />
+                <Route path="/payment-confirmation" element={<PaymentConfirmationPage />} />
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>

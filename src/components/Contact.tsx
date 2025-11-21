@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Mail, Send, Github, Linkedin, Twitter, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from '@supabase/supabase-js';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 // ✅ LAZY LOAD FIX: Removed initEmailJS import - Contact form only saves to Supabase, does not send emails
-import { env } from '../utils/env';
 import { sanitizeFormData } from '../utils/sanitize';
 import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
+import { supabase } from '../services/supabaseClient'; // ✅ FIX: Use singleton Supabase client
 
 interface FormErrors {
   name?: string;
@@ -18,11 +17,6 @@ interface FormErrors {
   budget?: string;
   message?: string;
 }
-
-// Initialize Supabase client
-const supabase = env.SUPABASE_URL && env.SUPABASE_ANON_KEY
-  ? createClient(env.SUPABASE_URL, env.SUPABASE_ANON_KEY)
-  : null;
 
 export default function Contact() {
   const [formData, setFormData] = useState({
