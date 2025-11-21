@@ -198,85 +198,96 @@ const Hero: FC = () => {
             {/* 1. Wireframe Grid Background */}
             <GenerativeGrid isMobile={isMobile} />
 
-            {/* 2. Dynamic Background Blob (Cosmic Glow) - Simplified on mobile */}
-            <motion.div
-                className={`absolute rounded-full mix-blend-screen ${
-                    isMobile ? 'w-[350px] h-[350px] opacity-20 blur-2xl' : 'w-[500px] h-[500px] md:w-[800px] md:h-[800px] opacity-35 blur-3xl'
-                }`}
-                style={{
-                    x: isMobile ? 0 : blobX,
-                    y: isMobile ? 0 : blobY,
-                    background: 'radial-gradient(circle, rgba(6,182,212,0.9) 0%, rgba(59,130,246,0.6) 40%, rgba(2,132,199,0) 70%)',
-                    zIndex: 2,
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
-                }}
-                animate={isMobile ? {} : {
-                    scale: [1, 1.1, 1],
-                    rotate: [0, 10, -10, 0],
-                }}
-                transition={isMobile ? {} : {
-                    duration: 30,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                }}
-            />
+            {/* 2. Dynamic Background Blob (Cosmic Glow) - ✅ P0 FIX: Static on mobile */}
+            {!isMobile && (
+                <motion.div
+                    className="absolute rounded-full mix-blend-screen w-[500px] h-[500px] md:w-[800px] md:h-[800px] opacity-35 blur-3xl"
+                    style={{
+                        x: blobX,
+                        y: blobY,
+                        background: 'radial-gradient(circle, rgba(6,182,212,0.9) 0%, rgba(59,130,246,0.6) 40%, rgba(2,132,199,0) 70%)',
+                        zIndex: 2,
+                        top: '50%',
+                        left: '50%',
+                        transform: 'translate(-50%, -50%)',
+                    }}
+                    animate={{
+                        scale: [1, 1.1, 1],
+                        rotate: [0, 10, -10, 0],
+                    }}
+                    transition={{
+                        duration: 30,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                />
+            )}
+            {/* ✅ P0 FIX: Simple static gradient on mobile for better performance */}
+            {isMobile && (
+                <div
+                    className="absolute w-full h-full opacity-20"
+                    style={{
+                        background: 'radial-gradient(circle at 50% 50%, rgba(6,182,212,0.4) 0%, rgba(59,130,246,0.2) 40%, transparent 70%)',
+                        zIndex: 2,
+                    }}
+                />
+            )}
 
             {/* Content Layer */}
             <div className="container mx-auto px-6 relative z-10">
                 <div className="text-center space-y-8 py-20">
                     <div className="space-y-4 sm:space-y-6">
-                        {/* 3D Name Effect: Mouse reactive rotation - SEO Optimized H1 */}
-                        <motion.div
-                            style={enableMouseTracking ? { rotateX, rotateY, transformStyle: "preserve-3d" } : {}}
-                            className="cursor-default"
-                            transition={enableMouseTracking ? springConfig : {}}
-                        >
+                        {/* 3D Name Effect: Mouse reactive rotation - SEO Optimized H1 - ✅ P0 FIX: No 3D on mobile */}
+                        {isMobile ? (
                             <h1
-                                className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold text-white tracking-tighter px-4"
+                                className="text-5xl xs:text-6xl sm:text-7xl font-extrabold text-white tracking-tighter px-4"
                                 style={{
-                                    textShadow: isMobile ? `
+                                    textShadow: `
                                         0 0 3px rgba(255, 255, 255, 0.6),
                                         0 3px 0px rgba(0, 0, 0, 0.3),
                                         0 6px 0px rgba(0, 175, 255, 0.2)
-                                    ` : `
-                                        0 0 5px rgba(255, 255, 255, 0.8),
-                                        0 5px 0px rgba(0, 0, 0, 0.3),
-                                        0 10px 0px rgba(0, 175, 255, 0.2),
-                                        0 15px 5px rgba(0, 0, 0, 0.1)
                                     `
                                 }}
                             >
                                 Sudharsan
                             </h1>
-                        </motion.div>
+                        ) : (
+                            <motion.div
+                                style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
+                                className="cursor-default"
+                                transition={springConfig}
+                            >
+                                <h1
+                                    className="text-5xl xs:text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-extrabold text-white tracking-tighter px-4"
+                                    style={{
+                                        textShadow: `
+                                            0 0 5px rgba(255, 255, 255, 0.8),
+                                            0 5px 0px rgba(0, 0, 0, 0.3),
+                                            0 10px 0px rgba(0, 175, 255, 0.2),
+                                            0 15px 5px rgba(0, 0, 0, 0.1)
+                                        `
+                                    }}
+                                >
+                                    Sudharsan
+                                </h1>
+                            </motion.div>
+                        )}
 
-                        {/* Animated subtitle with gradient - SEO Optimized */}
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: isMobile ? 0.1 : 0.3, duration: isMobile ? 0.4 : 0.8 }}
-                            className="space-y-3 px-4"
-                        >
+                        {/* Animated subtitle with gradient - SEO Optimized - ✅ P0 FIX: Simpler animations on mobile */}
+                        <div className="space-y-3 px-4">
                             <p className="text-lg xs:text-xl sm:text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 font-bold pt-2 flex flex-wrap items-center justify-center gap-2">
-                                <Sparkles className={`text-cyan-400 ${isMobile ? '' : 'animate-pulse'}`} size={isMobile ? 20 : 28} />
+                                <Sparkles className="text-cyan-400" size={isMobile ? 20 : 28} />
                                 <span className="text-center">Full Stack Web Developer & SaaS Builder</span>
-                                <Sparkles className={`text-cyan-400 ${isMobile ? '' : 'animate-pulse'}`} size={isMobile ? 20 : 28} />
+                                <Sparkles className="text-cyan-400" size={isMobile ? 20 : 28} />
                             </p>
                             <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto pt-2 leading-relaxed">
                                 Expert in <span className="text-cyan-400 font-semibold">React, TypeScript, Node.js</span> — Building modern web applications, SaaS platforms, and e-commerce solutions that drive business growth
                             </p>
-                        </motion.div>
+                        </div>
                     </div>
 
-                    {/* Social Icons - Enhanced with better animations and mobile-optimized touch targets */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: isMobile ? 0.2 : 0.5, duration: isMobile ? 0.4 : 0.8 }}
-                        className="flex justify-center gap-4 sm:gap-6 pt-6 sm:pt-8"
-                    >
+                    {/* Social Icons - Enhanced with better animations and mobile-optimized touch targets - ✅ P0 FIX: No entry animation on mobile */}
+                    <div className="flex justify-center gap-4 sm:gap-6 pt-6 sm:pt-8">
                         {/* GitHub */}
                         <motion.a
                             href="https://github.com/Sudharsan1-5"
@@ -347,17 +358,12 @@ const Hero: FC = () => {
                         >
                             <Mail size={isMobile ? 24 : 28} />
                         </motion.a>
-                    </motion.div>
+                    </div>
 
-                    {/* CTA Buttons - Book Now + Let's Work Together */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: isMobile ? 0.3 : 0.7, duration: isMobile ? 0.4 : 0.8 }}
-                        className={`pt-8 sm:pt-12 px-4 flex flex-col sm:flex-row items-center justify-center gap-4 ${
+                    {/* CTA Buttons - Book Now + Let's Work Together - ✅ P0 FIX: No entry animation on mobile */}
+                    <div className={`pt-8 sm:pt-12 px-4 flex flex-col sm:flex-row items-center justify-center gap-4 ${
                             isMobile ? 'w-full max-w-md mx-auto' : ''
-                        }`}
-                    >
+                        }`}>
                         {/* Book Now Button - Primary CTA */}
                         <motion.button
                             onClick={() => navigate('/services')}
@@ -394,7 +400,7 @@ const Hero: FC = () => {
                             <Sparkles size={isMobile ? 18 : 20} />
                             Let's Work Together
                         </motion.a>
-                    </motion.div>
+                    </div>
                 </div>
             </div>
             

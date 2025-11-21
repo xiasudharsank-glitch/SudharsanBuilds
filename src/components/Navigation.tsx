@@ -67,34 +67,35 @@ export default function Navigation() {
     e.preventDefault();
     setIsMobileMenuOpen(false);
 
+    // ✅ P0 FIX: Clear all pending timeouts before starting new navigation
+    timeoutIdsRef.current.forEach(timeoutId => clearTimeout(timeoutId));
+    timeoutIdsRef.current.clear();
+
     if (type === 'section') {
       // If we're not on the homepage, navigate there first
       if (location.pathname !== '/') {
         navigate('/');
-        // ✅ FIX #3: Track timeout IDs for proper cleanup
-        const timeoutId1 = setTimeout(() => {
-          requestAnimationFrame(() => {
-            const element = document.querySelector(href);
-            if (element) {
-              element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              timeoutIdsRef.current.delete(timeoutId1);
-            } else {
-              // If element still not found, try again after 200ms
-              const timeoutId2 = setTimeout(() => {
-                const retryElement = document.querySelector(href);
-                if (retryElement) {
-                  retryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-                timeoutIdsRef.current.delete(timeoutId2);
-              }, 200);
-              timeoutIdsRef.current.add(timeoutId2);
-              timeoutIdsRef.current.delete(timeoutId1);
-            }
-          });
+        // Wait for route change and DOM update before scrolling
+        const timeoutId = setTimeout(() => {
+          const element = document.querySelector(href);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            // If element not found, wait a bit longer (page might still be loading)
+            const retryTimeoutId = setTimeout(() => {
+              const retryElement = document.querySelector(href);
+              if (retryElement) {
+                retryElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+              timeoutIdsRef.current.delete(retryTimeoutId);
+            }, 300);
+            timeoutIdsRef.current.add(retryTimeoutId);
+          }
+          timeoutIdsRef.current.delete(timeoutId);
         }, 800);
-        timeoutIdsRef.current.add(timeoutId1);
+        timeoutIdsRef.current.add(timeoutId);
       } else {
-        // Already on homepage, scroll immediately with requestAnimationFrame for smoothness
+        // Already on homepage, scroll immediately
         requestAnimationFrame(() => {
           const element = document.querySelector(href);
           if (element) {

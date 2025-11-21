@@ -32,7 +32,24 @@ const FloatingAvatar: FC<FloatingAvatarProps> = ({ onClick }) => {
     const REPEL_STRENGTH = 0.8; // Strength of the repel effect (0-1)
     const RETURN_SPEED = 0.15; // Speed of return to original position (0-1, higher = faster)
 
+    // ✅ P0 FIX: Detect mobile and disable animations completely
+    const [isMobile, setIsMobile] = useState(false);
+
     useEffect(() => {
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+        };
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    useEffect(() => {
+        // ✅ P0 FIX: Skip all animations and mouse tracking on mobile for better performance
+        if (isMobile) {
+            return; // Exit early - no animations on mobile
+        }
+
         let currentX = 0;
         let currentY = 0;
         let targetX = 0;
@@ -107,8 +124,32 @@ const FloatingAvatar: FC<FloatingAvatarProps> = ({ onClick }) => {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, []); // ✅ FIX: Remove position from dependencies to prevent infinite loop
+    }, [isMobile]); // ✅ P0 FIX: Re-run if mobile state changes
 
+    // ✅ P0 FIX: Render static avatar on mobile (no animations)
+    if (isMobile) {
+        return (
+            <div
+                ref={avatarRef}
+                onClick={onClick}
+                className="fixed bottom-6 right-6 z-50 cursor-pointer select-none active:scale-95 transition-transform"
+            >
+                {/* Simple static avatar for mobile - no animations */}
+                <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500/20 to-blue-600/20 backdrop-blur-sm border-2 border-cyan-400/30 shadow-lg flex items-center justify-center">
+                    {/* Bot Icon */}
+                    <Bot
+                        size={32}
+                        className="text-cyan-400 drop-shadow-lg"
+                        strokeWidth={2}
+                    />
+                    {/* Simple static pulse indicator */}
+                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full border-2 border-white shadow-sm" />
+                </div>
+            </div>
+        );
+    }
+
+    // ✅ Desktop: Full animated experience
     return (
         <motion.div
             ref={avatarRef}

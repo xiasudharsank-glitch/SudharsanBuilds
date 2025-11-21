@@ -1,7 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, useEffect } from 'react';
 import Navigation from './components/Navigation';
 import ErrorBoundary from './components/ErrorBoundary';
+import { features } from './utils/env';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -30,6 +31,39 @@ function App() {
 
   const handleOpenChat = () => setIsChatOpen(true);
   const handleCloseChat = () => setIsChatOpen(false);
+
+  // ✅ P0 FIX: Validate environment variables on startup and log warnings
+  useEffect(() => {
+    // Only log in development to avoid exposing config issues in production
+    if (import.meta.env.DEV) {
+      console.log('🔧 Checking environment configuration...');
+
+      const warnings: string[] = [];
+
+      if (!features.hasPayment) {
+        warnings.push('⚠️ Payment system not configured (Razorpay/Supabase). Payment features will be disabled.');
+      }
+
+      if (!features.hasAIChat) {
+        warnings.push('⚠️ AI Chat not configured (Supabase). Chat features will be disabled.');
+      }
+
+      if (!features.hasEmailJS) {
+        warnings.push('⚠️ EmailJS not configured. Email notifications will be disabled.');
+      }
+
+      if (!features.hasContactForm) {
+        warnings.push('⚠️ Contact form backend not configured (Formspree/Supabase).');
+      }
+
+      if (warnings.length > 0) {
+        console.warn('⚠️ Configuration warnings:\n' + warnings.join('\n'));
+        console.log('💡 Features will gracefully degrade. Users will see appropriate fallback messages.');
+      } else {
+        console.log('✅ All features properly configured!');
+      }
+    }
+  }, []);
 
   return (
     <ErrorBoundary>

@@ -345,15 +345,47 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       return;
     }
 
-    // ✅ FIX: Validate Razorpay script is loaded
+    // ✅ P0 FIX: Critical - Wait for Razorpay script with retry logic
     if (!razorpayLoaded || !window.Razorpay) {
-      alert('Payment system is still loading. Please wait a moment and try again.');
-      return;
-    }
+      setShowBookingModal(false);
+      setIsPaymentLoading(true);
 
-    // Close modal and start payment
-    setShowBookingModal(false);
-    setIsPaymentLoading(true);
+      // Wait up to 10 seconds for Razorpay to load
+      let retries = 0;
+      const maxRetries = 20; // 20 * 500ms = 10 seconds
+
+      const waitForRazorpay = async (): Promise<void> => {
+        while (retries < maxRetries) {
+          if (window.Razorpay && razorpayLoaded) {
+            // Razorpay is now loaded, continue with payment
+            break;
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+          retries++;
+        }
+
+        // Check if Razorpay loaded successfully
+        if (!window.Razorpay || !razorpayLoaded) {
+          // Timeout - Razorpay failed to load
+          setIsPaymentLoading(false);
+          setShowBookingModal(true); // Reopen modal
+          alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
+          return;
+        }
+        // If Razorpay loaded successfully, continue below
+      };
+
+      await waitForRazorpay();
+
+      // If we return early (timeout), stop execution
+      if (!window.Razorpay || !razorpayLoaded) {
+        return;
+      }
+    } else {
+      // Close modal and start payment
+      setShowBookingModal(false);
+      setIsPaymentLoading(true);
+    }
 
     try {
       // ✅ CRITICAL FIX: Check env vars BEFORE any URL construction
@@ -627,10 +659,10 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                 ))}
               </ul>
 
-              {/* CTA Button */}
+              {/* CTA Button - ✅ P0 FIX: Always enabled, will wait for Razorpay on click */}
               <button
                 onClick={() => handleBooking(service)}
-                disabled={isPaymentLoading || (service.ctaAction === 'book' && !razorpayLoaded)}
+                disabled={isPaymentLoading}
                 className={`w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-base transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
                   service.ctaAction === 'book'
                     ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-500/50'
@@ -638,9 +670,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                 }`}
               >
                 {isPaymentLoading
-                  ? 'Processing...'
-                  : (service.ctaAction === 'book' && !razorpayLoaded)
-                  ? 'Loading payment system...'
+                  ? 'Loading payment...'
                   : service.ctaText}
               </button>
             </motion.div>
