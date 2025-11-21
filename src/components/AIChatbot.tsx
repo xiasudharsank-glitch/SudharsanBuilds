@@ -814,8 +814,19 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         setIsListening(false);
       };
 
-      recognitionInstance.onerror = () => {
+      recognitionInstance.onerror = (event: any) => {
+        // ✅ CRITICAL FIX #10: Better error handling with user feedback
+        console.error('Speech recognition error:', event.error);
         setIsListening(false);
+
+        // Show user-friendly error message based on error type
+        if (event.error === 'no-speech') {
+          // Silent fail for no-speech - user just didn't say anything
+        } else if (event.error === 'not-allowed') {
+          alert('⚠️ Microphone access denied. Please allow microphone access in your browser settings.');
+        } else if (event.error === 'network') {
+          alert('⚠️ Network error. Please check your internet connection and try again.');
+        }
       };
 
       recognitionInstance.onend = () => {
@@ -974,10 +985,10 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     URL.revokeObjectURL(url);
   };
 
-  // ✅ Voice Input Toggle
+  // ✅ CRITICAL FIX #5: Voice Input Toggle with better error handling
   const toggleVoiceInput = () => {
     if (!recognition) {
-      alert('Voice input not supported in this browser. Try Chrome or Edge.');
+      alert('⚠️ Voice input not supported in this browser.\n\n✅ Supported browsers: Chrome, Edge, Safari (iOS)\n❌ Not supported: Firefox');
       return;
     }
 
@@ -985,8 +996,14 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       recognition.stop();
       setIsListening(false);
     } else {
-      recognition.start();
-      setIsListening(true);
+      try {
+        recognition.start();
+        setIsListening(true);
+      } catch (error) {
+        console.error('Failed to start voice recognition:', error);
+        setIsListening(false);
+        alert('⚠️ Failed to start voice input. Please ensure:\n\n1. Microphone is connected\n2. Browser has microphone permission\n3. Microphone is not being used by another app');
+      }
     }
   };
 
@@ -1185,15 +1202,38 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   };
 
   // ✅ Quick Actions
+  // ✅ CRITICAL FIX: Quick actions now properly transition from welcome screen
   const quickActions = [
-    { icon: <MessageSquare className="w-4 h-4" />, label: "What services?", action: () => handleSendMessage("What services do you offer?") },
-    { icon: <DollarSign className="w-4 h-4" />, label: "Pricing", action: () => handleSendMessage("How much does a website cost?") },
-    { icon: <BookOpen className="w-4 h-4" />, label: "Portfolio", action: () => handleSendMessage("Show me your recent projects") },
-    { icon: <Clock className="w-4 h-4" />, label: "Timeline", action: () => handleSendMessage("How long does it take to build a website?") },
+    { icon: <MessageSquare className="w-4 h-4" />, label: "What services?", action: () => handleQuickAction("What services do you offer?") },
+    { icon: <DollarSign className="w-4 h-4" />, label: "Pricing", action: () => handleQuickAction("How much does a website cost?") },
+    { icon: <BookOpen className="w-4 h-4" />, label: "Portfolio", action: () => handleQuickAction("Show me your recent projects") },
+    { icon: <Clock className="w-4 h-4" />, label: "Timeline", action: () => handleQuickAction("How long does it take to build a website?") },
   ];
 
+  // ✅ CRITICAL FIX: Handle quick actions and prompts from welcome screen
+  const handleQuickAction = (message: string) => {
+    // First dismiss welcome screen for immediate UI feedback
+    if (chatState.isWelcome) {
+      setChatState((prev) => ({
+        ...prev,
+        isWelcome: false,
+      }));
+    }
+    // Then send the message
+    handleSendMessage(message);
+  };
+
   const handlePromptClick = (prompt: string) => {
-    handleSendMessage(prompt);
+    handleQuickAction(prompt);
+  };
+
+  // ✅ CRITICAL FIX #4: Preview follow-up suggestions before sending
+  const handleFollowUpClick = (suggestion: string) => {
+    // Populate input box instead of sending immediately
+    // This gives users a chance to review/edit before sending
+    setInputValue(suggestion);
+    // Scroll to input area
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   const handleSendMessage = async (promptText?: string) => {
@@ -1239,7 +1279,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
-    setMessageCount(prev => prev + 1);
+    // ✅ CRITICAL FIX #9: Don't increment count until after successful API response
 
     try {
       if (!env.SUPABASE_URL ||
@@ -1286,6 +1326,9 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       const data = await response.json();
 
       if (data.success && data.message) {
+        // ✅ CRITICAL FIX #9: Only increment count after successful API response
+        setMessageCount(prev => prev + 1);
+
         const assistantMessageId = (Date.now() + 1).toString();
 
         // ✅ Phase 2: Handle function calls from AI
@@ -1470,14 +1513,15 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                     )}
                   </motion.button>
 
-                  {/* Search Toggle */}
+                  {/* Search Toggle - ✅ CRITICAL FIX #6: Better explanation */}
                   {!chatState.isWelcome && (
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => setShowSearch(!showSearch)}
-                      className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                      title="Search messages"
+                      className={`p-2 hover:bg-white/10 rounded-lg transition-colors ${showSearch ? 'bg-white/20' : ''}`}
+                      title="🔍 Search through your chat history to find specific messages or topics"
+                      aria-label="Toggle search in chat history"
                     >
                       <Search className="w-5 h-5 text-white" />
                     </motion.button>
@@ -1518,15 +1562,21 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mt-3"
+                    className="mt-3 space-y-2"
                   >
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search messages..."
+                      placeholder="🔍 Type to search chat history... (e.g., 'pricing', 'portfolio')"
                       className="w-full px-3 py-2 bg-white/20 border border-white/30 rounded-lg text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 text-sm"
+                      autoFocus
                     />
+                    {searchQuery && (
+                      <p className="text-xs text-white/70 px-1">
+                        Searching {messages.filter(m => m.content.toLowerCase().includes(searchQuery.toLowerCase())).length} matches in {messages.length} messages
+                      </p>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1604,10 +1654,11 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                     {quickActions.map((action, index) => (
                       <motion.button
                         key={index}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: isLoading ? 1 : 1.05 }}
+                        whileTap={{ scale: isLoading ? 1 : 0.95 }}
                         onClick={action.action}
-                        className={`px-3 py-2 ${isDarkMode ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-200 border-slate-600/50' : 'bg-white/50 hover:bg-white text-slate-700 border-slate-300'} border text-xs rounded-lg transition-all text-left flex items-center gap-2`}
+                        disabled={isLoading}
+                        className={`px-3 py-2 ${isDarkMode ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-200 border-slate-600/50' : 'bg-white/50 hover:bg-white text-slate-700 border-slate-300'} border text-xs rounded-lg transition-all text-left flex items-center gap-2 ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         {action.icon}
                         <span>{action.label}</span>
@@ -1628,10 +1679,11 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                     {suggestedPrompts.slice(0, 4).map((prompt, index) => (
                       <motion.button
                         key={index}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={{ scale: isLoading ? 1 : 1.05 }}
+                        whileTap={{ scale: isLoading ? 1 : 0.95 }}
                         onClick={() => handlePromptClick(prompt)}
-                        className={`px-3 py-2 ${isDarkMode ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-200 border-slate-600/50' : 'bg-white/50 hover:bg-white text-slate-700 border-slate-300'} border text-xs rounded-lg transition-all text-left`}
+                        disabled={isLoading}
+                        className={`px-3 py-2 ${isDarkMode ? 'bg-slate-700/50 hover:bg-slate-700 text-slate-200 border-slate-600/50' : 'bg-white/50 hover:bg-white text-slate-700 border-slate-300'} border text-xs rounded-lg transition-all text-left ${isLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                       >
                         {prompt}
                       </motion.button>
@@ -1716,7 +1768,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                       readAloud={readAloud}
                       isSpeaking={isSpeaking}
                       currentSpeakingId={currentSpeakingId}
-                      onFollowUpClick={handleSendMessage} // ✅ Phase 1: Pass callback for follow-ups
+                      onFollowUpClick={handleFollowUpClick} // ✅ CRITICAL FIX #4: Preview suggestions in input
                     />
                   ))}
 
@@ -1774,7 +1826,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                       className={`flex-1 ${isDarkMode ? 'bg-slate-700/60 border-slate-600/50 text-white placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'} px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all text-sm disabled:opacity-50 backdrop-blur-sm`}
                     />
 
-                    {/* Voice Input */}
+                    {/* Voice Input - ✅ CRITICAL FIX #5: Better visibility and tooltips */}
                     {recognition && (
                       <motion.button
                         whileHover={{ scale: 1.08 }}
@@ -1783,10 +1835,11 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                         disabled={isLoading}
                         className={`w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 ${
                           isListening
-                            ? 'bg-red-500 hover:bg-red-600'
-                            : 'bg-gradient-to-r from-cyan-500 to-blue-600'
+                            ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                            : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700'
                         } text-white rounded-lg sm:rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex-shrink-0`}
-                        title={isListening ? "Stop listening" : "Voice input"}
+                        title={isListening ? "🔴 Recording... Click to stop" : "🎤 Click to speak your message"}
+                        aria-label={isListening ? "Stop voice input" : "Start voice input"}
                       >
                         {isListening ? (
                           <MicOff className="w-5 h-5" />
