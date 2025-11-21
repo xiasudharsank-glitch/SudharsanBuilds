@@ -528,7 +528,15 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               razorpaySignature: razorpayResponse.razorpay_signature
             });
 
-            // ✅ P0 FIX: Navigate to confirmation page instead of alert
+            // ✅ P1 FIX: Show email failure warning if needed
+            const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
+            if (hasEmailIssue) {
+              // Show warning but still navigate to confirmation
+              console.warn('⚠️ Email notification issue:', invoiceResult.message);
+              alert(`Payment successful! However:\n\n${invoiceResult.message}\n\nYou'll be redirected to your confirmation page.`);
+            }
+
+            // ✅ P0 FIX: Navigate to confirmation page
             // Build URL with payment details
             const confirmationUrl = new URLSearchParams({
               invoiceId: invoiceResult.invoiceId || 'N/A',
@@ -537,7 +545,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               name: customerDetails.name,
               email: customerDetails.email,
               deposit: selectedService.depositAmount!.toString(),
-              total: totalAmount.toString()
+              total: totalAmount.toString(),
+              emailStatus: hasEmailIssue ? 'warning' : 'success'
             });
 
             // Reset customer details before navigation
@@ -718,20 +727,35 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                 ))}
               </ul>
 
-              {/* CTA Button - ✅ P0 FIX: Always enabled, will wait for Razorpay on click */}
-              <button
-                onClick={() => handleBooking(service)}
-                disabled={isPaymentLoading}
-                className={`w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-base transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
-                  service.ctaAction === 'book'
-                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-500/50'
-                    : 'bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:shadow-slate-500/50'
-                }`}
-              >
-                {isPaymentLoading
-                  ? 'Loading payment...'
-                  : service.ctaText}
-              </button>
+              {/* CTA Button - ✅ P1 FIX: Hide payment buttons when system is disabled */}
+              {service.ctaAction === 'book' && !features.hasPayment ? (
+                // Payment system disabled - show contact button instead
+                <a
+                  href="#contact"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="block w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-base text-center transition-all duration-300 transform hover:scale-105 shadow-lg bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:shadow-slate-500/50"
+                >
+                  Contact for Quote
+                </a>
+              ) : (
+                // Payment enabled or quote service
+                <button
+                  onClick={() => handleBooking(service)}
+                  disabled={isPaymentLoading}
+                  className={`w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-base transition-all duration-300 transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed ${
+                    service.ctaAction === 'book'
+                      ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:shadow-cyan-500/50'
+                      : 'bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:shadow-slate-500/50'
+                  }`}
+                >
+                  {isPaymentLoading
+                    ? 'Loading payment...'
+                    : service.ctaText}
+                </button>
+              )}
             </motion.div>
           ))}
         </div>

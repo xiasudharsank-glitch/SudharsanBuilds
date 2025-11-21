@@ -15,6 +15,7 @@ export default function PaymentConfirmationPage() {
   const customerEmail = searchParams.get('email') || '';
   const depositAmount = searchParams.get('deposit') || '0';
   const totalAmount = searchParams.get('total') || '0';
+  const emailStatus = searchParams.get('emailStatus') || 'success';
 
   // WhatsApp contact link
   const whatsappNumber = env.WHATSAPP_NUMBER || '919876543210';
@@ -157,6 +158,16 @@ export default function PaymentConfirmationPage() {
                 </a>
               </div>
             </div>
+
+            {/* Email Status Warning */}
+            {emailStatus === 'warning' && (
+              <div className="bg-red-50 rounded-xl p-4 border-l-4 border-red-500 mb-4">
+                <p className="text-sm text-red-900">
+                  <strong>⚠️ Email Notification Issue:</strong> Some confirmation emails may not have been delivered.
+                  Please contact me immediately via WhatsApp or email to ensure you receive your invoice and booking details.
+                </p>
+              </div>
+            )}
 
             {/* Important Notice */}
             <div className="bg-amber-50 rounded-xl p-4 border-l-4 border-amber-500">
