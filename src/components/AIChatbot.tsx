@@ -1210,6 +1210,15 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     handleQuickAction(prompt);
   };
 
+  // ✅ CRITICAL FIX #4: Preview follow-up suggestions before sending
+  const handleFollowUpClick = (suggestion: string) => {
+    // Populate input box instead of sending immediately
+    // This gives users a chance to review/edit before sending
+    setInputValue(suggestion);
+    // Scroll to input area
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   const handleSendMessage = async (promptText?: string) => {
     const messageText = promptText || inputValue.trim();
     if (!messageText || isLoading) return;
@@ -1253,7 +1262,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     setMessages(newMessages);
     setInputValue('');
     setIsLoading(true);
-    setMessageCount(prev => prev + 1);
+    // ✅ CRITICAL FIX #9: Don't increment count until after successful API response
 
     try {
       if (!env.SUPABASE_URL ||
@@ -1300,6 +1309,9 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       const data = await response.json();
 
       if (data.success && data.message) {
+        // ✅ CRITICAL FIX #9: Only increment count after successful API response
+        setMessageCount(prev => prev + 1);
+
         const assistantMessageId = (Date.now() + 1).toString();
 
         // ✅ Phase 2: Handle function calls from AI
@@ -1732,7 +1744,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                       readAloud={readAloud}
                       isSpeaking={isSpeaking}
                       currentSpeakingId={currentSpeakingId}
-                      onFollowUpClick={handleSendMessage} // ✅ Phase 1: Pass callback for follow-ups
+                      onFollowUpClick={handleFollowUpClick} // ✅ CRITICAL FIX #4: Preview suggestions in input
                     />
                   ))}
 
