@@ -71,6 +71,13 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
   success: boolean;
   invoiceId?: string;
   message: string;
+  // ✅ P2 FIX: Enhanced error reporting for better debugging and user communication
+  databaseSaved?: boolean;
+  emailStatus?: {
+    bookingConfirmation: boolean;
+    invoice: boolean;
+    ownerAlert: boolean;
+  };
 }> => {
   try {
     // Generate invoice details
@@ -264,16 +271,26 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
       message = `❌ Critical error: Both database save and all email notifications failed. Please contact support immediately at ${yourEmail} or WhatsApp: ${whatsappNumber}`;
     }
 
+    // ✅ P2 FIX: Return detailed status for better error handling
     return {
       success: anyEmailSent || invoiceSavedToDatabase, // Success if at least one operation succeeded
       invoiceId: invoiceId,
-      message: message
+      message: message,
+      databaseSaved: invoiceSavedToDatabase,
+      emailStatus: emailResults
     };
   } catch (error) {
-    console.error('Error generating invoice:', error);
+    console.error('❌ Critical error generating invoice:', error);
+    // ✅ P2 FIX: Enhanced error reporting with details
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to generate invoice'
+      message: error instanceof Error ? error.message : 'Failed to generate invoice',
+      databaseSaved: false,
+      emailStatus: {
+        bookingConfirmation: false,
+        invoice: false,
+        ownerAlert: false
+      }
     };
   }
 };

@@ -36,6 +36,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     phone: '',
     projectDetails: ''
   });
+  // ✅ P1 FIX: Inline validation errors instead of alert()
+  const [validationErrors, setValidationErrors] = useState<{
+    name?: string;
+    email?: string;
+    phone?: string;
+    projectDetails?: string;
+  }>({});
 
   // ✅ ACCESSIBILITY: Focus management for modal
   const modalRef = useRef<HTMLDivElement>(null);
@@ -356,25 +363,44 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
   const handlePaymentProceed = async () => {
     if (!selectedService || !selectedService.depositAmount) return;
 
-    // Validate customer details (phone is optional)
-    if (!customerDetails.name.trim() || !customerDetails.email.trim() || !customerDetails.projectDetails.trim()) {
-      alert('Please fill in all required fields (name, email, project details)');
-      return;
+    // ✅ P1 FIX: Inline validation instead of alert()
+    const errors: typeof validationErrors = {};
+
+    // Validate name
+    if (!customerDetails.name.trim()) {
+      errors.name = 'Name is required';
     }
 
-    // Validate email format
+    // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customerDetails.email)) {
-      alert('Please enter a valid email address');
+    if (!customerDetails.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!emailRegex.test(customerDetails.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    // Validate phone (optional field)
+    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
+      errors.phone = 'Please enter a valid phone number (8-15 digits, no leading zero)';
+    }
+
+    // Validate project details
+    if (!customerDetails.projectDetails.trim()) {
+      errors.projectDetails = 'Project details are required';
+    }
+
+    // If there are errors, show them and stop
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      // Scroll to first error field
+      const firstErrorField = Object.keys(errors)[0];
+      const errorElement = document.getElementById(`modal-${firstErrorField === 'projectDetails' ? 'details' : firstErrorField}`);
+      errorElement?.focus();
       return;
     }
 
-    // ✅ FIX: Enhanced phone validation using shared utility - OPTIONAL
-    // Only validate if phone is provided (phone field is optional)
-    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
-      alert('Please enter a valid phone number (8-15 digits, no leading zero)');
-      return;
-    }
+    // Clear any previous errors
+    setValidationErrors({});
 
     // ✅ P0 FIX: Keep modal visible while loading Razorpay (prevents blank screen)
     setIsPaymentLoading(true); // Show "Processing..." button state
@@ -530,6 +556,16 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
             // ✅ P1 FIX: Show email failure warning if needed
             const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
+
+            // ✅ P2 FIX: Log detailed status for debugging
+            if (invoiceResult.emailStatus || invoiceResult.databaseSaved !== undefined) {
+              console.log('📊 Invoice generation detailed status:', {
+                databaseSaved: invoiceResult.databaseSaved,
+                emailStatus: invoiceResult.emailStatus,
+                invoiceId: invoiceResult.invoiceId
+              });
+            }
+
             if (hasEmailIssue) {
               // Show warning but still navigate to confirmation
               console.warn('⚠️ Email notification issue:', invoiceResult.message);
@@ -884,12 +920,29 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     type="text"
                     id="modal-name"
                     value={customerDetails.name}
-                    onChange={(e) => setCustomerDetails({ ...customerDetails, name: e.target.value })}
+                    onChange={(e) => {
+                      setCustomerDetails({ ...customerDetails, name: e.target.value });
+                      // Clear error when user starts typing
+                      if (validationErrors.name) {
+                        setValidationErrors({ ...validationErrors, name: undefined });
+                      }
+                    }}
                     onKeyDown={handleModalKeyDown}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                      validationErrors.name
+                        ? 'border-red-500 focus:ring-red-500 bg-red-50'
+                        : 'border-slate-300 focus:ring-cyan-500'
+                    }`}
                     placeholder="John Doe"
                     required
+                    aria-invalid={!!validationErrors.name}
+                    aria-describedby={validationErrors.name ? 'name-error' : undefined}
                   />
+                  {validationErrors.name && (
+                    <p id="name-error" className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                      <span>⚠️</span> {validationErrors.name}
+                    </p>
+                  )}
                 </div>
 
                 {/* Email */}
@@ -901,12 +954,29 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     type="email"
                     id="modal-email"
                     value={customerDetails.email}
-                    onChange={(e) => setCustomerDetails({ ...customerDetails, email: e.target.value })}
+                    onChange={(e) => {
+                      setCustomerDetails({ ...customerDetails, email: e.target.value });
+                      // Clear error when user starts typing
+                      if (validationErrors.email) {
+                        setValidationErrors({ ...validationErrors, email: undefined });
+                      }
+                    }}
                     onKeyDown={handleModalKeyDown}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                      validationErrors.email
+                        ? 'border-red-500 focus:ring-red-500 bg-red-50'
+                        : 'border-slate-300 focus:ring-cyan-500'
+                    }`}
                     placeholder="john@example.com"
                     required
+                    aria-invalid={!!validationErrors.email}
+                    aria-describedby={validationErrors.email ? 'email-error' : undefined}
                   />
+                  {validationErrors.email && (
+                    <p id="email-error" className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                      <span>⚠️</span> {validationErrors.email}
+                    </p>
+                  )}
                 </div>
 
                 {/* Phone */}
@@ -918,16 +988,33 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     international
                     defaultCountry="IN"
                     value={customerDetails.phone}
-                    onChange={(value) => setCustomerDetails({ ...customerDetails, phone: value || '' })}
+                    onChange={(value) => {
+                      setCustomerDetails({ ...customerDetails, phone: value || '' });
+                      // Clear error when user starts typing
+                      if (validationErrors.phone) {
+                        setValidationErrors({ ...validationErrors, phone: undefined });
+                      }
+                    }}
                     className="w-full"
                     style={{
                       '--PhoneInputCountryFlag-height': '1em',
                       '--PhoneInput-color--focus': '#06b6d4',
                     } as React.CSSProperties}
                     numberInputProps={{
-                      className: 'w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500'
+                      className: `w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors ${
+                        validationErrors.phone
+                          ? 'border-red-500 focus:ring-red-500 bg-red-50'
+                          : 'border-slate-300 focus:ring-cyan-500'
+                      }`,
+                      'aria-invalid': !!validationErrors.phone,
+                      'aria-describedby': validationErrors.phone ? 'phone-error' : undefined
                     }}
                   />
+                  {validationErrors.phone && (
+                    <p id="phone-error" className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                      <span>⚠️</span> {validationErrors.phone}
+                    </p>
+                  )}
                 </div>
 
                 {/* Project Details */}
@@ -938,7 +1025,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                   <textarea
                     id="modal-details"
                     value={customerDetails.projectDetails}
-                    onChange={(e) => setCustomerDetails({ ...customerDetails, projectDetails: e.target.value })}
+                    onChange={(e) => {
+                      setCustomerDetails({ ...customerDetails, projectDetails: e.target.value });
+                      // Clear error when user starts typing
+                      if (validationErrors.projectDetails) {
+                        setValidationErrors({ ...validationErrors, projectDetails: undefined });
+                      }
+                    }}
                     onKeyDown={(e) => {
                       // Shift+Enter: new line, Enter: proceed to payment (last field)
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -947,10 +1040,21 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                       }
                     }}
                     rows={4}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+                    className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 resize-none transition-colors ${
+                      validationErrors.projectDetails
+                        ? 'border-red-500 focus:ring-red-500 bg-red-50'
+                        : 'border-slate-300 focus:ring-cyan-500'
+                    }`}
                     placeholder="Brief description of your project requirements..."
                     required
+                    aria-invalid={!!validationErrors.projectDetails}
+                    aria-describedby={validationErrors.projectDetails ? 'details-error' : undefined}
                   />
+                  {validationErrors.projectDetails && (
+                    <p id="details-error" className="text-red-600 text-sm mt-1 flex items-center gap-1">
+                      <span>⚠️</span> {validationErrors.projectDetails}
+                    </p>
+                  )}
                 </div>
 
                 {/* Summary */}
