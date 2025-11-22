@@ -7,6 +7,7 @@ interface EnvConfig {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   RAZORPAY_KEY_ID: string;
+  PAYPAL_CLIENT_ID: string;
   FORMSPREE_ID: string;
   EMAILJS_SERVICE_ID: string;
   EMAILJS_PUBLIC_KEY: string;
@@ -15,6 +16,7 @@ interface EnvConfig {
   YOUR_EMAIL: string;
   WHATSAPP_NUMBER: string;
   UPI_ID: string;
+  REGION: string;
 }
 
 /**
@@ -71,10 +73,12 @@ Please contact the site administrator.
  * @returns Object with validation results
  */
 export function validateEnv(): { isValid: boolean; missing: string[] } {
+  const region = import.meta.env.VITE_REGION as string | undefined;
+
+  // Base required vars for all regions
   const requiredVars = [
     'SUPABASE_URL',
     'SUPABASE_ANON_KEY',
-    'RAZORPAY_KEY_ID',
     'FORMSPREE_ID',
     'EMAILJS_SERVICE_ID',
     'EMAILJS_PUBLIC_KEY',
@@ -82,6 +86,16 @@ export function validateEnv(): { isValid: boolean; missing: string[] } {
     'YOUR_EMAIL',
     'WHATSAPP_NUMBER'
   ];
+
+  // Add region-specific payment gateway requirements
+  if (region === 'india') {
+    requiredVars.push('RAZORPAY_KEY_ID');
+  } else if (region === 'global') {
+    requiredVars.push('PAYPAL_CLIENT_ID');
+  } else {
+    // If region not specified, require both for flexibility
+    console.warn('⚠️ VITE_REGION not set - will detect from domain at runtime');
+  }
 
   const missing: string[] = [];
 
@@ -97,7 +111,7 @@ export function validateEnv(): { isValid: boolean; missing: string[] } {
     return { isValid: false, missing };
   }
 
-  console.log('✅ All required environment variables are configured');
+  console.log(`✅ All required environment variables are configured (Region: ${region || 'auto-detect'})`);
   return { isValid: true, missing: [] };
 }
 
@@ -107,7 +121,8 @@ export function validateEnv(): { isValid: boolean; missing: string[] } {
 export const env: EnvConfig = {
   SUPABASE_URL: getEnvVar('SUPABASE_URL') || '',
   SUPABASE_ANON_KEY: getEnvVar('SUPABASE_ANON_KEY') || '',
-  RAZORPAY_KEY_ID: getEnvVar('RAZORPAY_KEY_ID') || '',
+  RAZORPAY_KEY_ID: getEnvVar('RAZORPAY_KEY_ID', false) || '',
+  PAYPAL_CLIENT_ID: getEnvVar('PAYPAL_CLIENT_ID', false) || '',
   FORMSPREE_ID: getEnvVar('FORMSPREE_ID') || '',
   EMAILJS_SERVICE_ID: getEnvVar('EMAILJS_SERVICE_ID') || '',
   EMAILJS_PUBLIC_KEY: getEnvVar('EMAILJS_PUBLIC_KEY') || '',
@@ -115,14 +130,17 @@ export const env: EnvConfig = {
   EMAILJS_TEMPLATE_INVOICE: getEnvVar('EMAILJS_TEMPLATE_INVOICE', false) || 'template_invoice',
   YOUR_EMAIL: getEnvVar('YOUR_EMAIL') || '',
   WHATSAPP_NUMBER: getEnvVar('WHATSAPP_NUMBER') || '',
-  UPI_ID: getEnvVar('UPI_ID', false) || ''
+  UPI_ID: getEnvVar('UPI_ID', false) || '',
+  REGION: getEnvVar('REGION', false) || ''
 };
 
 /**
  * Check if a specific feature is available based on env vars
  */
 export const features = {
-  hasPayment: !!env.RAZORPAY_KEY_ID && !!env.SUPABASE_URL,
+  hasRazorpay: !!env.RAZORPAY_KEY_ID && !!env.SUPABASE_URL,
+  hasPayPal: !!env.PAYPAL_CLIENT_ID,
+  hasPayment: (!!env.RAZORPAY_KEY_ID || !!env.PAYPAL_CLIENT_ID) && !!env.SUPABASE_URL,
   hasAIChat: !!env.SUPABASE_URL && !!env.SUPABASE_ANON_KEY,
   hasEmailJS: !!env.EMAILJS_SERVICE_ID && !!env.EMAILJS_PUBLIC_KEY,
   hasContactForm: !!env.FORMSPREE_ID

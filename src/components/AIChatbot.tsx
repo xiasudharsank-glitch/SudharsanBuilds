@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { Send, X, Minimize2, Maximize2, Sparkles, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Mic, MicOff, Volume2, VolumeX, Download, Search, Trash2, Moon, Sun, Zap, MessageSquare, BookOpen, DollarSign, Clock, Globe, Building2, ShoppingCart, Code2, User, Briefcase, Rocket, Layers, CheckCircle2, ExternalLink, FolderOpen, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -8,6 +8,7 @@ import CryptoJS from 'crypto-js'; // ✅ FIX #6: Encryption for chat history
 import { env } from '../utils/env';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PROJECTS_DATA, type Project } from '../data/projectsData';
+import { getActiveRegion, formatCurrency } from '../config/regions';
 
 // Service data structure
 interface Service {
@@ -47,125 +48,37 @@ interface AIChatbotProps {
   onClose: () => void;
 }
 
-// Services data - matches Services.tsx
-const SERVICES_DATA: Service[] = [
-  {
-    icon: <Globe className="w-6 h-6" />,
-    name: 'Landing Page',
-    price: '₹15,000',
-    totalAmount: 15000,
-    description: '1-2 page website, modern design, mobile responsive',
-    features: ['Responsive Design', 'Contact Form', 'Google Analytics', 'SSL Certificate', 'Fast Loading', 'Basic SEO'],
-    timeline: '1-2 weeks',
-    ctaText: 'Book Now - Pay ₹5,000 Deposit',
-    depositAmount: 5000,
-  },
-  {
-    icon: <User className="w-6 h-6" />,
-    name: 'Portfolio Website',
-    price: '₹20,000',
-    totalAmount: 20000,
-    description: 'Professional portfolio for freelancers, designers & developers',
-    features: ['Project Gallery', 'About & Skills', 'Resume Download', 'Contact Form', 'Testimonials', 'Mobile Responsive'],
-    timeline: '2-3 weeks',
-    ctaText: 'Book Now - Pay ₹7,000 Deposit',
-    depositAmount: 7000,
-  },
-  {
-    icon: <Building2 className="w-6 h-6" />,
-    name: 'Business Website',
-    price: '₹30,000',
-    totalAmount: 30000,
-    description: '5-10 pages, professional design, CMS integration',
-    features: ['5-10 Pages', 'CMS Integration', 'Blog Section', 'Advanced Analytics', 'SEO Optimization', 'Contact Forms'],
-    timeline: '3-4 weeks',
-    ctaText: 'Book Now - Pay ₹10,000 Deposit',
-    depositAmount: 10000,
-  },
-  {
-    icon: <Briefcase className="w-6 h-6" />,
-    name: 'Personal Brand Website',
-    price: '₹25,000',
-    totalAmount: 25000,
-    description: 'Build your personal brand for coaches & consultants',
-    features: ['About & Services', 'Blog/Articles', 'Email Newsletter', 'Social Media Integration', 'Booking/Calendar', 'SEO & Analytics'],
-    timeline: '3 weeks',
-    ctaText: 'Book Now - Pay ₹8,000 Deposit',
-    depositAmount: 8000,
-  },
-  {
-    icon: <ShoppingCart className="w-6 h-6" />,
-    name: 'E-Commerce Store',
-    price: '₹50,000',
-    totalAmount: 50000,
-    description: 'Complete online store with payment gateway & admin panel',
-    features: ['Product Catalog', 'Shopping Cart', 'Razorpay/PayPal', 'Inventory Management', 'Order Tracking', 'Admin Dashboard'],
-    timeline: '4-6 weeks',
-    ctaText: 'Book Now - Pay ₹15,000 Deposit',
-    depositAmount: 15000,
-  },
-  {
-    icon: <Rocket className="w-6 h-6" />,
-    name: 'SaaS Product',
-    price: '₹75,000+',
-    totalAmount: 75000,
-    description: 'Full-featured SaaS platform with subscriptions',
-    features: ['User Authentication', 'Subscription Billing', 'Admin & User Dashboards', 'API Integration', 'Database Design', 'Scalable Architecture'],
-    timeline: '6-10 weeks',
-    ctaText: 'Book Now - Pay ₹20,000 Deposit',
-    depositAmount: 20000,
-  },
-  {
-    icon: <Layers className="w-6 h-6" />,
-    name: 'Web Application',
-    price: '₹60,000+',
-    totalAmount: 60000,
-    description: 'Custom web applications with complex features',
-    features: ['Custom Requirements', 'Database & Backend', 'User Management', 'Real-time Features', 'Third-party Integrations', 'Responsive Design'],
-    timeline: '5-8 weeks',
-    ctaText: 'Book Now - Pay ₹18,000 Deposit',
-    depositAmount: 18000,
-  },
-  {
-    icon: <Code2 className="w-6 h-6" />,
-    name: 'Custom Development',
-    price: '₹500-₹1000/hour',
-    description: 'Hourly-based custom projects & maintenance',
-    features: ['Custom Requirements', 'Full-stack Development', 'API Integration', 'Bug Fixes & Updates', 'Code Reviews', 'Ongoing Support'],
-    timeline: 'Flexible',
-    ctaText: 'Get Quote - Discuss Project',
-  },
-];
+// Services data will be generated dynamically based on region config inside the component
 
 // Intent detection - detects if user is asking about services, pricing, or specific categories
-const detectIntent = (message: string): { showCards: boolean; filteredServices?: Service[] } => {
+const detectIntent = (message: string, servicesData: Service[]): { showCards: boolean; filteredServices?: Service[] } => {
   const lowerMessage = message.toLowerCase();
 
   // Specific service type queries
   if (lowerMessage.match(/portfolio|personal.*(website|site)/i)) {
-    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('Portfolio') || s.name.includes('Personal Brand')) };
+    return { showCards: true, filteredServices: servicesData.filter(s => s.name.includes('Portfolio') || s.name.includes('Personal Brand')) };
   }
   if (lowerMessage.match(/ecommerce|e-commerce|online store|shop/i)) {
-    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('E-Commerce')) };
+    return { showCards: true, filteredServices: servicesData.filter(s => s.name.includes('E-Commerce')) };
   }
   if (lowerMessage.match(/saas|software.*service|subscription/i)) {
-    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('SaaS')) };
+    return { showCards: true, filteredServices: servicesData.filter(s => s.name.includes('SaaS')) };
   }
   if (lowerMessage.match(/business.*(website|site)/i)) {
-    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('Business')) };
+    return { showCards: true, filteredServices: servicesData.filter(s => s.name.includes('Business')) };
   }
   if (lowerMessage.match(/landing.*page|simple.*(website|site)/i)) {
-    return { showCards: true, filteredServices: SERVICES_DATA.filter(s => s.name.includes('Landing')) };
+    return { showCards: true, filteredServices: servicesData.filter(s => s.name.includes('Landing')) };
   }
 
   // General service/pricing queries
   if (lowerMessage.match(/service|what.*offer|pricing|price|cost|how much|package|plan/i)) {
-    return { showCards: true, filteredServices: SERVICES_DATA.slice(0, 4) }; // Show top 4 popular services
+    return { showCards: true, filteredServices: servicesData.slice(0, 4) }; // Show top 4 popular services
   }
 
   // Show all services
   if (lowerMessage.match(/show.*all|view.*all|see.*all.*service/i)) {
-    return { showCards: true, filteredServices: SERVICES_DATA };
+    return { showCards: true, filteredServices: servicesData };
   }
 
   return { showCards: false };
@@ -693,6 +606,100 @@ const getUserId = (): string => {
 export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   const location = useLocation();
   const navigate = useNavigate(); // ✅ ENHANCEMENT: Add page navigation
+
+  // ✅ Region Config: Get active region for pricing and currency
+  const regionConfig = getActiveRegion();
+  const { currency, pricing, payment } = regionConfig;
+
+  // ✅ Services Data: Generated dynamically based on region config
+  const SERVICES_DATA = useMemo<Service[]>(() => [
+    {
+      icon: <Globe className="w-6 h-6" />,
+      name: 'Landing Page',
+      price: formatCurrency(pricing.landingPage.total, regionConfig),
+      totalAmount: pricing.landingPage.total,
+      description: '1-2 page website, modern design, mobile responsive',
+      features: ['Responsive Design', 'Contact Form', 'Google Analytics', 'SSL Certificate', 'Fast Loading', 'Basic SEO'],
+      timeline: pricing.landingPage.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.landingPage.deposit, regionConfig)} Deposit`,
+      depositAmount: pricing.landingPage.deposit,
+    },
+    {
+      icon: <User className="w-6 h-6" />,
+      name: 'Portfolio Website',
+      price: formatCurrency(pricing.portfolio.total, regionConfig),
+      totalAmount: pricing.portfolio.total,
+      description: 'Professional portfolio for freelancers, designers & developers',
+      features: ['Project Gallery', 'About & Skills', 'Resume Download', 'Contact Form', 'Testimonials', 'Mobile Responsive'],
+      timeline: pricing.portfolio.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.portfolio.deposit, regionConfig)} Deposit`,
+      depositAmount: pricing.portfolio.deposit,
+    },
+    {
+      icon: <Building2 className="w-6 h-6" />,
+      name: 'Business Website',
+      price: formatCurrency(pricing.business.total, regionConfig),
+      totalAmount: pricing.business.total,
+      description: '5-10 pages, professional design, CMS integration',
+      features: ['5-10 Pages', 'CMS Integration', 'Blog Section', 'Advanced Analytics', 'SEO Optimization', 'Contact Forms'],
+      timeline: pricing.business.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.business.deposit, regionConfig)} Deposit`,
+      depositAmount: pricing.business.deposit,
+    },
+    {
+      icon: <Briefcase className="w-6 h-6" />,
+      name: 'Personal Brand Website',
+      price: formatCurrency(pricing.personalBrand.total, regionConfig),
+      totalAmount: pricing.personalBrand.total,
+      description: 'Build your personal brand for coaches & consultants',
+      features: ['About & Services', 'Blog/Articles', 'Email Newsletter', 'Social Media Integration', 'Booking/Calendar', 'SEO & Analytics'],
+      timeline: pricing.personalBrand.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.personalBrand.deposit, regionConfig)} Deposit`,
+      depositAmount: pricing.personalBrand.deposit,
+    },
+    {
+      icon: <ShoppingCart className="w-6 h-6" />,
+      name: 'E-Commerce Store',
+      price: formatCurrency(pricing.ecommerce.total, regionConfig),
+      totalAmount: pricing.ecommerce.total,
+      description: 'Complete online store with payment gateway & admin panel',
+      features: ['Product Catalog', 'Shopping Cart', `${payment.gateway === 'razorpay' ? 'Razorpay' : 'PayPal'} Integration`, 'Inventory Management', 'Order Tracking', 'Admin Dashboard'],
+      timeline: pricing.ecommerce.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.ecommerce.deposit, regionConfig)} Deposit`,
+      depositAmount: pricing.ecommerce.deposit,
+    },
+    {
+      icon: <Rocket className="w-6 h-6" />,
+      name: 'SaaS Product',
+      price: `${formatCurrency(pricing.saas.total, regionConfig)}+`,
+      totalAmount: pricing.saas.total,
+      description: 'Full-featured SaaS platform with subscriptions',
+      features: ['User Authentication', 'Subscription Billing', 'Admin & User Dashboards', 'API Integration', 'Database Design', 'Scalable Architecture'],
+      timeline: pricing.saas.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.saas.deposit, regionConfig)} Deposit`,
+      depositAmount: pricing.saas.deposit,
+    },
+    {
+      icon: <Layers className="w-6 h-6" />,
+      name: 'Web Application',
+      price: `${formatCurrency(pricing.webApp.total, regionConfig)}+`,
+      totalAmount: pricing.webApp.total,
+      description: 'Custom web applications with complex features',
+      features: ['Custom Requirements', 'Database & Backend', 'User Management', 'Real-time Features', 'Third-party Integrations', 'Responsive Design'],
+      timeline: pricing.webApp.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.webApp.deposit, regionConfig)} Deposit`,
+      depositAmount: pricing.webApp.deposit,
+    },
+    {
+      icon: <Code2 className="w-6 h-6" />,
+      name: 'Custom Development',
+      price: `${formatCurrency(pricing.hourly.rate, regionConfig)}/hour`,
+      description: 'Hourly-based custom projects & maintenance',
+      features: ['Custom Requirements', 'Full-stack Development', 'API Integration', 'Bug Fixes & Updates', 'Code Reviews', 'Ongoing Support'],
+      timeline: 'Flexible',
+      ctaText: 'Get Quote - Discuss Project',
+    },
+  ], [regionConfig, pricing, payment]);
 
   // ✅ Phase 2: Persistent User ID
   const [userId] = useState<string>(getUserId());
@@ -1519,7 +1526,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     abortControllerRef.current = abortController;
 
     // ✅ Detect intent for service cards
-    const intent = detectIntent(messageText);
+    const intent = detectIntent(messageText, SERVICES_DATA);
 
     // ✅ Phase 1: Detect project intent
     const projectIntent = detectProjectIntent(messageText);

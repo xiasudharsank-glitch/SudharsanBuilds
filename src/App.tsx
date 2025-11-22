@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import Navigation from './components/Navigation';
+import RegionBanner from './components/RegionBanner';
 import ErrorBoundary from './components/ErrorBoundary';
 import { features } from './utils/env';
 
@@ -91,6 +92,9 @@ function App() {
           </a>
 
           <Navigation />
+
+          {/* Region Suggestion Banner */}
+          <RegionBanner />
 
           <main id="main-content">
             <Suspense fallback={<PageLoader />}>

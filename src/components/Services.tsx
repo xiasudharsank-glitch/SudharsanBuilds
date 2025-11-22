@@ -1,13 +1,14 @@
 import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react'; // ✅ FIX: Add useCallback
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { sendBookingConfirmation, sendNewBookingAlert } from '../services/emailService'; // ✅ CHANGED: Import functions, not init
 import { generateAndSendInvoice } from '../services/invoiceService';
 import { env, features } from '../utils/env';
 import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
+import { getActiveRegion, formatCurrency } from '../config/regions';
 
 interface Service {
   icon: React.ReactNode;
@@ -26,6 +27,9 @@ interface Service {
 
 export default function Services({ showAll = false }: { showAll?: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const regionConfig = getActiveRegion();
+  const { currency, pricing, payment } = regionConfig;
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
@@ -137,8 +141,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     {
       icon: <Globe className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Landing Page',
-      price: '₹15,000',
-      totalAmount: 15000,
+      price: formatCurrency(pricing.landingPage.total, regionConfig),
+      totalAmount: pricing.landingPage.total,
       description: '1-2 page website, modern design, mobile responsive, perfect for launching quickly',
       features: [
         'Responsive Design',
@@ -148,16 +152,16 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Fast Loading Speed',
         'Basic SEO Optimization'
       ],
-      timeline: '1-2 weeks',
-      ctaText: 'Book Now - Pay ₹5,000 Deposit',
+      timeline: pricing.landingPage.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.landingPage.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 5000,
+      depositAmount: pricing.landingPage.deposit,
     },
     {
       icon: <User className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Portfolio Website',
-      price: '₹20,000',
-      totalAmount: 20000,
+      price: formatCurrency(pricing.portfolio.total, regionConfig),
+      totalAmount: pricing.portfolio.total,
       description: 'Professional portfolio for freelancers, designers, developers & creatives',
       features: [
         'Project Showcase Gallery',
@@ -167,16 +171,16 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Testimonials Section',
         'Mobile Responsive'
       ],
-      timeline: '2-3 weeks',
-      ctaText: 'Book Now - Pay ₹7,000 Deposit',
+      timeline: pricing.portfolio.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.portfolio.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 7000,
+      depositAmount: pricing.portfolio.deposit,
     },
     {
       icon: <Building2 className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Business Website',
-      price: '₹30,000',
-      totalAmount: 30000,
+      price: formatCurrency(pricing.business.total, regionConfig),
+      totalAmount: pricing.business.total,
       description: '5-10 pages, professional design, CMS integration, perfect for established businesses',
       features: [
         'Multi-page Layout (5-10 pages)',
@@ -186,17 +190,17 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'SEO Optimization',
         'Contact Forms & Maps'
       ],
-      timeline: '3-4 weeks',
-      ctaText: 'Book Now - Pay ₹1 Deposit',
+      timeline: pricing.business.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.business.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 1,
+      depositAmount: pricing.business.deposit,
       popular: true,
     },
     {
       icon: <Briefcase className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Personal Brand Website',
-      price: '₹25,000',
-      totalAmount: 25000,
+      price: formatCurrency(pricing.personalBrand.total, regionConfig),
+      totalAmount: pricing.personalBrand.total,
       description: 'Build your personal brand with a professional website for coaches, consultants & professionals',
       features: [
         'About & Services Pages',
@@ -206,36 +210,36 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Booking/Calendar Integration',
         'SEO & Analytics'
       ],
-      timeline: '3 weeks',
-      ctaText: 'Book Now - Pay ₹8,000 Deposit',
+      timeline: pricing.personalBrand.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.personalBrand.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 8000,
+      depositAmount: pricing.personalBrand.deposit,
     },
     {
       icon: <ShoppingCart className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'E-Commerce Store',
-      price: '₹50,000',
-      totalAmount: 50000,
-      description: 'Complete online store with payment gateway, inventory management & admin panel',
+      price: formatCurrency(pricing.ecommerce.total, regionConfig),
+      totalAmount: pricing.ecommerce.total,
+      description: `Complete online store with payment gateway, inventory management & admin panel`,
       features: [
         'Product Catalog (Unlimited)',
         'Shopping Cart',
-        'Razorpay/PayPal Integration',
+        `${payment.gateway === 'razorpay' ? 'Razorpay' : 'PayPal'} Integration`,
         'Inventory Management',
         'Order Tracking',
         'Admin Dashboard'
       ],
-      timeline: '4-6 weeks',
-      ctaText: 'Book Now - Pay ₹15,000 Deposit',
+      timeline: pricing.ecommerce.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.ecommerce.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 15000,
+      depositAmount: pricing.ecommerce.deposit,
     },
     {
       icon: <Rocket className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'SaaS Product',
-      price: '₹75,000+',
+      price: `${formatCurrency(pricing.saas.total, regionConfig)}+`,
       priceSubtext: 'Starting from',
-      totalAmount: 75000,
+      totalAmount: pricing.saas.total,
       description: 'Full-featured SaaS platform with user management, subscriptions & admin dashboard',
       features: [
         'User Authentication',
@@ -245,17 +249,17 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Database Design',
         'Scalable Architecture'
       ],
-      timeline: '6-10 weeks',
-      ctaText: 'Book Now - Pay ₹20,000 Deposit',
+      timeline: pricing.saas.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.saas.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 20000,
+      depositAmount: pricing.saas.deposit,
     },
     {
       icon: <Layers className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Web Application',
-      price: '₹60,000+',
+      price: `${formatCurrency(pricing.webApp.total, regionConfig)}+`,
       priceSubtext: 'Starting from',
-      totalAmount: 60000,
+      totalAmount: pricing.webApp.total,
       description: 'Custom web applications with complex features & functionality',
       features: [
         'Custom Requirements',
@@ -265,15 +269,15 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Third-party Integrations',
         'Responsive Design'
       ],
-      timeline: '5-8 weeks',
-      ctaText: 'Book Now - Pay ₹18,000 Deposit',
+      timeline: pricing.webApp.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.webApp.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 18000,
+      depositAmount: pricing.webApp.deposit,
     },
     {
       icon: <Code2 className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Custom Development',
-      price: '₹500-₹1000/hour',
+      price: `${formatCurrency(pricing.hourly.rate, regionConfig)}/hour`,
       priceSubtext: 'Negotiable',
       totalAmount: undefined, // Hourly rate - no fixed total
       description: 'Hourly-based custom projects, API integrations, complex features & maintenance',
@@ -293,10 +297,30 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
   const handleBooking = async (service: Service) => {
     if (service.ctaAction === 'quote' || !service.depositAmount) {
-      // Scroll to contact form for quotes
-      const contactSection = document.getElementById('contact');
-      if (contactSection) {
-        contactSection.scrollIntoView({ behavior: 'smooth' });
+      // Navigate to home page first if not already there, then scroll to contact form
+      if (location.pathname !== '/') {
+        navigate('/');
+        // Wait for route change and DOM update before scrolling
+        setTimeout(() => {
+          const contactSection = document.getElementById('contact');
+          if (contactSection) {
+            contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            // Retry if element not found (page might still be loading)
+            setTimeout(() => {
+              const retrySection = document.getElementById('contact');
+              if (retrySection) {
+                retrySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 300);
+          }
+        }, 100);
+      } else {
+        // Already on home page, just scroll to contact
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
       return;
     }
@@ -855,7 +879,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               className="mt-12 text-center"
             >
               <p className="text-sm text-slate-600">
-                <strong>Secure payments via Razorpay</strong> - UPI, Cards, Net Banking accepted.
+                <strong>{regionConfig.content.paymentNote}</strong>
                 <br />
                 Can't pay deposit now? <a href="#contact" className="text-cyan-600 hover:underline">Contact me</a> to discuss your project first.
               </p>
