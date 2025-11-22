@@ -10,6 +10,14 @@ import { env, features } from '../utils/env';
 import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
 import { getActiveRegion, formatCurrency } from '../config/regions';
 
+// TypeScript declarations for payment gateways
+declare global {
+  interface Window {
+    Razorpay: any;
+    paypal: any;
+  }
+}
+
 interface Service {
   icon: React.ReactNode;
   name: string;
@@ -34,6 +42,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [customerDetails, setCustomerDetails] = useState({
     name: '',
     email: '',
@@ -64,33 +73,54 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
   // ✅ LAZY LOAD: EmailJS now initializes only when actually sending emails (in handlePaymentProceed)
 
-  // ✅ LAZY LOAD: Razorpay only loads when user opens booking modal, NOT on page load
+  // ✅ LAZY LOAD: Payment Gateway Script - loads Razorpay OR PayPal based on region
   useEffect(() => {
-    // Only load Razorpay if modal is open AND Razorpay not already loaded
-    if (!showBookingModal || razorpayLoaded || window.Razorpay) {
-      return;
+    if (!showBookingModal) return;
+
+    // Load Razorpay for India region
+    if (payment.gateway === 'razorpay' && !razorpayLoaded && !window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
+        console.log('✅ Razorpay script loaded (India region)');
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load Razorpay script');
+        setRazorpayLoaded(false);
+      };
+      document.body.appendChild(script);
+
+      return () => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => {
-      setRazorpayLoaded(true);
-      console.log('✅ Razorpay script loaded (lazy loaded on modal open)');
-    };
-    script.onerror = () => {
-      console.error('❌ Failed to load Razorpay script');
-      setRazorpayLoaded(false);
-    };
-    document.body.appendChild(script);
+    // Load PayPal for Global region
+    if (payment.gateway === 'paypal' && !paypalLoaded && !window.paypal) {
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=${env.PAYPAL_CLIENT_ID}&currency=USD`;
+      script.async = true;
+      script.onload = () => {
+        setPaypalLoaded(true);
+        console.log('✅ PayPal SDK loaded (Global region)');
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load PayPal SDK');
+        setPaypalLoaded(false);
+      };
+      document.body.appendChild(script);
 
-    // ✅ FIX: Cleanup - remove script on unmount
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, [showBookingModal, razorpayLoaded]); // ✅ CHANGED: Add showBookingModal dependency
+      return () => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    }
+  }, [showBookingModal, payment.gateway, razorpayLoaded, paypalLoaded]);
 
 
   // ✅ P2 FIX: Focus management and escape key for modal
@@ -384,77 +414,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     }
   };
 
-  const handlePaymentProceed = async () => {
+  // ✅ Razorpay Payment Handler (India)
+  const processRazorpayPayment = async () => {
     if (!selectedService || !selectedService.depositAmount) return;
-
-    // ✅ P1 FIX: Inline validation instead of alert()
-    const errors: typeof validationErrors = {};
-
-    // Validate name
-    if (!customerDetails.name.trim()) {
-      errors.name = 'Name is required';
-    }
-
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!customerDetails.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!emailRegex.test(customerDetails.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    // Validate phone (optional field)
-    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
-      errors.phone = 'Please enter a valid phone number (8-15 digits, no leading zero)';
-    }
-
-    // Validate project details
-    if (!customerDetails.projectDetails.trim()) {
-      errors.projectDetails = 'Project details are required';
-    }
-
-    // If there are errors, show them and stop
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      // Scroll to first error field
-      const firstErrorField = Object.keys(errors)[0];
-      const errorElement = document.getElementById(`modal-${firstErrorField === 'projectDetails' ? 'details' : firstErrorField}`);
-      errorElement?.focus();
-      return;
-    }
-
-    // Clear any previous errors
-    setValidationErrors({});
-
-    // ✅ P0 FIX: Keep modal visible while loading Razorpay (prevents blank screen)
-    setIsPaymentLoading(true); // Show "Processing..." button state
-
-    if (!razorpayLoaded || !window.Razorpay) {
-      // Wait up to 15 seconds for Razorpay to load (keeping modal visible)
-      let retries = 0;
-      const maxRetries = 30; // 30 * 500ms = 15 seconds
-
-      while (retries < maxRetries) {
-        if (window.Razorpay && razorpayLoaded) {
-          // Razorpay is now loaded, continue with payment
-          break;
-        }
-        await new Promise(resolve => setTimeout(resolve, 500));
-        retries++;
-      }
-
-      // Check if Razorpay loaded successfully
-      if (!window.Razorpay || !razorpayLoaded) {
-        // Timeout - Razorpay failed to load
-        setIsPaymentLoading(false); // Reset button to normal state
-        // Keep modal open so user can see their data and try again
-        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
-        return;
-      }
-    }
-
-    // Razorpay is ready - now close modal and proceed with payment
-    setShowBookingModal(false);
 
     try {
       // ✅ CRITICAL FIX: Check env vars BEFORE any URL construction
@@ -689,6 +651,258 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       if (contactSection) {
         contactSection.scrollIntoView({ behavior: 'smooth' });
       }
+    }
+  };
+
+  // ✅ PayPal Payment Handler (Global)
+  const processPayPalPayment = async () => {
+    if (!selectedService || !selectedService.depositAmount) return;
+
+    try {
+      // Check PayPal env vars
+      if (!env.PAYPAL_CLIENT_ID || env.PAYPAL_CLIENT_ID === '') {
+        console.error('❌ PayPal not configured');
+        alert('⚠️ Payment system is not configured yet.\n\nPlease contact us directly via email:\nsudharsanofficial0001@gmail.com');
+        setIsPaymentLoading(false);
+        return;
+      }
+
+      const totalAmount = selectedService.totalAmount || selectedService.depositAmount;
+
+      // Create PayPal order via Supabase Edge Function
+      const createOrderUrl = `${env.SUPABASE_URL}/functions/v1/create-paypal-order`;
+      const csrfToken = sessionStorage.getItem('csrf_token');
+
+      const response = await fetch(createOrderUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
+          'X-CSRF-Token': csrfToken || ''
+        },
+        body: JSON.stringify({
+          amount: selectedService.depositAmount,
+          currency: 'USD',
+          description: `Deposit for ${selectedService.name}`,
+          service_name: selectedService.name,
+          service_price: selectedService.price,
+          total_amount: totalAmount,
+          deposit_amount: selectedService.depositAmount,
+          customer_name: customerDetails.name,
+          customer_email: customerDetails.email,
+          customer_phone: customerDetails.phone
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create PayPal order');
+      }
+
+      const { orderId } = await response.json();
+
+      // Render PayPal buttons
+      if (window.paypal) {
+        // Create a container for PayPal buttons
+        const paypalContainer = document.createElement('div');
+        paypalContainer.id = 'paypal-button-container';
+        document.body.appendChild(paypalContainer);
+
+        window.paypal.Buttons({
+          createOrder: () => orderId,
+          onApprove: async (data: any) => {
+            console.log('✅ PayPal Payment Approved:', data);
+
+            try {
+              // Capture payment via Supabase Edge Function
+              const captureUrl = `${env.SUPABASE_URL}/functions/v1/capture-paypal-payment`;
+
+              const captureResponse = await fetch(captureUrl, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+                },
+                body: JSON.stringify({
+                  orderId: data.orderID
+                })
+              });
+
+              const captureResult = await captureResponse.json();
+
+              if (!captureResult.success) {
+                console.error('❌ Payment capture failed:', captureResult);
+                alert('❌ Payment capture failed. Please contact support with Order ID: ' + data.orderID);
+                setIsPaymentLoading(false);
+                return;
+              }
+
+              console.log('✅ Payment captured successfully');
+
+              // Generate invoice and send emails
+              const invoiceResult = await generateAndSendInvoice({
+                name: customerDetails.name,
+                email: customerDetails.email,
+                phone: customerDetails.phone,
+                service: selectedService.name,
+                amount: totalAmount,
+                depositAmount: selectedService.depositAmount!,
+                timeline: selectedService.timeline,
+                projectDetails: customerDetails.projectDetails,
+                razorpayPaymentId: data.orderID, // Use PayPal order ID
+                razorpayOrderId: data.orderID,
+                razorpaySignature: '' // Not applicable for PayPal
+              });
+
+              const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
+
+              if (hasEmailIssue) {
+                console.warn('⚠️ Email notification issue:', invoiceResult.message);
+                alert(`Payment successful! However:\n\n${invoiceResult.message}\n\nYou'll be redirected to your confirmation page.`);
+              }
+
+              // Navigate to confirmation page
+              const confirmationUrl = new URLSearchParams({
+                invoiceId: invoiceResult.invoiceId || 'N/A',
+                paymentId: data.orderID,
+                service: selectedService.name,
+                name: customerDetails.name,
+                email: customerDetails.email,
+                deposit: selectedService.depositAmount!.toString(),
+                total: totalAmount.toString(),
+                emailStatus: hasEmailIssue ? 'warning' : 'success'
+              });
+
+              setCustomerDetails({
+                name: '',
+                email: '',
+                phone: '',
+                projectDetails: ''
+              });
+
+              // Clean up PayPal container
+              paypalContainer.remove();
+
+              navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+            } catch (error) {
+              console.error('❌ Payment processing error:', error);
+              alert(`⚠️ Payment received but processing failed.\n\nOrder ID: ${data.orderID}\n\nPlease contact support.`);
+              paypalContainer.remove();
+            } finally {
+              setIsPaymentLoading(false);
+            }
+          },
+          onError: (err: any) => {
+            console.error('❌ PayPal error:', err);
+            alert('❌ Payment failed. Please try again or contact us at:\nsudharsanofficial0001@gmail.com');
+            setIsPaymentLoading(false);
+            setShowBookingModal(true);
+            paypalContainer.remove();
+          },
+          onCancel: () => {
+            console.log('ℹ️ Payment cancelled by user');
+            setIsPaymentLoading(false);
+            setShowBookingModal(true);
+            paypalContainer.remove();
+          }
+        }).render('#paypal-button-container');
+
+      } else {
+        throw new Error('PayPal SDK not loaded');
+      }
+    } catch (error) {
+      console.error('❌ PayPal payment error:', error);
+      alert('❌ Payment system error. Please try again or contact us at:\nsudharsanofficial0001@gmail.com');
+      setIsPaymentLoading(false);
+    }
+  };
+
+  // ✅ Main Payment Handler - Routes to correct payment gateway
+  const handlePaymentProceed = async () => {
+    if (!selectedService || !selectedService.depositAmount) return;
+
+    // Validate customer details
+    const errors: typeof validationErrors = {};
+
+    if (!customerDetails.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!customerDetails.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!emailRegex.test(customerDetails.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
+      errors.phone = 'Please enter a valid phone number (8-15 digits, no leading zero)';
+    }
+
+    if (!customerDetails.projectDetails.trim()) {
+      errors.projectDetails = 'Project details are required';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const firstErrorField = Object.keys(errors)[0];
+      const errorElement = document.getElementById(`modal-${firstErrorField === 'projectDetails' ? 'details' : firstErrorField}`);
+      errorElement?.focus();
+      return;
+    }
+
+    setValidationErrors({});
+    setIsPaymentLoading(true);
+
+    // Wait for payment gateway to load
+    const isRazorpay = payment.gateway === 'razorpay';
+    const isPayPal = payment.gateway === 'paypal';
+
+    if (isRazorpay && (!razorpayLoaded || !window.Razorpay)) {
+      let retries = 0;
+      const maxRetries = 30;
+
+      while (retries < maxRetries) {
+        if (window.Razorpay && razorpayLoaded) break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        retries++;
+      }
+
+      if (!window.Razorpay || !razorpayLoaded) {
+        setIsPaymentLoading(false);
+        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
+        return;
+      }
+    }
+
+    if (isPayPal && (!paypalLoaded || !window.paypal)) {
+      let retries = 0;
+      const maxRetries = 30;
+
+      while (retries < maxRetries) {
+        if (window.paypal && paypalLoaded) break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        retries++;
+      }
+
+      if (!window.paypal || !paypalLoaded) {
+        setIsPaymentLoading(false);
+        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
+        return;
+      }
+    }
+
+    // Close modal before payment
+    setShowBookingModal(false);
+
+    // Route to correct payment handler
+    if (isRazorpay) {
+      await processRazorpayPayment();
+    } else if (isPayPal) {
+      await processPayPalPayment();
+    } else {
+      console.error('❌ Unknown payment gateway:', payment.gateway);
+      alert('⚠️ Payment system configuration error. Please contact support.');
+      setIsPaymentLoading(false);
     }
   };
 
