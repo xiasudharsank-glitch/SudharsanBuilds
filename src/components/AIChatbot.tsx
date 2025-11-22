@@ -231,57 +231,67 @@ const getPageSummary = (pathname: string): string => {
   }
 };
 
-// ✅ Phase 1: Smart follow-up suggestions based on message context
+// ✅ P1 FIX: Action-oriented follow-up suggestions for conversion
 const getFollowUpSuggestions = (userMessage: string, assistantMessage: string, context: string): string[] => {
   const lowerUserMsg = userMessage.toLowerCase();
   const lowerAssistantMsg = assistantMessage.toLowerCase();
 
-  // Service-related follow-ups
+  // Service/Pricing follow-ups - push towards booking
   if (lowerUserMsg.match(/service|pricing|cost|price/i)) {
     return [
-      "What's included in the pricing?",
-      "Do you offer payment plans?",
-      "How long does it take?",
-      "Can I see examples of your work?"
+      "📅 Book a free consultation",
+      "💰 I want a custom quote",
+      "✨ Show me similar projects",
+      "⚡ Start my project now"
     ];
   }
 
-  // Project-related follow-ups
+  // Project/Portfolio follow-ups - push towards contact
   if (lowerUserMsg.match(/project|portfolio|work|example/i)) {
     return [
-      "What services do you offer?",
-      "How much does a similar project cost?",
-      "What technologies do you use?",
-      "Can you customize this for me?"
+      "💬 Discuss my project idea",
+      "💰 How much for similar work?",
+      "📅 Book a consultation call",
+      "⚡ Get started today"
     ];
   }
 
-  // Timeline-related follow-ups
+  // Timeline follow-ups - create urgency
   if (lowerUserMsg.match(/how long|timeline|duration|time/i)) {
     return [
-      "What's the process like?",
-      "Can we start immediately?",
-      "What information do you need?",
-      "What about maintenance?"
+      "⚡ Can we start this week?",
+      "📅 Book my project slot",
+      "💰 View pricing options",
+      "💬 Contact for priority delivery"
     ];
   }
 
-  // Process-related follow-ups
+  // Process follow-ups - move to action
   if (lowerUserMsg.match(/process|workflow|how.*work/i)) {
     return [
-      "What do I need to prepare?",
-      "How do we communicate?",
-      "What's the payment structure?",
-      "Can I request changes?"
+      "🚀 I'm ready to start",
+      "📅 Schedule a call",
+      "💰 Get detailed quote",
+      "💬 Open contact form"
     ];
   }
 
-  // Default follow-ups
+  // Booking/consultation follow-ups - close the deal
+  if (lowerUserMsg.match(/book|consultation|call|meet/i)) {
+    return [
+      "💬 Go to contact form now",
+      "💰 See full pricing details",
+      "📧 Send email directly",
+      "⚡ What info do you need?"
+    ];
+  }
+
+  // Default follow-ups - always actionable
   return [
-    "Tell me about your services",
-    "Show me your projects",
-    "What are your rates?",
-    "How can we get started?"
+    "📅 Book free consultation",
+    "💰 View pricing packages",
+    "✨ See portfolio projects",
+    "⚡ Get started today"
   ];
 };
 
@@ -692,7 +702,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     return saved ? JSON.parse(saved) : true; // Default dark
   });
 
-  // ✅ Phase 2: Function Call Execution
+  // ✅ P0 FIX: Function Call Execution with proper feedback and error handling
   const executeFunctionCall = (functionName: string, args: any) => {
     console.log(`🔧 Executing function: ${functionName}`, args);
 
@@ -700,45 +710,111 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       case 'scrollToSection':
         const sectionId = args.section;
         const element = document.getElementById(sectionId);
+
         if (element) {
+          // ✅ P1 FIX: Add visual feedback message
+          const feedbackMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: `✅ Taking you to the ${sectionId} section now...`,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, feedbackMessage]);
+
+          // Scroll to section
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          // Close chat to show the section
+
+          // Close chat after user can see the feedback (increased delay)
           setTimeout(() => {
             handleCloseChat();
-          }, 500);
+          }, 1500);
+        } else {
+          // ✅ P0 FIX: Handle missing section error
+          console.warn(`Section not found: ${sectionId}`);
+          const errorMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: `⚠️ I couldn't find the ${sectionId} section. It might not be available on this page. Try visiting the homepage!`,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, errorMessage]);
         }
         break;
 
       case 'openContactForm':
         // Scroll to contact section
         const contactSection = document.getElementById('contact');
+
         if (contactSection) {
+          // ✅ P1 FIX: Add visual feedback
+          const feedbackMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: `✅ Opening the contact form for you...`,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, feedbackMessage]);
+
           contactSection.scrollIntoView({ behavior: 'smooth' });
+
           // Prefill message if provided
           if (args.prefillMessage) {
             setTimeout(() => {
               const messageInput = document.querySelector('textarea[name="message"]') as HTMLTextAreaElement;
               if (messageInput) {
                 messageInput.value = args.prefillMessage;
+                messageInput.focus();
               }
-            }, 800);
+            }, 1200);
           }
-          // Close chat after navigating
+
+          // Close chat after longer delay to ensure form is visible
           setTimeout(() => {
             handleCloseChat();
-          }, 1000);
+          }, 1800);
+        } else {
+          // ✅ P0 FIX: Handle missing contact section
+          console.warn('Contact section not found');
+          const errorMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: `⚠️ The contact form isn't available on this page. Would you like me to share the contact email instead? It's ${env.YOUR_EMAIL || 'sudharsanofficial0001@gmail.com'}`,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, errorMessage]);
         }
         break;
 
       case 'showServiceDetails':
         // Scroll to services section
         const servicesSection = document.getElementById('services');
+
         if (servicesSection) {
+          // ✅ P1 FIX: Add visual feedback
+          const feedbackMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: `✅ Showing you the services section...`,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, feedbackMessage]);
+
           servicesSection.scrollIntoView({ behavior: 'smooth' });
-          // Close chat to show services
+
+          // Close chat with longer delay
           setTimeout(() => {
             handleCloseChat();
-          }, 500);
+          }, 1500);
+        } else {
+          // ✅ P0 FIX: Handle missing services section
+          console.warn('Services section not found');
+          const errorMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            role: 'assistant',
+            content: `⚠️ The services section isn't on this page. Let me show you the service cards in our chat instead!`,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, errorMessage]);
         }
         break;
 
@@ -815,17 +891,33 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       };
 
       recognitionInstance.onerror = (event: any) => {
-        // ✅ CRITICAL FIX #10: Better error handling with user feedback
+        // ✅ P0 FIX: Better error handling without alerts
         console.error('Speech recognition error:', event.error);
         setIsListening(false);
 
         // Show user-friendly error message based on error type
+        let errorMsg = '';
         if (event.error === 'no-speech') {
           // Silent fail for no-speech - user just didn't say anything
+          errorMsg = '🎤 No speech detected. Please try again and speak clearly.';
         } else if (event.error === 'not-allowed') {
-          alert('⚠️ Microphone access denied. Please allow microphone access in your browser settings.');
+          errorMsg = '🎤 **Microphone access denied**\n\nPlease allow microphone access in your browser settings.';
         } else if (event.error === 'network') {
-          alert('⚠️ Network error. Please check your internet connection and try again.');
+          errorMsg = '🎤 **Network error**\n\nPlease check your internet connection and try again.';
+        } else if (event.error === 'aborted') {
+          // User stopped manually - no need to show error
+          return;
+        }
+
+        // Only show message if there's an actual error
+        if (errorMsg) {
+          const message: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: errorMsg,
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, message]);
         }
       };
 
@@ -1021,25 +1113,83 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     URL.revokeObjectURL(url);
   };
 
-  // ✅ CRITICAL FIX #5: Voice Input Toggle with better error handling
-  const toggleVoiceInput = () => {
+  // ✅ P0 FIX: Voice Input with proper permission checking
+  const toggleVoiceInput = async () => {
     if (!recognition) {
-      alert('⚠️ Voice input not supported in this browser.\n\n✅ Supported browsers: Chrome, Edge, Safari (iOS)\n❌ Not supported: Firefox');
+      // Show inline message instead of alert
+      const errorMsg: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: '⚠️ Voice input is not supported in this browser.\n\n✅ **Supported:** Chrome, Edge, Safari\n❌ **Not supported:** Firefox\n\nPlease type your message instead.',
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
       return;
     }
 
     if (isListening) {
       recognition.stop();
       setIsListening(false);
-    } else {
-      try {
-        recognition.start();
-        setIsListening(true);
-      } catch (error) {
-        console.error('Failed to start voice recognition:', error);
-        setIsListening(false);
-        alert('⚠️ Failed to start voice input. Please ensure:\n\n1. Microphone is connected\n2. Browser has microphone permission\n3. Microphone is not being used by another app');
+      return;
+    }
+
+    // ✅ P0 FIX: Check microphone permission first using Permissions API
+    try {
+      if (navigator.permissions && navigator.permissions.query) {
+        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+
+        if (permissionStatus.state === 'denied') {
+          // Permission explicitly denied
+          const errorMsg: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: '🎤 **Microphone access is blocked**\n\nTo use voice input:\n1. Click the 🔒 lock icon in your address bar\n2. Allow microphone access\n3. Refresh the page and try again\n\nOr simply type your message!',
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, errorMsg]);
+          return;
+        }
+
+        if (permissionStatus.state === 'prompt') {
+          // Will prompt user - show helpful message
+          const infoMsg: Message = {
+            id: Date.now().toString(),
+            role: 'assistant',
+            content: '🎤 **Allow microphone access** in the browser prompt to use voice input.',
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, infoMsg]);
+        }
       }
+
+      // Try to start recognition
+      recognition.start();
+      setIsListening(true);
+    } catch (error) {
+      console.error('Failed to start voice recognition:', error);
+      setIsListening(false);
+
+      // ✅ P1 FIX: Better error messages without alerts
+      const errorMessage = error instanceof Error ? error.message.toLowerCase() : '';
+
+      let userMessage = '';
+      if (errorMessage.includes('not-allowed') || errorMessage.includes('permission')) {
+        userMessage = '🎤 **Microphone permission denied**\n\nPlease allow microphone access in your browser settings and try again.';
+      } else if (errorMessage.includes('busy') || errorMessage.includes('in use')) {
+        userMessage = '🎤 **Microphone is busy**\n\nAnother app might be using your microphone. Please close it and try again.';
+      } else if (errorMessage.includes('not found') || errorMessage.includes('notfound')) {
+        userMessage = '🎤 **No microphone detected**\n\nPlease connect a microphone and try again, or type your message.';
+      } else {
+        userMessage = '🎤 **Voice input failed**\n\nPlease try again or type your message instead.';
+      }
+
+      const errorMsg: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: userMessage,
+        timestamp: new Date(),
+      };
+      setMessages(prev => [...prev, errorMsg]);
     }
   };
 
@@ -1237,13 +1387,12 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     saveChatHistory(newMessages);
   };
 
-  // ✅ Quick Actions
-  // ✅ CRITICAL FIX: Quick actions now properly transition from welcome screen
+  // ✅ P1 FIX: Sales-optimized quick actions with conversion focus
   const quickActions = [
-    { icon: <MessageSquare className="w-4 h-4" />, label: "What services?", action: () => handleQuickAction("What services do you offer?") },
-    { icon: <DollarSign className="w-4 h-4" />, label: "Pricing", action: () => handleQuickAction("How much does a website cost?") },
-    { icon: <BookOpen className="w-4 h-4" />, label: "Portfolio", action: () => handleQuickAction("Show me your recent projects") },
-    { icon: <Clock className="w-4 h-4" />, label: "Timeline", action: () => handleQuickAction("How long does it take to build a website?") },
+    { icon: <Rocket className="w-4 h-4" />, label: "📅 Book Consultation", action: () => handleQuickAction("I want to book a free consultation to discuss my project") },
+    { icon: <DollarSign className="w-4 h-4" />, label: "💰 View Pricing", action: () => handleQuickAction("Show me your pricing and packages") },
+    { icon: <Sparkles className="w-4 h-4" />, label: "✨ See Live Work", action: () => handleQuickAction("Show me your best projects and client work") },
+    { icon: <Zap className="w-4 h-4" />, label: "⚡ Get Quote Now", action: () => handleQuickAction("I want to get a quote for my website project") },
   ];
 
   // ✅ CRITICAL FIX: Handle quick actions and prompts from welcome screen
@@ -1361,7 +1510,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
       const data = await response.json();
 
-      // ✅ PRODUCTION FIX: Enhanced error logging and handling
+      // ✅ P0 FIX: Enhanced error logging and handling with better success checking
       console.log('🔍 API Response:', {
         status: response.status,
         ok: response.ok,
@@ -1372,9 +1521,9 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         userMessage: data.userMessage,
       });
 
-      // ✅ PRODUCTION FIX: Handle backend errors with detailed messages
-      if (!response.ok || data.error) {
-        // Backend returned an error response - show the user-friendly message
+      // ✅ P0 FIX: Handle backend errors properly - check success field AND error field
+      if (!response.ok || data.error || data.success === false) {
+        // Backend returned an error response - prioritize userMessage for user-friendly errors
         const errorContent = data.userMessage || data.message || 'I encountered a temporary issue. Please try again in a moment.';
 
         console.error('❌ Backend Error Response:', {
@@ -1385,10 +1534,23 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
           fullResponse: data,
         });
 
+        // ✅ P1 FIX: Categorize errors for better user experience
+        let displayMessage = errorContent;
+
+        // Add helpful context based on error type
+        if (data.error === 'QUOTA_EXCEEDED') {
+          displayMessage = `${errorContent}\n\n💡 **Tip:** High traffic right now. The AI will be ready in just a moment!`;
+        } else if (data.error === 'AUTH_ERROR') {
+          displayMessage = `${errorContent}\n\n📧 **Email:** sudharsanofficial0001@gmail.com`;
+        } else if (data.error === 'NETWORK_ERROR') {
+          displayMessage = `${errorContent}\n\n💡 **Tip:** Check your WiFi/data connection and try again.`;
+        }
+
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: errorContent,
+          content: displayMessage,
+          timestamp: new Date(),
         };
         const finalMessages = [...newMessages, errorMessage];
         setMessages(finalMessages);
@@ -1479,14 +1641,14 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     }
   };
 
-  // ✅ Suggested prompts
+  // ✅ P1 FIX: Action-oriented suggested prompts for better conversion
   const suggestedPrompts = [
-    "What services do you offer?",
-    "How much does a website cost?",
-    "Can you help with e-commerce?",
-    "Tell me about your process",
-    "Do you offer maintenance?",
-    "What's your turnaround time?"
+    "📅 Book a free consultation call",
+    "💰 Show me pricing for my project",
+    "✨ I want to see your portfolio",
+    "⚡ Get a custom quote",
+    "🚀 How fast can we start?",
+    "💬 Take me to contact form"
   ];
 
   // ✅ Filter messages by search
@@ -1900,25 +2062,31 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                       className={`flex-1 ${isDarkMode ? 'bg-slate-700/60 border-slate-600/50 text-white placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'} px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl border focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 transition-all text-sm disabled:opacity-50 backdrop-blur-sm`}
                     />
 
-                    {/* Voice Input - ✅ CRITICAL FIX #5: Better visibility and tooltips */}
+                    {/* Voice Input - ✅ P1 FIX: Better tooltips and visual feedback */}
                     {recognition && (
                       <motion.button
-                        whileHover={{ scale: 1.08 }}
-                        whileTap={{ scale: 0.92 }}
+                        whileHover={{ scale: isLoading ? 1 : 1.08 }}
+                        whileTap={{ scale: isLoading ? 1 : 0.92 }}
                         onClick={toggleVoiceInput}
                         disabled={isLoading}
-                        className={`w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 ${
+                        className={`relative w-10 h-10 sm:w-11 sm:h-11 md:w-12 md:h-12 ${
                           isListening
                             ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                            : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700'
-                        } text-white rounded-lg sm:rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex-shrink-0`}
-                        title={isListening ? "🔴 Recording... Click to stop" : "🎤 Click to speak your message"}
+                            : 'bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700'
+                        } text-white rounded-lg sm:rounded-xl flex items-center justify-center transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg flex-shrink-0 group`}
+                        title={isListening ? "🔴 Recording... Click to stop" : "🎤 Click and speak your message (Chrome, Edge, Safari)"}
                         aria-label={isListening ? "Stop voice input" : "Start voice input"}
                       >
                         {isListening ? (
                           <MicOff className="w-5 h-5" />
                         ) : (
                           <Mic className="w-5 h-5" />
+                        )}
+                        {/* ✅ P1 FIX: Tooltip on hover */}
+                        {!isListening && !isLoading && (
+                          <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            🎤 Speak
+                          </div>
                         )}
                       </motion.button>
                     )}
@@ -1941,7 +2109,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                     {messageCount >= MESSAGE_LIMIT ? (
                       <span className="text-red-400">Daily limit reached. Contact us for unlimited access.</span>
                     ) : (
-                      <>↵ Enter to send{recognition && ' • 🎤 Voice input available'} • Powered by Gemini AI</>
+                      <>↵ Enter to send{recognition && ' • 🎤 Click mic to speak'} • ⚡ Powered by Gemini AI</>
                     )}
                   </motion.p>
                 </div>
