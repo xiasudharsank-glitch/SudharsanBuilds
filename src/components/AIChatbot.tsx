@@ -1151,7 +1151,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     URL.revokeObjectURL(url);
   };
 
-  // ✅ P0 FIX: Voice Input with proper permission checking
+  // ✅ CRITICAL FIX: Voice Input with ACTUAL permission request
   const toggleVoiceInput = async () => {
     if (!recognition) {
       // Show inline message instead of alert
@@ -1171,54 +1171,38 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       return;
     }
 
-    // ✅ P0 FIX: Check microphone permission first using Permissions API
+    // ✅ CRITICAL FIX: Actually request microphone permission using getUserMedia
+    // This triggers the browser's native permission prompt
     try {
-      if (navigator.permissions && navigator.permissions.query) {
-        const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+      console.log('🎤 Requesting microphone permission...');
 
-        if (permissionStatus.state === 'denied') {
-          // Permission explicitly denied
-          const errorMsg: Message = {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content: '🎤 **Microphone access is blocked**\n\nTo use voice input:\n1. Click the 🔒 lock icon in your address bar\n2. Allow microphone access\n3. Refresh the page and try again\n\nOr simply type your message!',
-            timestamp: new Date(),
-          };
-          setMessages(prev => [...prev, errorMsg]);
-          return;
-        }
+      // Request microphone access - this will show browser's permission prompt
+      await navigator.mediaDevices.getUserMedia({ audio: true });
 
-        if (permissionStatus.state === 'prompt') {
-          // Will prompt user - show helpful message
-          const infoMsg: Message = {
-            id: Date.now().toString(),
-            role: 'assistant',
-            content: '🎤 **Allow microphone access** in the browser prompt to use voice input.',
-            timestamp: new Date(),
-          };
-          setMessages(prev => [...prev, infoMsg]);
-        }
-      }
+      console.log('✅ Microphone permission granted');
 
-      // Try to start recognition
+      // Permission granted, now start speech recognition
       recognition.start();
       setIsListening(true);
+
     } catch (error) {
-      console.error('Failed to start voice recognition:', error);
+      console.error('❌ Microphone permission error:', error);
       setIsListening(false);
 
-      // ✅ P1 FIX: Better error messages without alerts
-      const errorMessage = error instanceof Error ? error.message.toLowerCase() : '';
-
+      // ✅ CRITICAL FIX: Handle specific permission errors
+      const err = error as Error;
       let userMessage = '';
-      if (errorMessage.includes('not-allowed') || errorMessage.includes('permission')) {
-        userMessage = '🎤 **Microphone permission denied**\n\nPlease allow microphone access in your browser settings and try again.';
-      } else if (errorMessage.includes('busy') || errorMessage.includes('in use')) {
-        userMessage = '🎤 **Microphone is busy**\n\nAnother app might be using your microphone. Please close it and try again.';
-      } else if (errorMessage.includes('not found') || errorMessage.includes('notfound')) {
-        userMessage = '🎤 **No microphone detected**\n\nPlease connect a microphone and try again, or type your message.';
+
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        userMessage = '🎤 **Microphone access denied**\n\nYou clicked "Block" in the permission prompt.\n\nTo fix:\n1. Click the 🔒 lock icon in your address bar\n2. Change microphone to "Allow"\n3. Click the mic button again\n\nOr just type your message!';
+      } else if (err.name === 'NotFoundError') {
+        userMessage = '🎤 **No microphone found**\n\nPlease connect a microphone and try again, or type your message.';
+      } else if (err.name === 'NotReadableError') {
+        userMessage = '🎤 **Microphone is in use**\n\nAnother app (like Zoom, Teams, or Discord) might be using your microphone.\n\nClose other apps and try again, or type your message.';
+      } else if (err.name === 'SecurityError') {
+        userMessage = '🎤 **Security error**\n\nMicrophone access requires HTTPS. If you\'re on HTTP, please use HTTPS instead.\n\nOr just type your message!';
       } else {
-        userMessage = '🎤 **Voice input failed**\n\nPlease try again or type your message instead.';
+        userMessage = `🎤 **Voice input failed**\n\nError: ${err.message}\n\nPlease type your message instead.`;
       }
 
       const errorMsg: Message = {
@@ -1463,13 +1447,11 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     handleQuickAction(prompt);
   };
 
-  // ✅ CRITICAL FIX #4: Preview follow-up suggestions before sending
+  // ✅ CRITICAL FIX: Auto-send follow-up suggestions (user requested this)
   const handleFollowUpClick = (suggestion: string) => {
-    // Populate input box instead of sending immediately
-    // This gives users a chance to review/edit before sending
-    setInputValue(suggestion);
-    // Scroll to input area
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Directly send the message instead of filling input
+    // User wants instant action, not manual send
+    handleSendMessage(suggestion);
   };
 
   const handleSendMessage = async (promptText?: string) => {
@@ -1609,26 +1591,29 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         return; // Exit early - don't continue to success block
       }
 
-      if (data.success && data.message) {
+      // ✅ CRITICAL FIX: Handle both messages AND function calls (function calls can have empty messages)
+      if (data.success && (data.message || data.functionCall)) {
         // ✅ CRITICAL FIX #9: Only increment count after successful API response
         setMessageCount(prev => prev + 1);
 
         const assistantMessageId = (Date.now() + 1).toString();
 
-        // ✅ Phase 2: Handle function calls from AI
+        // ✅ CRITICAL FIX: Handle function calls from AI - execute them immediately
         if (data.functionCall) {
           console.log('🎯 AI requested function call:', data.functionCall);
           executeFunctionCall(data.functionCall.name, data.functionCall.args);
-          // Show the message along with executing the function
+          // Note: executeFunctionCall now adds its own feedback messages
+          // Don't add duplicate messages here
+          return; // Exit early after executing function
         }
 
-        // ✅ Phase 1: Generate smart follow-up suggestions
+        // ✅ Phase 1: Generate smart follow-up suggestions (only for text messages)
         const followUps = getFollowUpSuggestions(messageText, data.message, context);
 
         const assistantMessage: Message = {
           id: assistantMessageId,
           role: 'assistant',
-          content: data.message || '✨ Taking you there now!',
+          content: data.message,
           serviceCards: intent.showCards ? intent.filteredServices : undefined,
           projectCards: projectIntent.showProjects ? projectIntent.filteredProjects : undefined, // ✅ Phase 1: Add project cards
           followUpSuggestions: followUps, // ✅ Phase 1: Add follow-up suggestions
@@ -1648,13 +1633,14 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
           ));
         }, (data.message?.length || 20) * 15 + 100); // Calculate based on text length
       } else {
-        // ✅ PRODUCTION FIX: This should rarely happen now that we check errors earlier
-        console.warn('⚠️ Unexpected response format:', data);
+        // ✅ CRITICAL FIX: Better error message for unexpected responses
+        console.error('❌ Unexpected response format:', data);
 
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: 'I encountered a temporary issue. Please try again in a moment.',
+          content: '⚠️ Something went wrong with the AI response. Please try rephrasing your question or contact support.',
+          timestamp: new Date(),
         };
         const finalMessages = [...newMessages, errorMessage];
         setMessages(finalMessages);
