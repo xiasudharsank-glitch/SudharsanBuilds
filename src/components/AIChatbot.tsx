@@ -948,6 +948,29 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     };
   }, [recognition]);
 
+  // ✅ P3 FIX: Keyboard shortcuts - Esc to close, Cmd/Ctrl+K to focus input
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Esc to close chat
+      if (e.key === 'Escape' && chatState.isOpen) {
+        handleCloseChat();
+        return;
+      }
+
+      // Cmd+K (Mac) or Ctrl+K (Windows/Linux) to focus input
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k' && chatState.isOpen && !chatState.isWelcome) {
+        e.preventDefault();
+        const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+        if (inputElement) {
+          inputElement.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [chatState.isOpen, chatState.isWelcome]);
+
   // ✅ Toggle Dark Mode
   const toggleTheme = () => {
     const newTheme = !isDarkMode;
@@ -955,28 +978,37 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newTheme));
   };
 
-  // ✅ P1 FIX: Save Chat History - Proactive message limit + better error handling
+  // ✅ P2 FIX: Save Chat History - Proactive warnings before auto-trim
   const saveChatHistory = (msgs: Message[]) => {
     try {
-      // ✅ P1 FIX: Proactively limit to last 50 messages to prevent quota issues
       const MAX_MESSAGES = 50;
+      const WARNING_THRESHOLD = 40;
       let messagesToSave = msgs;
 
+      // ✅ P2 FIX: Warn user at 40 messages (before auto-trim at 50)
+      if (msgs.length === WARNING_THRESHOLD) {
+        const warningMsg: Message = {
+          id: `warning-${Date.now()}`,
+          role: 'assistant',
+          content: `⚠️ **Chat history approaching limit** (${WARNING_THRESHOLD}/${MAX_MESSAGES} messages)\n\n💡 **Tip:** Use the **Export** button to save this conversation before it auto-trims!`,
+          timestamp: new Date(),
+        };
+        // Add warning to messages (but don't save it yet to avoid recursion)
+        setMessages(prev => [...prev, warningMsg]);
+      }
+
+      // Auto-trim at 50 messages
       if (msgs.length > MAX_MESSAGES) {
         console.log(`📦 Chat history exceeds ${MAX_MESSAGES} messages. Auto-trimming to prevent storage issues.`);
-        // Keep only the last MAX_MESSAGES messages
         messagesToSave = msgs.slice(-MAX_MESSAGES);
-
-        // Update state to match what we're saving (prevents desync)
         setMessages(messagesToSave);
 
-        // Show subtle notification (non-blocking)
+        // Show notification
         setChatState(prev => ({
           ...prev,
-          error: `Chat history auto-trimmed to last ${MAX_MESSAGES} messages to save space.`
+          error: `Chat history auto-trimmed to last ${MAX_MESSAGES} messages. Export important conversations!`
         }));
 
-        // Clear error after 5 seconds
         setTimeout(() => {
           setChatState(prev => ({ ...prev, error: null }));
         }, 5000);
@@ -1056,7 +1088,13 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
           const history = JSON.parse(decrypted);
           if (Array.isArray(history) && history.length > 0) {
-            setMessages(history);
+            // ✅ P0 CRITICAL FIX: Convert timestamp strings back to Date objects
+            // This fixes the "timestamp.toLocaleTimeString is not a function" error
+            const deserializedHistory = history.map(msg => ({
+              ...msg,
+              timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date(),
+            }));
+            setMessages(deserializedHistory);
             setChatState(prev => ({ ...prev, isWelcome: false }));
           }
         } catch (decryptError) {
@@ -1274,6 +1312,19 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       ...prev,
       isWelcome: false,
     }));
+
+    // ✅ P2 FIX: Add proactive engagement message for first-time users
+    if (messages.length === 0) {
+      setTimeout(() => {
+        const welcomeMsg: Message = {
+          id: `welcome-${Date.now()}`,
+          role: 'assistant',
+          content: `👋 Hi! I'm Sudharsan's AI assistant. I can help you:\n\n📅 **Book a consultation** for your project\n💰 **Get pricing** for websites & web apps\n✨ **Explore portfolio** of past work\n⚡ **Get a custom quote** tailored to your needs\n\nWhat interests you most?`,
+          timestamp: new Date(),
+        };
+        setMessages([welcomeMsg]);
+      }, 300);
+    }
   };
 
   const toggleFullScreen = () => {
@@ -1867,6 +1918,18 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                   <p className={`text-xs sm:text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                     Sudharsan's AI delivers exceptional insights tailored to your needs.
                   </p>
+                  {/* ✅ P2 FIX: Add urgency/scarcity messaging */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className={`mt-2 px-4 py-2 rounded-lg ${isDarkMode ? 'bg-amber-900/30 border border-amber-500/30' : 'bg-amber-50 border border-amber-300'}`}
+                  >
+                    <p className="text-xs font-semibold text-amber-500 flex items-center justify-center gap-2">
+                      <Zap className="w-3 h-3" />
+                      Limited Slots Available This Month
+                    </p>
+                  </motion.div>
                 </motion.div>
 
                 <motion.button
@@ -2109,7 +2172,11 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                     {messageCount >= MESSAGE_LIMIT ? (
                       <span className="text-red-400">Daily limit reached. Contact us for unlimited access.</span>
                     ) : (
-                      <>↵ Enter to send{recognition && ' • 🎤 Click mic to speak'} • ⚡ Powered by Gemini AI</>
+                      <>
+                        ↵ Enter to send{recognition && ' • 🎤 Click mic to speak'}
+                        {!chatState.isWelcome && ' • ⌘K to focus • Esc to close'}
+                        {' '} • ⚡ Powered by Gemini AI
+                      </>
                     )}
                   </motion.p>
                 </div>
