@@ -6,7 +6,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import CryptoJS from 'crypto-js'; // ✅ FIX #6: Encryption for chat history
 import { env } from '../utils/env';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { PROJECTS_DATA, type Project } from '../data/projectsData';
 
 // Service data structure
@@ -692,6 +692,7 @@ const getUserId = (): string => {
 
 export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   const location = useLocation();
+  const navigate = useNavigate(); // ✅ ENHANCEMENT: Add page navigation
 
   // ✅ Phase 2: Persistent User ID
   const [userId] = useState<string>(getUserId());
@@ -702,7 +703,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     return saved ? JSON.parse(saved) : true; // Default dark
   });
 
-  // ✅ P0 FIX: Function Call Execution with proper feedback and error handling
+  // ✅ ENHANCEMENT: Function Call Execution with cross-page navigation support
   const executeFunctionCall = (functionName: string, args: any) => {
     console.log(`🔧 Executing function: ${functionName}`, args);
 
@@ -712,7 +713,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         const element = document.getElementById(sectionId);
 
         if (element) {
-          // ✅ P1 FIX: Add visual feedback message
+          // ✅ Element found on current page
           const feedbackMessage: Message = {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
@@ -721,32 +722,42 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
           };
           setMessages(prev => [...prev, feedbackMessage]);
 
-          // Scroll to section
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-          // Close chat after user can see the feedback (increased delay)
           setTimeout(() => {
             handleCloseChat();
           }, 1500);
         } else {
-          // ✅ P0 FIX: Handle missing section error
-          console.warn(`Section not found: ${sectionId}`);
-          const errorMessage: Message = {
+          // ✅ ENHANCEMENT: Navigate to homepage first, then scroll
+          console.log(`Section not on current page. Navigating to homepage...`);
+
+          const navMessage: Message = {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
-            content: `⚠️ I couldn't find the ${sectionId} section. It might not be available on this page. Try visiting the homepage!`,
+            content: `✅ Taking you to the ${sectionId} section on the homepage...`,
             timestamp: new Date(),
           };
-          setMessages(prev => [...prev, errorMessage]);
+          setMessages(prev => [...prev, navMessage]);
+
+          // Navigate to homepage
+          navigate('/');
+
+          // Wait for page load, then scroll
+          setTimeout(() => {
+            const targetElement = document.getElementById(sectionId);
+            if (targetElement) {
+              targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            handleCloseChat();
+          }, 800);
         }
         break;
 
       case 'openContactForm':
-        // Scroll to contact section
         const contactSection = document.getElementById('contact');
 
         if (contactSection) {
-          // ✅ P1 FIX: Add visual feedback
+          // ✅ Contact form found on current page
           const feedbackMessage: Message = {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
@@ -768,29 +779,51 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
             }, 1200);
           }
 
-          // Close chat after longer delay to ensure form is visible
           setTimeout(() => {
             handleCloseChat();
           }, 1800);
         } else {
-          // ✅ P0 FIX: Handle missing contact section
-          console.warn('Contact section not found');
-          const errorMessage: Message = {
+          // ✅ ENHANCEMENT: Navigate to homepage contact section
+          console.log('Contact form not on current page. Navigating to homepage...');
+
+          const navMessage: Message = {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
-            content: `⚠️ The contact form isn't available on this page. Would you like me to share the contact email instead? It's ${env.YOUR_EMAIL || 'sudharsanofficial0001@gmail.com'}`,
+            content: `✅ Taking you to the contact form on the homepage...`,
             timestamp: new Date(),
           };
-          setMessages(prev => [...prev, errorMessage]);
+          setMessages(prev => [...prev, navMessage]);
+
+          // Navigate to homepage
+          navigate('/');
+
+          // Wait for page load, then scroll to contact
+          setTimeout(() => {
+            const targetSection = document.getElementById('contact');
+            if (targetSection) {
+              targetSection.scrollIntoView({ behavior: 'smooth' });
+
+              // Prefill message if provided
+              if (args.prefillMessage) {
+                setTimeout(() => {
+                  const messageInput = document.querySelector('textarea[name="message"]') as HTMLTextAreaElement;
+                  if (messageInput) {
+                    messageInput.value = args.prefillMessage;
+                    messageInput.focus();
+                  }
+                }, 1200);
+              }
+            }
+            handleCloseChat();
+          }, 800);
         }
         break;
 
       case 'showServiceDetails':
-        // Scroll to services section
         const servicesSection = document.getElementById('services');
 
         if (servicesSection) {
-          // ✅ P1 FIX: Add visual feedback
+          // ✅ Services found on current page
           const feedbackMessage: Message = {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
@@ -801,20 +834,32 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
           servicesSection.scrollIntoView({ behavior: 'smooth' });
 
-          // Close chat with longer delay
           setTimeout(() => {
             handleCloseChat();
           }, 1500);
         } else {
-          // ✅ P0 FIX: Handle missing services section
-          console.warn('Services section not found');
-          const errorMessage: Message = {
+          // ✅ ENHANCEMENT: Navigate to homepage services section
+          console.log('Services section not on current page. Navigating to homepage...');
+
+          const navMessage: Message = {
             id: (Date.now() + 2).toString(),
             role: 'assistant',
-            content: `⚠️ The services section isn't on this page. Let me show you the service cards in our chat instead!`,
+            content: `✅ Taking you to the services section on the homepage...`,
             timestamp: new Date(),
           };
-          setMessages(prev => [...prev, errorMessage]);
+          setMessages(prev => [...prev, navMessage]);
+
+          // Navigate to homepage
+          navigate('/');
+
+          // Wait for page load, then scroll to services
+          setTimeout(() => {
+            const targetSection = document.getElementById('services');
+            if (targetSection) {
+              targetSection.scrollIntoView({ behavior: 'smooth' });
+            }
+            handleCloseChat();
+          }, 800);
         }
         break;
 
