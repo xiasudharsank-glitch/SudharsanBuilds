@@ -31,13 +31,18 @@ async function createPayPalOrder(amount: number, description: string) {
       {
         amount: {
           currency_code: "USD",
-          value: (amount / 100).toString(), // Convert cents to dollars
+          value: amount.toFixed(2), // Amount is already in dollars from frontend
         },
         description: description,
       },
     ],
-    return_url: "https://sudharsanbuilds.com/success",
-    cancel_url: "https://sudharsanbuilds.com/cancel",
+    application_context: {
+      brand_name: "Sudharsan Builds",
+      landing_page: "NO_PREFERENCE",
+      user_action: "PAY_NOW",
+      return_url: "https://sudharsanbuilds.com/payment-confirmation",
+      cancel_url: "https://sudharsanbuilds.com/services",
+    }
   };
 
   const response = await fetch(PAYPAL_API_URL, {

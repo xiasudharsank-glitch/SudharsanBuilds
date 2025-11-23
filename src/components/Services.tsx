@@ -1,6 +1,6 @@
 import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef, useCallback } from 'react'; // ✅ FIX: Add useCallback
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -820,6 +820,136 @@ window.paypal.Buttons({
     }
   };
 
+  // ✅ Render PayPal Buttons in Modal (Global Region Only)
+  useEffect(() => {
+    if (showBookingModal && payment.gateway === 'paypal' && paypalLoaded && window.paypal && selectedService) {
+      const container = document.getElementById('paypal-button-container-modal');
+      if (!container) return;
+
+      // Clear existing buttons
+      container.innerHTML = '';
+
+      const totalAmount = selectedService.totalAmount || selectedService.depositAmount;
+
+      // Render PayPal buttons
+      window.paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'blue',
+          shape: 'rect',
+          label: 'paypal',
+          height: 45
+        },
+        createOrder: async () => {
+          try {
+            // Validate before creating order
+            if (!customerDetails.name || !customerDetails.email || !customerDetails.projectDetails) {
+              throw new Error('Please fill in all required fields');
+            }
+
+            const createOrderUrl = `${env.SUPABASE_URL}/functions/v1/create-paypal-order`;
+            const csrfToken = sessionStorage.getItem('csrf_token');
+
+            const response = await fetch(createOrderUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
+                'X-CSRF-Token': csrfToken || ''
+              },
+              body: JSON.stringify({
+                amount: selectedService.depositAmount,
+                service_name: selectedService.name
+              })
+            });
+
+            const data = await response.json();
+            console.log('✅ PayPal order created:', data.id);
+            return data.id;
+          } catch (error) {
+            console.error('❌ Order creation error:', error);
+            alert('Please fill in all required fields before proceeding');
+            throw error;
+          }
+        },
+        onApprove: async (data: any) => {
+          console.log('✅ PayPal Payment Approved:', data.orderID);
+          setIsPaymentLoading(true);
+          setShowBookingModal(false);
+
+          try {
+            // Capture payment
+            const captureUrl = `${env.SUPABASE_URL}/functions/v1/capture-paypal-payment`;
+            const captureResponse = await fetch(captureUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+              },
+              body: JSON.stringify({
+                orderId: data.orderID,
+                customer_email: customerDetails.email,
+                amount: selectedService.depositAmount,
+                service_name: selectedService.name
+              })
+            });
+
+            const captureResult = await captureResponse.json();
+
+            if (!captureResult.success) {
+              throw new Error('Payment capture failed');
+            }
+
+            console.log('✅ Payment captured');
+
+            // Generate invoice
+            const invoiceResult = await generateAndSendInvoice({
+              name: customerDetails.name,
+              email: customerDetails.email,
+              phone: customerDetails.phone,
+              service: selectedService.name,
+              amount: totalAmount!,
+              depositAmount: selectedService.depositAmount!,
+              timeline: selectedService.timeline,
+              projectDetails: customerDetails.projectDetails,
+              razorpayPaymentId: data.orderID,
+              razorpayOrderId: data.orderID,
+              razorpaySignature: ''
+            });
+
+            // Navigate to confirmation
+            const confirmationUrl = new URLSearchParams({
+              invoiceId: invoiceResult.invoiceId || 'N/A',
+              paymentId: data.orderID,
+              service: selectedService.name,
+              name: customerDetails.name,
+              email: customerDetails.email,
+              deposit: selectedService.depositAmount!.toString(),
+              total: totalAmount!.toString(),
+              emailStatus: 'success'
+            });
+
+            setCustomerDetails({ name: '', email: '', phone: '', projectDetails: '' });
+            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+          } catch (error) {
+            console.error('❌ Payment error:', error);
+            alert('Payment processing failed. Please contact support with Order ID: ' + data.orderID);
+            setShowBookingModal(true);
+          } finally {
+            setIsPaymentLoading(false);
+          }
+        },
+        onError: (err: any) => {
+          console.error('❌ PayPal error:', err);
+          alert('Payment failed. Please try again.');
+        },
+        onCancel: () => {
+          console.log('ℹ️ Payment cancelled');
+        }
+      }).render('#paypal-button-container-modal');
+    }
+  }, [showBookingModal, payment.gateway, paypalLoaded, selectedService, customerDetails, navigate]);
+
   // ✅ Main Payment Handler - Routes to correct payment gateway
   const handlePaymentProceed = async () => {
     if (!selectedService || !selectedService.depositAmount) return;
@@ -1133,7 +1263,9 @@ window.paypal.Buttons({
                   <div>
                     <h3 id="modal-title" className="text-2xl font-bold mb-2">Complete Your Booking</h3>
                     <p className="text-cyan-50">{selectedService.name} - {selectedService.price}</p>
-                    <p className="text-sm text-cyan-100 mt-1">Deposit: ₹{selectedService.depositAmount?.toLocaleString('en-IN')}</p>
+                    <p className="text-sm text-cyan-100 mt-1">
+                      Deposit: {formatCurrency(selectedService.depositAmount!, regionConfig)}
+                    </p>
                   </div>
                   <button
                     onClick={() => setShowBookingModal(false)}
@@ -1313,7 +1445,9 @@ window.paypal.Buttons({
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="text-slate-600">Deposit (Pay Now):</span>
-                      <span className="font-bold text-cyan-600 text-lg">₹{selectedService.depositAmount?.toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-cyan-600 text-lg">
+                        {formatCurrency(selectedService.depositAmount!, regionConfig)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Timeline:</span>
@@ -1324,21 +1458,35 @@ window.paypal.Buttons({
 
                 {/* Actions - Sticky at bottom for better UX */}
                 <div className="sticky bottom-0 bg-white pt-4 pb-2 mt-4 border-t border-slate-200">
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowBookingModal(false)}
-                      className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handlePaymentProceed}
-                      disabled={isPaymentLoading}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
-                    </button>
-                  </div>
+                  {payment.gateway === 'razorpay' ? (
+                    // India: Show Proceed to Payment button for Razorpay
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowBookingModal(false)}
+                        className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handlePaymentProceed}
+                        disabled={isPaymentLoading}
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
+                      </button>
+                    </div>
+                  ) : (
+                    // Global: Show PayPal buttons inline
+                    <div className="space-y-3">
+                      <div id="paypal-button-container-modal" className="min-h-[45px]"></div>
+                      <button
+                        onClick={() => setShowBookingModal(false)}
+                        className="w-full px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
