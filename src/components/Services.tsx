@@ -1008,7 +1008,9 @@ window.paypal.Buttons({
               projectDetails: currentDetails,
               razorpayPaymentId: data.orderID,
               razorpayOrderId: data.orderID,
-              razorpaySignature: ''
+              razorpaySignature: '',
+              currency_symbol: currency?.symbol || '$',
+              currency_locale: currency?.locale || 'en-US',
             });
 
             // Navigate to confirmation
