@@ -698,118 +698,122 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         throw new Error('Failed to create PayPal order');
       }
 
-      const { orderId } = await response.json();
+      const order = await response.json();
+const orderId = order.id;
 
       // Render PayPal buttons
-      if (window.paypal) {
-        // Create a container for PayPal buttons
-        const paypalContainer = document.createElement('div');
-        paypalContainer.id = 'paypal-button-container';
-        document.body.appendChild(paypalContainer);
+if (!window.paypal) {
+  throw new Error('PayPal SDK not loaded');
+}
 
-        window.paypal.Buttons({
-          createOrder: () => orderId,
-          onApprove: async (data: any) => {
-            console.log('✅ PayPal Payment Approved:', data);
+// Create a container for PayPal buttons
+const paypalContainer = document.createElement('div');
+paypalContainer.id = 'paypal-button-container';
+document.body.appendChild(paypalContainer);
 
-            try {
-              // Capture payment via Supabase Edge Function
-              const captureUrl = `${env.SUPABASE_URL}/functions/v1/capture-paypal-payment`;
+window.paypal.Buttons({
+  createOrder: (data: any, actions: any) => {
+    return orderId; // Return the order ID
+  },
+  onApprove: async (data: any, actions: any) => {
+    console.log('✅ PayPal Payment Approved:', data);
+    
+    try {
+      // Call verify-paypal-payment function instead of capture
+      const verifyUrl = `${env.SUPABASE_URL}/functions/v1/verify-paypal-payment`;
 
-              const captureResponse = await fetch(captureUrl, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
-                },
-                body: JSON.stringify({
-                  orderId: data.orderID
-                })
-              });
+      const verifyResponse = await fetch(verifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          order_id: data.orderID,
+          customer_email: customerDetails.email,
+          amount: selectedService.depositAmount,
+          service_name: selectedService.name
+        })
+      });
 
-              const captureResult = await captureResponse.json();
+      const verifyResult = await verifyResponse.json();
 
-              if (!captureResult.success) {
-                console.error('❌ Payment capture failed:', captureResult);
-                alert('❌ Payment capture failed. Please contact support with Order ID: ' + data.orderID);
-                setIsPaymentLoading(false);
-                return;
-              }
-
-              console.log('✅ Payment captured successfully');
-
-              // Generate invoice and send emails
-              const invoiceResult = await generateAndSendInvoice({
-                name: customerDetails.name,
-                email: customerDetails.email,
-                phone: customerDetails.phone,
-                service: selectedService.name,
-                amount: totalAmount,
-                depositAmount: selectedService.depositAmount!,
-                timeline: selectedService.timeline,
-                projectDetails: customerDetails.projectDetails,
-                razorpayPaymentId: data.orderID, // Use PayPal order ID
-                razorpayOrderId: data.orderID,
-                razorpaySignature: '' // Not applicable for PayPal
-              });
-
-              const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
-
-              if (hasEmailIssue) {
-                console.warn('⚠️ Email notification issue:', invoiceResult.message);
-                alert(`Payment successful! However:\n\n${invoiceResult.message}\n\nYou'll be redirected to your confirmation page.`);
-              }
-
-              // Navigate to confirmation page
-              const confirmationUrl = new URLSearchParams({
-                invoiceId: invoiceResult.invoiceId || 'N/A',
-                paymentId: data.orderID,
-                service: selectedService.name,
-                name: customerDetails.name,
-                email: customerDetails.email,
-                deposit: selectedService.depositAmount!.toString(),
-                total: totalAmount.toString(),
-                emailStatus: hasEmailIssue ? 'warning' : 'success'
-              });
-
-              setCustomerDetails({
-                name: '',
-                email: '',
-                phone: '',
-                projectDetails: ''
-              });
-
-              // Clean up PayPal container
-              paypalContainer.remove();
-
-              navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
-            } catch (error) {
-              console.error('❌ Payment processing error:', error);
-              alert(`⚠️ Payment received but processing failed.\n\nOrder ID: ${data.orderID}\n\nPlease contact support.`);
-              paypalContainer.remove();
-            } finally {
-              setIsPaymentLoading(false);
-            }
-          },
-          onError: (err: any) => {
-            console.error('❌ PayPal error:', err);
-            alert('❌ Payment failed. Please try again or contact us at:\nsudharsanofficial0001@gmail.com');
-            setIsPaymentLoading(false);
-            setShowBookingModal(true);
-            paypalContainer.remove();
-          },
-          onCancel: () => {
-            console.log('ℹ️ Payment cancelled by user');
-            setIsPaymentLoading(false);
-            setShowBookingModal(true);
-            paypalContainer.remove();
-          }
-        }).render('#paypal-button-container');
-
-      } else {
-        throw new Error('PayPal SDK not loaded');
+      if (!verifyResult.success) {
+        console.error('❌ Payment verification failed:', verifyResult);
+        alert('❌ Payment verification failed. Please contact support.');
+        setIsPaymentLoading(false);
+        paypalContainer.remove();
+        return;
       }
+
+      console.log('✅ Payment verified successfully');
+
+      // Generate invoice and send emails
+      const invoiceResult = await generateAndSendInvoice({
+        name: customerDetails.name,
+        email: customerDetails.email,
+        phone: customerDetails.phone,
+        service: selectedService.name,
+        amount: totalAmount,
+        depositAmount: selectedService.depositAmount!,
+        timeline: selectedService.timeline,
+        projectDetails: customerDetails.projectDetails,
+        razorpayPaymentId: data.orderID,
+        razorpayOrderId: data.orderID,
+        razorpaySignature: ''
+      });
+
+      const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
+
+      if (hasEmailIssue) {
+        console.warn('⚠️ Email notification issue:', invoiceResult.message);
+        alert(`Payment successful! However:\n\n${invoiceResult.message}\n\nYou'll be redirected to confirmation.`);
+      }
+
+      // Navigate to confirmation
+      const confirmationUrl = new URLSearchParams({
+        invoiceId: invoiceResult.invoiceId || 'N/A',
+        paymentId: data.orderID,
+        service: selectedService.name,
+        name: customerDetails.name,
+        email: customerDetails.email,
+        deposit: selectedService.depositAmount!.toString(),
+        total: totalAmount.toString(),
+        emailStatus: hasEmailIssue ? 'warning' : 'success'
+      });
+
+      setCustomerDetails({
+        name: '',
+        email: '',
+        phone: '',
+        projectDetails: ''
+      });
+
+      paypalContainer.remove();
+      navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
     } catch (error) {
+      console.error('❌ Payment error:', error);
+      alert('❌ Payment error. Please contact support.');
+      paypalContainer.remove();
+    } finally {
+      setIsPaymentLoading(false);
+    }
+  },
+  onError: (err: any) => {
+    console.error('❌ PayPal error:', err);
+    alert('❌ Payment failed. Please try again.');
+    setIsPaymentLoading(false);
+    setShowBookingModal(true);
+    paypalContainer.remove();
+  },
+  onCancel: () => {
+    console.log('ℹ️ Payment cancelled');
+    setIsPaymentLoading(false);
+    setShowBookingModal(true);
+    paypalContainer.remove();
+  }
+}).render('#paypal-button-container')
+} catch (error) {
       console.error('❌ PayPal payment error:', error);
       alert('❌ Payment system error. Please try again or contact us at:\nsudharsanofficial0001@gmail.com');
       setIsPaymentLoading(false);
