@@ -40,6 +40,8 @@ interface BookingConfirmationData {
   timeline: string;
   whatsapp_link: string;
   your_email: string;
+  currency_symbol: string; // ✅ ADDED: Dynamic currency (₹ or $)
+  currency_locale: string; // ✅ ADDED: Locale for number formatting (en-IN or en-US)
 }
 
 interface InvoiceData {
@@ -55,6 +57,8 @@ interface InvoiceData {
   invoice_date: string;
   due_date: string;
   upi_id: string;
+  currency_symbol: string; // ✅ ADDED: Dynamic currency (₹ or $)
+  currency_locale: string; // ✅ ADDED: Locale for number formatting (en-IN or en-US)
 }
 
 interface NewBookingAlertData {
@@ -69,6 +73,8 @@ interface NewBookingAlertData {
   payment_status: string;
   whatsapp_link: string;
   your_email: string;
+  currency_symbol: string; // ✅ ADDED: Dynamic currency (₹ or $)
+  currency_locale: string; // ✅ ADDED: Locale for number formatting (en-IN or en-US)
 }
 
 /**
@@ -93,8 +99,8 @@ export const sendBookingConfirmation = async (data: BookingConfirmationData): Pr
       customer_name: data.customer_name,
       customer_phone: data.customer_phone,
       service_type: data.service_type,
-      amount: `₹${data.amount.toLocaleString('en-IN')}`,
-      deposit_amount: `₹${data.deposit_amount.toLocaleString('en-IN')}`,
+      amount: `${data.currency_symbol}${data.amount.toLocaleString(data.currency_locale)}`,
+      deposit_amount: `${data.currency_symbol}${data.deposit_amount.toLocaleString(data.currency_locale)}`,
       timeline: data.timeline,
       whatsapp_link: data.whatsapp_link,
       your_email: data.your_email,
@@ -131,9 +137,9 @@ export const sendInvoiceEmail = async (data: InvoiceData): Promise<boolean> => {
       invoice_id: data.invoice_id,
       service_type: data.service_type,
       description: data.description,
-      amount: `₹${data.amount.toLocaleString('en-IN')}`,
-      deposit_amount: `₹${data.deposit_amount.toLocaleString('en-IN')}`,
-      remaining_amount: `₹${data.remaining_amount.toLocaleString('en-IN')}`,
+      amount: `${data.currency_symbol}${data.amount.toLocaleString(data.currency_locale)}`,
+      deposit_amount: `${data.currency_symbol}${data.deposit_amount.toLocaleString(data.currency_locale)}`,
+      remaining_amount: `${data.currency_symbol}${data.remaining_amount.toLocaleString(data.currency_locale)}`,
       payment_status: data.payment_status,
       invoice_date: data.invoice_date,
       due_date: data.due_date,
@@ -171,8 +177,8 @@ export const sendNewBookingAlert = async (data: NewBookingAlertData): Promise<bo
       customer_name: `🔔 NEW BOOKING: ${data.customer_name}`,
       customer_phone: data.customer_phone,
       service_type: `${data.service_type} | Contact: ${data.customer_email}`,
-      amount: `₹${data.amount.toLocaleString('en-IN')}`,
-      deposit_amount: `₹${data.deposit_amount.toLocaleString('en-IN')} (${data.payment_status})`,
+      amount: `${data.currency_symbol}${data.amount.toLocaleString(data.currency_locale)}`,
+      deposit_amount: `${data.currency_symbol}${data.deposit_amount.toLocaleString(data.currency_locale)} (${data.payment_status})`,
       timeline: `${data.timeline} | Details: ${data.project_details}`,
       whatsapp_link: data.whatsapp_link,
       your_email: data.customer_email, // Show customer email in template

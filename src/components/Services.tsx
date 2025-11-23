@@ -565,7 +565,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               projectDetails: customerDetails.projectDetails,
               razorpayPaymentId: razorpayResponse.razorpay_payment_id,
               razorpayOrderId: razorpayResponse.razorpay_order_id,
-              razorpaySignature: razorpayResponse.razorpay_signature
+              razorpaySignature: razorpayResponse.razorpay_signature,
+              currency_symbol: currency.symbol,
+              currency_locale: currency.locale,
             });
 
             // ✅ P1 FIX: Show email failure warning if needed
@@ -788,7 +790,9 @@ window.paypal.Buttons({
         projectDetails: customerDetails.projectDetails,
         razorpayPaymentId: data.orderID,
         razorpayOrderId: data.orderID,
-        razorpaySignature: ''
+        razorpaySignature: '',
+        currency_symbol: currency.symbol,
+        currency_locale: currency.locale,
       });
 
       const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
