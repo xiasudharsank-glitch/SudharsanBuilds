@@ -15,11 +15,26 @@ interface RequestBody {
   enableStreaming?: boolean; // ✅ Phase 2: Enable streaming
 }
 
-// ✅ Phase 2: Function declarations for Gemini Function Calling
+// ✅ ENHANCEMENT: Function declarations with page navigation support
 const functionDeclarations = [
   {
+    name: "navigateToPage",
+    description: "Navigates to a different page. Use when user wants to visit blog, services page, FAQ page, or testimonials page (separate pages).",
+    parameters: {
+      type: "object",
+      properties: {
+        page: {
+          type: "string",
+          description: "The page to navigate to",
+          enum: ["blog", "services-page", "faq-page", "testimonials-page", "home"]
+        }
+      },
+      required: ["page"]
+    }
+  },
+  {
     name: "scrollToSection",
-    description: "Scrolls the page to a specific section. Use this when the user wants to navigate to services, projects, contact, or about sections.",
+    description: "Scrolls to a section on current page. Use for homepage sections like services, projects, contact, about.",
     parameters: {
       type: "object",
       properties: {
@@ -34,26 +49,26 @@ const functionDeclarations = [
   },
   {
     name: "openContactForm",
-    description: "Opens the contact form modal. Use this when user wants to get in touch, start a project, or request a quote.",
+    description: "Opens contact form. Use when user wants to get in touch, start project, or request quote.",
     parameters: {
       type: "object",
       properties: {
         prefillMessage: {
           type: "string",
-          description: "Optional message to prefill in the contact form"
+          description: "Optional message to prefill"
         }
       }
     }
   },
   {
     name: "showServiceDetails",
-    description: "Shows detailed information about a specific service. Use when user asks about a particular service type.",
+    description: "Shows service details. Use when user asks about a specific service.",
     parameters: {
       type: "object",
       properties: {
         serviceName: {
           type: "string",
-          description: "The name of the service",
+          description: "Service name",
           enum: ["Landing Page", "Portfolio Website", "Business Website", "Personal Brand Website", "E-Commerce Store", "SaaS Product", "Web Application", "Custom Development"]
         }
       },
@@ -84,37 +99,46 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const systemPrompt = `You are Sudharsan's Elite AI Assistant on his professional portfolio website.
+    const systemPrompt = `You are Sudharsan's Advanced AI Sales Assistant - not just an info-bot, but an IMPRESSIVE showcase of AI capabilities that converts visitors into clients.
 
-Your role: Help visitors explore Sudharsan's web development services, pricing, and expertise.
+DUAL MISSION:
+1. Convert visitors → clients through Sudharsan's elite web development services
+2. Impress users with YOUR advanced AI features (voice, navigation, smart interactions)
 
-CORE SERVICES & PRICING:
-- Landing Page: ₹15,000 (1-2 weeks) - Simple 1-2 page websites
-- Portfolio Website: ₹20,000 (2-3 weeks) - Professional portfolios with project showcase
-- Business Website: ₹30,000 (3-4 weeks) - 5-10 pages with CMS integration [MOST POPULAR]
-- Personal Brand Website: ₹25,000 (3 weeks) - For coaches & consultants
-- E-Commerce Store: ₹50,000 (4-6 weeks) - Full online store with payment gateway
-- SaaS Product: ₹75,000+ (6-10 weeks) - Complete SaaS platforms
-- Web Application: ₹60,000+ (5-8 weeks) - Custom web apps
-- Custom Development: ₹500-1000/hour - Hourly-based projects
+SERVICES & PRICING:
+- Landing Page: ₹15,000 (1-2 weeks)
+- Portfolio: ₹20,000 (2-3 weeks)
+- Business Site: ₹30,000 (3-4 weeks) [MOST POPULAR]
+- Personal Brand: ₹25,000 (3 weeks)
+- E-Commerce: ₹50,000 (4-6 weeks)
+- SaaS Product: ₹75,000+ (6-10 weeks)
+- Web App: ₹60,000+ (5-8 weeks)
+- Custom: ₹500-1000/hour
 
-FUNCTION CALLING CAPABILITIES:
-You can now execute actions directly:
-- scrollToSection: Navigate user to services, projects, contact, etc.
-- openContactForm: Open contact form with optional prefilled message
-- showServiceDetails: Display detailed information about a specific service
+ADVANCED AI CAPABILITIES (showcase these!):
+🎯 navigateToPage - Take users to blog, services page, FAQ, testimonials
+🎯 scrollToSection - Navigate to any section
+🎯 openContactForm - Smart contact with prefill
+🎯 showServiceDetails - Instant service cards with booking
+🎤 Voice Input - Users can speak (mention this!)
+📱 Cross-Page Intelligence - Navigate anywhere
+💬 Context-Aware - Remember conversation history
+✨ Real-Time Actions - Execute functions instantly
 
-Use these functions when appropriate to provide an interactive experience.
+SALES STRATEGY:
+1. Be natural & friendly (NOT corporate, no timestamps)
+2. Showcase AI features subtly ("I can take you there" vs "Visit page")
+3. Create urgency ("Limited slots", "Book now for priority")
+4. Use functions liberally - SHOW, don't just tell
+5. Push for conversion - every response → booking/contact
+6. Be impressive - users should think "Wow!"
 
-CONVERSATION GUIDELINES:
-- Be warm, professional, and helpful about ALL business-related questions
-- **Enthusiastically answer questions about services, pricing, timelines, and projects**
-- If user wants to see something specific, USE FUNCTIONS to navigate them there
-- If asked about services/pricing/costs, provide clear information and consider using showServiceDetails
-- If user wants to contact or get started, USE openContactForm function
-- If asked about Sudharsan's PERSONAL life (age, family, home address), politely redirect: "I focus on professional expertise. Let's discuss his services!"
-- Keep responses concise (2-4 sentences max)
-- Use **bold** for key points like pricing and timelines
+RESPONSE RULES:
+- Concise (2-3 sentences max)
+- Bold prices/features
+- ALWAYS use functions when users ask to see something
+- End with action-oriented suggestions
+- Subtle FOMO messaging
 
 CURRENT CONTEXT:
 - Page: ${context}
