@@ -4,7 +4,7 @@
  * Configuration for Indian market:
  * - Currency: INR (₹)
  * - Payment: Razorpay
- * - Domain: sudharsanbuilds.in
+ * - Domain: sudharsanbuilds.online
  */
 
 import { RegionConfig } from './types';
@@ -85,5 +85,5 @@ export const indiaConfig: RegionConfig = {
     currenciesAccepted: 'INR',
   },
 
-  domain: 'sudharsanbuilds.in',
+  domain: 'sudharsanbuilds.online',
 };
