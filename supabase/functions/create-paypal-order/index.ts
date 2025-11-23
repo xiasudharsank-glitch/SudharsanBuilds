@@ -2,13 +2,25 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const PAYPAL_CLIENT_ID = Deno.env.get("VITE_PAYPAL_CLIENT_ID");
 const PAYPAL_CLIENT_SECRET = Deno.env.get("VITE_PAYPAL_CLIENT_SECRET");
-const PAYPAL_API_URL = "https://api.paypal.com/v2/checkout/orders";
+const IS_PRODUCTION = Deno.env.get("VITE_PAYPAL_MODE") === "production";
+
+// ✅ Use sandbox API for testing, production API for live
+const PAYPAL_API_BASE = IS_PRODUCTION
+  ? "https://api.paypal.com"
+  : "https://api-m.sandbox.paypal.com";
+const PAYPAL_API_URL = `${PAYPAL_API_BASE}/v2/checkout/orders`;
 
 // Get PayPal access token
 async function getPayPalAccessToken() {
+  // ✅ Validate credentials exist
+  if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+    throw new Error('PayPal credentials not configured');
+  }
+
   const auth = btoa(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`);
-  
-  const response = await fetch("https://api.paypal.com/v1/oauth2/token", {
+  const tokenUrl = `${PAYPAL_API_BASE}/v1/oauth2/token`;
+
+  const response = await fetch(tokenUrl, {
     method: "POST",
     headers: {
       "Authorization": `Basic ${auth}`,
@@ -18,6 +30,14 @@ async function getPayPalAccessToken() {
   });
 
   const data = await response.json();
+
+  // ✅ Check if token request succeeded
+  if (!response.ok || !data.access_token) {
+    console.error('❌ Failed to get PayPal access token:', data);
+    throw new Error(`Failed to authenticate with PayPal: ${data.error_description || 'Unknown error'}`);
+  }
+
+  console.log('✅ PayPal access token obtained');
   return data.access_token;
 }
 
@@ -45,6 +65,8 @@ async function createPayPalOrder(amount: number, description: string) {
     }
   };
 
+  console.log('📤 Creating PayPal order with payload:', JSON.stringify(payload, null, 2));
+
   const response = await fetch(PAYPAL_API_URL, {
     method: "POST",
     headers: {
@@ -54,7 +76,20 @@ async function createPayPalOrder(amount: number, description: string) {
     body: JSON.stringify(payload),
   });
 
-  return await response.json();
+  const data = await response.json();
+
+  // ✅ CRITICAL FIX: Check if PayPal API call succeeded
+  if (!response.ok) {
+    console.error('❌ PayPal API error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: data
+    });
+    throw new Error(`PayPal API error: ${data.error || data.message || 'Unknown error'}`);
+  }
+
+  console.log('✅ PayPal order created:', data.id);
+  return data;
 }
 
 serve(async (req: Request) => {

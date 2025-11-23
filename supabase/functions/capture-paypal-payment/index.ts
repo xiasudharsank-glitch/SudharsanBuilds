@@ -3,13 +3,25 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const PAYPAL_CLIENT_ID = Deno.env.get("VITE_PAYPAL_CLIENT_ID");
 const PAYPAL_CLIENT_SECRET = Deno.env.get("VITE_PAYPAL_CLIENT_SECRET");
-const PAYPAL_API_URL = "https://api.paypal.com/v2/checkout/orders";
+const IS_PRODUCTION = Deno.env.get("VITE_PAYPAL_MODE") === "production";
+
+// ✅ Use sandbox API for testing, production API for live
+const PAYPAL_API_BASE = IS_PRODUCTION
+  ? "https://api.paypal.com"
+  : "https://api-m.sandbox.paypal.com";
+const PAYPAL_API_URL = `${PAYPAL_API_BASE}/v2/checkout/orders`;
 
 // Get PayPal access token
 async function getPayPalAccessToken() {
-  const auth = btoa(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`);
+  // ✅ Validate credentials exist
+  if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+    throw new Error('PayPal credentials not configured');
+  }
 
-  const response = await fetch("https://api.paypal.com/v1/oauth2/token", {
+  const auth = btoa(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`);
+  const tokenUrl = `${PAYPAL_API_BASE}/v1/oauth2/token`;
+
+  const response = await fetch(tokenUrl, {
     method: "POST",
     headers: {
       "Authorization": `Basic ${auth}`,
@@ -19,12 +31,22 @@ async function getPayPalAccessToken() {
   });
 
   const data = await response.json();
+
+  // ✅ Check if token request succeeded
+  if (!response.ok || !data.access_token) {
+    console.error('❌ Failed to get PayPal access token:', data);
+    throw new Error(`Failed to authenticate with PayPal: ${data.error_description || 'Unknown error'}`);
+  }
+
+  console.log('✅ PayPal access token obtained');
   return data.access_token;
 }
 
 // Capture PayPal payment (completes the transaction)
 async function capturePayPalPayment(orderId: string) {
   const accessToken = await getPayPalAccessToken();
+
+  console.log('📤 Capturing PayPal payment for order:', orderId);
 
   const response = await fetch(`${PAYPAL_API_URL}/${orderId}/capture`, {
     method: "POST",
@@ -34,7 +56,20 @@ async function capturePayPalPayment(orderId: string) {
     },
   });
 
-  return await response.json();
+  const data = await response.json();
+
+  // ✅ Check if capture request succeeded
+  if (!response.ok) {
+    console.error('❌ PayPal capture failed:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: data
+    });
+    throw new Error(`PayPal capture failed: ${data.message || 'Unknown error'}`);
+  }
+
+  console.log('✅ PayPal payment captured:', data.status);
+  return data;
 }
 
 serve(async (req: Request) => {

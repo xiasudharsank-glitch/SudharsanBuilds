@@ -868,6 +868,12 @@ window.paypal.Buttons({
             const createOrderUrl = `${env.SUPABASE_URL}/functions/v1/create-paypal-order`;
             const csrfToken = sessionStorage.getItem('csrf_token');
 
+            console.log('📤 Creating PayPal order with:', {
+              amount: selectedService.depositAmount,
+              service_name: selectedService.name,
+              customer_email: currentEmail
+            });
+
             const response = await fetch(createOrderUrl, {
               method: 'POST',
               headers: {
@@ -884,11 +890,33 @@ window.paypal.Buttons({
               })
             });
 
+            // ✅ CRITICAL FIX: Check response status before parsing
+            if (!response.ok) {
+              const errorText = await response.text();
+              console.error('❌ PayPal order creation failed:', {
+                status: response.status,
+                statusText: response.statusText,
+                error: errorText
+              });
+              alert(`❌ Failed to create payment order (${response.status}). Please try again or contact support.`);
+              throw new Error(`Failed to create order: ${response.status} ${errorText}`);
+            }
+
             const data = await response.json();
-            console.log('✅ PayPal order created:', data.id);
+            console.log('📥 PayPal order response:', data);
+
+            // ✅ CRITICAL FIX: Validate response structure
+            if (!data || !data.id) {
+              console.error('❌ Invalid order response - missing order ID:', data);
+              alert('❌ Invalid payment response. Please try again or contact support.');
+              throw new Error('Invalid order response: missing order ID');
+            }
+
+            console.log('✅ PayPal order created successfully:', data.id);
             return data.id;
           } catch (error) {
             console.error('❌ Order creation error:', error);
+            // Re-throw to let PayPal SDK handle it
             throw error;
           }
         },
