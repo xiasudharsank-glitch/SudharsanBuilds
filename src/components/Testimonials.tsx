@@ -113,7 +113,7 @@ export default function Testimonials({ limit = null, showViewAll = false }: Test
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-lg rounded-2xl shadow-2xl hover:shadow-orange-500/50 transition-all border-2 border-orange-400"
+                className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold text-lg rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all border-2 border-purple-400"
               >
                 View All Testimonials
                 <ArrowRight className="w-6 h-6" />

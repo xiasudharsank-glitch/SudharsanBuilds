@@ -26,7 +26,7 @@ const regions: Region[] = [
   },
   {
     name: 'Global',
-    flag: '🌐',
+    flag: '🌍',
     domain: globalConfig.domain,
     code: 'global',
   },
@@ -65,7 +65,7 @@ export default function CountrySwitcher() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Trigger Button */}
+      {/* Trigger Button - ✅ ENHANCED: Show pricing info for clarity */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 dark:bg-gray-800/50 hover:bg-white/20 dark:hover:bg-gray-700/50 transition-colors border border-white/20 dark:border-gray-700"
@@ -73,7 +73,9 @@ export default function CountrySwitcher() {
         aria-expanded={isOpen}
       >
         <span className="text-xl">{activeRegion.flag}</span>
-        <span className="text-sm font-medium hidden sm:inline">{activeRegion.name}</span>
+        <span className="text-sm font-medium">
+          {activeRegion.name} - Pricing in {currentRegion.currency.symbol}
+        </span>
         <ChevronDown
           className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />

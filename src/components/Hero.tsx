@@ -378,13 +378,13 @@ const Hero: FC = () => {
                         {/* Book Now Button - Primary CTA */}
                         <motion.button
                             onClick={() => navigate('/services')}
-                            className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-full font-bold tracking-wide shadow-2xl shadow-orange-500/50 border-2 border-orange-400 touch-target ${
+                            className={`inline-flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-full font-bold tracking-wide shadow-2xl shadow-purple-500/50 border-2 border-purple-400 touch-target ${
                                 isMobile ? 'w-full px-8 py-4 text-base' : 'px-12 py-5 text-lg'
                             }`}
                             whileHover={!isMobile ? {
                                 scale: 1.08,
                                 y: -3,
-                                boxShadow: "0 0 45px rgba(249, 115, 22, 0.9), 0 10px 30px rgba(249, 115, 22, 0.4)",
+                                boxShadow: "0 0 45px rgba(168, 85, 247, 0.9), 0 10px 30px rgba(168, 85, 247, 0.4)",
                             } : {}}
                             whileTap={{ scale: 0.96 }}
                             transition={{ type: "spring", stiffness: 400, damping: 15 }}

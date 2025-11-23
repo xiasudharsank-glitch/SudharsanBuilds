@@ -1103,7 +1103,7 @@ window.paypal.Buttons({
     <section id="services" className="py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white">
       <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16">
+        <div className="text-center mb-12 md:mb-16 relative">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1121,6 +1121,24 @@ window.paypal.Buttons({
           >
             Transparent pricing with no hidden fees. Choose the package that fits your needs.
           </motion.p>
+
+          {/* ✅ Region Indicator - Subtle but important */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="absolute top-0 right-0 md:right-4"
+          >
+            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border-2 ${
+              regionConfig.region === 'india'
+                ? 'bg-orange-50 border-orange-300 text-orange-700'
+                : 'bg-blue-50 border-blue-300 text-blue-700'
+            }`}>
+              <span className="text-base">{regionConfig.region === 'india' ? '🇮🇳' : '🌍'}</span>
+              <span>{regionConfig.region === 'india' ? 'India' : 'Global'} - {currency.symbol}</span>
+            </div>
+          </motion.div>
         </div>
 
         {/* Services Grid */}
@@ -1239,7 +1257,7 @@ window.paypal.Buttons({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => navigate('/services')}
-              className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-lg rounded-2xl shadow-2xl hover:shadow-orange-500/50 transition-all border-2 border-orange-400"
+              className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-purple-500 to-pink-600 text-white font-bold text-lg rounded-2xl shadow-2xl hover:shadow-purple-500/50 transition-all border-2 border-purple-400"
             >
               View All {services.length} Services & Pricing
               <ArrowRight className="w-6 h-6" />

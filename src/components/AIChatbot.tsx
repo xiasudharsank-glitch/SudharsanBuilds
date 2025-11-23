@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { Send, X, Minimize2, Maximize2, Sparkles, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Mic, MicOff, Volume2, VolumeX, Download, Search, Trash2, Moon, Sun, Zap, MessageSquare, BookOpen, DollarSign, Clock, Globe, Building2, ShoppingCart, Code2, User, Briefcase, Rocket, Layers, CheckCircle2, ExternalLink, FolderOpen, Lightbulb } from 'lucide-react';
+import { Send, X, Minimize2, Maximize2, Sparkles, Copy, RotateCw, ThumbsUp, ThumbsDown, Check, Mic, MicOff, Volume2, VolumeX, Download, Search, Trash2, Moon, Sun, Zap, MessageSquare, BookOpen, DollarSign, Clock, Globe, Building2, ShoppingCart, Code2, User, Briefcase, Rocket, Layers, CheckCircle2, ExternalLink, FolderOpen, Lightbulb, Navigation } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -241,12 +241,17 @@ const useStreamingText = (finalText: string, isActive: boolean, speed: number = 
 };
 
 // Service Card Component - Mini version for chat
-const ServiceCardInChat = ({ service, isDarkMode }: { service: Service; isDarkMode: boolean }) => {
+const ServiceCardInChat = ({ service, isDarkMode, onBookService }: { service: Service; isDarkMode: boolean; onBookService?: (service: Service) => void }) => {
   const handleBooking = () => {
-    // Scroll to services section on main page
-    const servicesSection = document.getElementById('services');
-    if (servicesSection) {
-      servicesSection.scrollIntoView({ behavior: 'smooth' });
+    // ✅ FIX: Use callback to open contact form with prefilled service details
+    if (onBookService) {
+      onBookService(service);
+    } else {
+      // Fallback: Scroll to services section on main page
+      const servicesSection = document.getElementById('services');
+      if (servicesSection) {
+        servicesSection.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -389,7 +394,7 @@ const ProjectCardInChat = ({ project, isDarkMode }: { project: Project; isDarkMo
 };
 
 // Message Bubble Component with Streaming
-const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMessage, readAloud, isSpeaking, currentSpeakingId, onFollowUpClick }: {
+const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMessage, readAloud, isSpeaking, currentSpeakingId, onFollowUpClick, onBookService }: {
   message: Message;
   isStreaming: boolean;
   isDarkMode: boolean;
@@ -399,6 +404,7 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
   isSpeaking: boolean;
   currentSpeakingId: string | null;
   onFollowUpClick?: (suggestion: string) => void; // ✅ Phase 1: Callback for follow-up clicks
+  onBookService?: (service: Service) => void; // ✅ FIX: Callback for booking service
 }) => {
   const { displayedText } = useStreamingText(message.content, isStreaming, 15);
   const contentToShow = isStreaming ? displayedText : message.content;
@@ -501,17 +507,11 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
                   <ThumbsDown className="w-3 h-3" />
                 </button>
               </div>
-              <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                {message.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </p>
+              {/* ✅ REMOVED: Timestamps for natural, friendly UX */}
             </div>
           )}
 
-          {message.role === 'user' && (
-            <p className="text-xs mt-2.5 text-cyan-100">
-              {message.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          )}
+          {/* ✅ REMOVED: User message timestamps for cleaner UX */}
         </motion.div>
       </motion.div>
 
@@ -524,7 +524,7 @@ const MessageBubble = ({ message, isStreaming, isDarkMode, addReaction, copyMess
           className="grid grid-cols-1 gap-3 ml-0"
         >
           {message.serviceCards.map((service, idx) => (
-            <ServiceCardInChat key={idx} service={service} isDarkMode={isDarkMode} />
+            <ServiceCardInChat key={idx} service={service} isDarkMode={isDarkMode} onBookService={onBookService} />
           ))}
         </motion.div>
       )}
@@ -715,6 +715,36 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     console.log(`🔧 Executing function: ${functionName}`, args);
 
     switch (functionName) {
+      case 'navigateToPage':
+        // ✅ NEW: Navigate to separate pages (blog, services, FAQ, testimonials)
+        const pageMap: Record<string, string> = {
+          'blog': '/blog',
+          'services-page': '/services',
+          'faq-page': '/faq',
+          'testimonials-page': '/testimonials',
+          'home': '/'
+        };
+
+        const pagePath = pageMap[args.page] || '/';
+        const pageName = args.page.replace('-page', '').replace('-', ' ');
+
+        const pageNavMessage: Message = {
+          id: (Date.now() + 2).toString(),
+          role: 'assistant',
+          content: `✨ Taking you to the ${pageName} page now...`,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, pageNavMessage]);
+
+        // Navigate to page
+        navigate(pagePath);
+
+        // Close chat
+        setTimeout(() => {
+          handleCloseChat();
+        }, 1000);
+        break;
+
       case 'scrollToSection':
         const sectionId = args.section;
         const element = document.getElementById(sectionId);
@@ -1474,12 +1504,12 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     saveChatHistory(newMessages);
   };
 
-  // ✅ P1 FIX: Sales-optimized quick actions with conversion focus
+  // ✅ PERSONALIZED: Quick actions showcasing AI features + services (not templated!)
   const quickActions = [
-    { icon: <Rocket className="w-4 h-4" />, label: "📅 Book Consultation", action: () => handleQuickAction("I want to book a free consultation to discuss my project") },
-    { icon: <DollarSign className="w-4 h-4" />, label: "💰 View Pricing", action: () => handleQuickAction("Show me your pricing and packages") },
-    { icon: <Sparkles className="w-4 h-4" />, label: "✨ See Live Work", action: () => handleQuickAction("Show me your best projects and client work") },
-    { icon: <Zap className="w-4 h-4" />, label: "⚡ Get Quote Now", action: () => handleQuickAction("I want to get a quote for my website project") },
+    { icon: <Mic className="w-4 h-4" />, label: "🎤 Try Voice Chat", action: () => handleQuickAction("What makes your AI chatbot so impressive?") },
+    { icon: <Navigation className="w-4 h-4" />, label: "🚀 Navigate Pages", action: () => handleQuickAction("Take me to your blog") },
+    { icon: <Sparkles className="w-4 h-4" />, label: "✨ Smart Finder", action: () => handleQuickAction("Find the perfect service for my startup idea") },
+    { icon: <Zap className="w-4 h-4" />, label: "⚡ Quick Quote", action: () => handleQuickAction("Get me a quote for an e-commerce store with AI features") },
   ];
 
   // ✅ CRITICAL FIX: Handle quick actions and prompts from welcome screen
@@ -1504,6 +1534,14 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     // Directly send the message instead of filling input
     // User wants instant action, not manual send
     handleSendMessage(suggestion);
+  };
+
+  // ✅ FIX: Handle Book Now button in service cards - opens contact form with prefilled details
+  const handleBookService = (service: Service) => {
+    const prefillMessage = `I'm interested in booking the ${service.name} package (${service.price}). ${service.description}\n\nPlease provide more information about:\n- Timeline: ${service.timeline}\n- Payment terms and deposit amount\n- Next steps to get started`;
+
+    // Execute openContactForm function to open contact form with prefilled message
+    executeFunctionCall('openContactForm', { prefillMessage });
   };
 
   const handleSendMessage = async (promptText?: string) => {
@@ -1730,14 +1768,18 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     }
   };
 
-  // ✅ P1 FIX: Action-oriented suggested prompts for better conversion
+  // ✅ PERSONALIZED: 10 diverse questions showcasing ALL AI features (voice, navigation, context, actions)
   const suggestedPrompts = [
-    "📅 Book a free consultation call",
-    "💰 Show me pricing for my project",
-    "✨ I want to see your portfolio",
-    "⚡ Get a custom quote",
-    "🚀 How fast can we start?",
-    "💬 Take me to contact form"
+    "🎤 Can I speak to you instead of typing?",
+    "🚀 Navigate me to your services page",
+    "💡 What AI features make you different?",
+    "📊 Show your most impressive SaaS project",
+    "⏱️ Compare: Landing page vs Full website timeline",
+    "💰 What's included in the ₹30,000 business package?",
+    "🎯 Open contact form with my details prefilled",
+    "✨ Remember my budget for later discussion",
+    "📱 Navigate to testimonials from other clients",
+    "🔥 What's the fastest project you've delivered?"
   ];
 
   // ✅ Filter messages by search
@@ -2106,6 +2148,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
                       isSpeaking={isSpeaking}
                       currentSpeakingId={currentSpeakingId}
                       onFollowUpClick={handleFollowUpClick} // ✅ CRITICAL FIX #4: Preview suggestions in input
+                      onBookService={handleBookService} // ✅ FIX: Handle Book Now button clicks
                     />
                   ))}
 
