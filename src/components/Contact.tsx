@@ -7,6 +7,7 @@ import 'react-phone-number-input/style.css';
 import { sanitizeFormData } from '../utils/sanitize';
 import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
 import { supabase } from '../services/supabaseClient'; // ✅ FIX: Use singleton Supabase client
+import { getActiveRegion } from '../config/regions'; // ✅ ADDED: For region-based phone defaults
 
 interface FormErrors {
   name?: string;
@@ -19,6 +20,9 @@ interface FormErrors {
 }
 
 export default function Contact() {
+  // ✅ Get region config for phone number defaults
+  const regionConfig = getActiveRegion();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -422,7 +426,7 @@ export default function Contact() {
                 </label>
                 <PhoneInput
                   international
-                  defaultCountry="IN"
+                  defaultCountry={regionConfig.region === 'india' ? 'IN' : 'US'}
                   value={formData.phone}
                   onChange={(value) => setFormData(prev => ({ ...prev, phone: value || '' }))}
                   disabled={status === "sending"}

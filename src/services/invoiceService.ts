@@ -19,6 +19,8 @@ export interface PaymentData {
   razorpayPaymentId: string;
   razorpayOrderId: string;
   razorpaySignature: string;
+  currency_symbol: string; // ✅ ADDED: Dynamic currency (₹ or $)
+  currency_locale: string; // ✅ ADDED: Locale for number formatting (en-IN or en-US)
 }
 
 export interface Invoice {
@@ -180,6 +182,8 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
         timeline: paymentData.timeline,
         whatsapp_link: `https://wa.me/${whatsappNumber}`,
         your_email: yourEmail,
+        currency_symbol: paymentData.currency_symbol,
+        currency_locale: paymentData.currency_locale,
       });
 
       if (emailResults.bookingConfirmation) {
@@ -207,6 +211,8 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
         invoice_date: invoiceDate,
         due_date: dueDate,
         upi_id: upiId,
+        currency_symbol: paymentData.currency_symbol,
+        currency_locale: paymentData.currency_locale,
       });
 
       if (emailResults.invoice) {
@@ -233,6 +239,8 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
         payment_status: 'Deposit Received',
         whatsapp_link: `https://wa.me/${paymentData.phone.replace(/\D/g, '')}`,
         your_email: yourEmail,
+        currency_symbol: paymentData.currency_symbol,
+        currency_locale: paymentData.currency_locale,
       });
 
       if (emailResults.ownerAlert) {

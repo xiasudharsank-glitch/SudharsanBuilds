@@ -3,9 +3,14 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CheckCircle, Mail, Phone, Download, Home, MessageCircle } from 'lucide-react';
 import { env } from '../utils/env';
+import { getActiveRegion } from '../config/regions'; // ✅ ADDED: Dynamic currency support
 
 export default function PaymentConfirmationPage() {
   const [searchParams] = useSearchParams();
+
+  // ✅ Get region-specific currency configuration
+  const regionConfig = getActiveRegion();
+  const currency = regionConfig.currency;
 
   // Extract payment details from URL params
   const invoiceId = searchParams.get('invoiceId') || 'N/A';
@@ -77,15 +82,15 @@ export default function PaymentConfirmationPage() {
                 </div>
                 <div className="flex justify-between text-sm border-t pt-3">
                   <span className="text-slate-600">Total Amount:</span>
-                  <span className="font-semibold text-slate-900">₹{parseInt(totalAmount).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-slate-900">{currency.symbol}{parseInt(totalAmount).toLocaleString(currency.locale)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">Deposit Paid:</span>
-                  <span className="font-bold text-green-600 text-lg">₹{parseInt(depositAmount).toLocaleString('en-IN')}</span>
+                  <span className="font-bold text-green-600 text-lg">{currency.symbol}{parseInt(depositAmount).toLocaleString(currency.locale)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">Remaining Balance:</span>
-                  <span className="font-semibold text-slate-900">₹{(parseInt(totalAmount) - parseInt(depositAmount)).toLocaleString('en-IN')}</span>
+                  <span className="font-semibold text-slate-900">{currency.symbol}{(parseInt(totalAmount) - parseInt(depositAmount)).toLocaleString(currency.locale)}</span>
                 </div>
               </div>
             </div>

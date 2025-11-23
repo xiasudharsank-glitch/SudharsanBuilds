@@ -73,11 +73,11 @@ export default function CountrySwitcher() {
         aria-expanded={isOpen}
       >
         <span className="text-xl">{activeRegion.flag}</span>
-        <span className="text-sm font-medium">
+        <span className="text-sm font-bold text-white">
           {activeRegion.name} - Pricing in {currentRegion.currency.symbol}
         </span>
         <ChevronDown
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-white transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 

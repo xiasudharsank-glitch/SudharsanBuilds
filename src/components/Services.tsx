@@ -1,4 +1,4 @@
-import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, X, ArrowRight } from 'lucide-react';
+import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, X, ArrowRight, ChevronDown, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { sendBookingConfirmation, sendNewBookingAlert } from '../services/emailS
 import { generateAndSendInvoice } from '../services/invoiceService';
 import { env, features } from '../utils/env';
 import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
-import { getActiveRegion, formatCurrency } from '../config/regions';
+import { getActiveRegion, formatCurrency, indiaConfig, globalConfig } from '../config/regions';
 
 // TypeScript declarations for payment gateways
 declare global {
@@ -43,6 +43,11 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
+  const [showPayPalButtons, setShowPayPalButtons] = useState(false); // ✅ NEW: Only show PayPal after validation
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false); // ✅ NEW: Show success animation before redirect
+  const [successMessage, setSuccessMessage] = useState('Payment Successful!'); // ✅ NEW: Dynamic success messages
+  const [showRegionDropdown, setShowRegionDropdown] = useState(false);
+  const regionDropdownRef = useRef<HTMLDivElement>(null);
   const [customerDetails, setCustomerDetails] = useState({
     name: '',
     email: '',
@@ -70,6 +75,32 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       console.log('✅ CSRF token generated for payment security');
     }
   }, []);
+
+  // ✅ Region dropdown: Close when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (regionDropdownRef.current && !regionDropdownRef.current.contains(event.target as Node)) {
+        setShowRegionDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Region switch handler
+  const handleRegionSwitch = (regionCode: 'india' | 'global') => {
+    if (regionCode === regionConfig.region) {
+      setShowRegionDropdown(false);
+      return;
+    }
+
+    const targetDomain = regionCode === 'india' ? indiaConfig.domain : globalConfig.domain;
+    const protocol = window.location.protocol;
+    const path = window.location.pathname;
+    const newUrl = `${protocol}//${targetDomain}${path}`;
+    window.location.href = newUrl;
+  };
 
   // ✅ LAZY LOAD: EmailJS now initializes only when actually sending emails (in handlePaymentProceed)
 
@@ -135,6 +166,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       const handleEscape = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           setShowBookingModal(false);
+          setShowPayPalButtons(false); // ✅ Reset PayPal buttons on Escape
         }
       };
 
@@ -537,7 +569,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               projectDetails: customerDetails.projectDetails,
               razorpayPaymentId: razorpayResponse.razorpay_payment_id,
               razorpayOrderId: razorpayResponse.razorpay_order_id,
-              razorpaySignature: razorpayResponse.razorpay_signature
+              razorpaySignature: razorpayResponse.razorpay_signature,
+              currency_symbol: currency?.symbol || '$',
+              currency_locale: currency?.locale || 'en-US',
             });
 
             // ✅ P1 FIX: Show email failure warning if needed
@@ -579,8 +613,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               projectDetails: ''
             });
 
-            // Navigate to confirmation page
-            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+            // ✅ NEW: Show success overlay with progress, then navigate
+            await showSuccessAndRedirect(`/payment-confirmation?${confirmationUrl.toString()}`);
           } catch (error) {
             console.error('❌ Payment processing error:', error);
             alert(`⚠️ Payment received but verification failed.\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nPlease contact support to confirm your booking.`);
@@ -760,7 +794,9 @@ window.paypal.Buttons({
         projectDetails: customerDetails.projectDetails,
         razorpayPaymentId: data.orderID,
         razorpayOrderId: data.orderID,
-        razorpaySignature: ''
+        razorpaySignature: '',
+        currency_symbol: currency?.symbol || '$',
+        currency_locale: currency?.locale || 'en-US',
       });
 
       const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
@@ -822,8 +858,9 @@ window.paypal.Buttons({
 
   // ✅ Render PayPal Buttons in Modal (Global Region Only)
   // ✅ CRITICAL FIX: Removed customerDetails from dependency array to prevent re-rendering on every keystroke
+  // ✅ NEW: Only render when showPayPalButtons is true (after validation)
   useEffect(() => {
-    if (showBookingModal && payment.gateway === 'paypal' && paypalLoaded && window.paypal && selectedService) {
+    if (showBookingModal && payment.gateway === 'paypal' && paypalLoaded && window.paypal && selectedService && showPayPalButtons) {
       const container = document.getElementById('paypal-button-container-modal');
       if (!container) return;
 
@@ -973,7 +1010,9 @@ window.paypal.Buttons({
               projectDetails: currentDetails,
               razorpayPaymentId: data.orderID,
               razorpayOrderId: data.orderID,
-              razorpaySignature: ''
+              razorpaySignature: '',
+              currency_symbol: currency?.symbol || '$',
+              currency_locale: currency?.locale || 'en-US',
             });
 
             // Navigate to confirmation
@@ -989,7 +1028,8 @@ window.paypal.Buttons({
             });
 
             setCustomerDetails({ name: '', email: '', phone: '', projectDetails: '' });
-            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+            // ✅ NEW: Show success overlay with progress, then navigate
+            await showSuccessAndRedirect(`/payment-confirmation?${confirmationUrl.toString()}`);
           } catch (error) {
             console.error('❌ Payment error:', error);
             alert('❌ Payment processing failed. Please contact support with Order ID: ' + data.orderID);
@@ -1007,7 +1047,7 @@ window.paypal.Buttons({
         }
       }).render('#paypal-button-container-modal');
     }
-  }, [showBookingModal, payment.gateway, paypalLoaded, selectedService, navigate]); // ✅ Removed customerDetails from deps
+  }, [showBookingModal, payment.gateway, paypalLoaded, selectedService, showPayPalButtons, navigate, currency]); // ✅ Added showPayPalButtons and currency
 
   // ✅ Main Payment Handler - Routes to correct payment gateway
   const handlePaymentProceed = async () => {
@@ -1044,13 +1084,40 @@ window.paypal.Buttons({
     }
 
     setValidationErrors({});
-    setIsPaymentLoading(true);
 
-    // Wait for payment gateway to load
-    const isRazorpay = payment.gateway === 'razorpay';
+    // ✅ NEW: For PayPal, show buttons in modal after validation
     const isPayPal = payment.gateway === 'paypal';
 
-    if (isRazorpay && (!razorpayLoaded || !window.Razorpay)) {
+    if (isPayPal) {
+      // ✅ PayPal: Keep modal open, just show PayPal buttons
+      if (!paypalLoaded || !window.paypal) {
+        setIsPaymentLoading(true);
+        let retries = 0;
+        const maxRetries = 30;
+
+        while (retries < maxRetries) {
+          if (window.paypal && paypalLoaded) break;
+          await new Promise(resolve => setTimeout(resolve, 500));
+          retries++;
+        }
+
+        if (!window.paypal || !paypalLoaded) {
+          setIsPaymentLoading(false);
+          alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
+          return;
+        }
+        setIsPaymentLoading(false);
+      }
+
+      // Show PayPal buttons (validation passed)
+      setShowPayPalButtons(true);
+      return;
+    }
+
+    // ✅ Razorpay: Original flow (close modal, open Razorpay)
+    setIsPaymentLoading(true);
+
+    if (!razorpayLoaded || !window.Razorpay) {
       let retries = 0;
       const maxRetries = 30;
 
@@ -1067,47 +1134,110 @@ window.paypal.Buttons({
       }
     }
 
-    if (isPayPal && (!paypalLoaded || !window.paypal)) {
-      let retries = 0;
-      const maxRetries = 30;
-
-      while (retries < maxRetries) {
-        if (window.paypal && paypalLoaded) break;
-        await new Promise(resolve => setTimeout(resolve, 500));
-        retries++;
-      }
-
-      if (!window.paypal || !paypalLoaded) {
-        setIsPaymentLoading(false);
-        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
-        return;
-      }
-    }
-
-    // Close modal before payment
+    // Close modal before Razorpay payment
     setShowBookingModal(false);
+    await processRazorpayPayment();
+  };
 
-    // Route to correct payment handler
-    if (isRazorpay) {
-      await processRazorpayPayment();
-    } else if (isPayPal) {
-      await processPayPalPayment();
-    } else {
-      console.error('❌ Unknown payment gateway:', payment.gateway);
-      alert('⚠️ Payment system configuration error. Please contact support.');
-      setIsPaymentLoading(false);
-    }
+  // ✅ NEW: Show success overlay with animated messages, then redirect
+  const showSuccessAndRedirect = async (confirmationUrl: string) => {
+    setShowSuccessOverlay(true);
+    setSuccessMessage('✓ Payment Successful!');
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setSuccessMessage('📄 Generating your invoice...');
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setSuccessMessage('📧 Sending confirmation email...');
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setSuccessMessage('🎉 Redirecting...');
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    navigate(confirmationUrl);
+    setShowSuccessOverlay(false);
   };
 
   return (
     <section id="services" className="py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white">
       <div className="container mx-auto px-4 md:px-6">
         {/* Header */}
-        <div className="text-center mb-12 md:mb-16 relative">
+        <div className="text-center mb-12 md:mb-16">
+          {/* ✅ Region Switcher - Centered above heading for better mobile UX */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            className="flex justify-center mb-6"
+          >
+            <div className="relative" ref={regionDropdownRef}>
+            <button
+              onClick={() => setShowRegionDropdown(!showRegionDropdown)}
+              className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all hover:shadow-md ${
+                regionConfig.region === 'india'
+                  ? 'bg-orange-50 border-orange-300 text-orange-700 hover:bg-orange-100'
+                  : 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100'
+              }`}
+            >
+              <span className="text-base">{regionConfig.region === 'india' ? '🇮🇳' : '🌍'}</span>
+              <span>{regionConfig.region === 'india' ? 'India' : 'Global'} - {currency.symbol}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${showRegionDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            <AnimatePresence>
+              {showRegionDropdown && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50"
+                >
+                  <div className="py-1">
+                    <button
+                      onClick={() => handleRegionSwitch('india')}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 transition-colors ${
+                        regionConfig.region === 'india' ? 'bg-orange-50' : ''
+                      }`}
+                    >
+                      <span className="text-xl">🇮🇳</span>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium text-gray-900 text-sm">India</div>
+                        <div className="text-xs text-gray-500">Pricing in ₹</div>
+                      </div>
+                      {regionConfig.region === 'india' && (
+                        <Check className="w-4 h-4 text-orange-600" />
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleRegionSwitch('global')}
+                      className={`w-full flex items-center gap-3 px-4 py-2.5 hover:bg-gray-100 transition-colors ${
+                        regionConfig.region === 'global' ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <span className="text-xl">🌍</span>
+                      <div className="flex-1 text-left">
+                        <div className="font-medium text-gray-900 text-sm">Global</div>
+                        <div className="text-xs text-gray-500">Pricing in $</div>
+                      </div>
+                      {regionConfig.region === 'global' && (
+                        <Check className="w-4 h-4 text-blue-600" />
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            </div>
+          </motion.div>
+
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
             className="text-4xl md:text-5xl font-bold mb-4 text-slate-900"
           >
             Services & <span className="text-cyan-600">Pricing</span>
@@ -1116,29 +1246,11 @@ window.paypal.Buttons({
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.3 }}
             className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto"
           >
             Transparent pricing with no hidden fees. Choose the package that fits your needs.
           </motion.p>
-
-          {/* ✅ Region Indicator - Subtle but important */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 }}
-            className="absolute top-0 right-0 md:right-4"
-          >
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border-2 ${
-              regionConfig.region === 'india'
-                ? 'bg-orange-50 border-orange-300 text-orange-700'
-                : 'bg-blue-50 border-blue-300 text-blue-700'
-            }`}>
-              <span className="text-base">{regionConfig.region === 'india' ? '🇮🇳' : '🌍'}</span>
-              <span>{regionConfig.region === 'india' ? 'India' : 'Global'} - {currency.symbol}</span>
-            </div>
-          </motion.div>
         </div>
 
         {/* Services Grid */}
@@ -1345,7 +1457,10 @@ window.paypal.Buttons({
                     </p>
                   </div>
                   <button
-                    onClick={() => setShowBookingModal(false)}
+                    onClick={() => {
+                      setShowBookingModal(false);
+                      setShowPayPalButtons(false); // ✅ Reset PayPal buttons on close
+                    }}
                     className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
                     aria-label="Close modal (Press Escape)"
                     title="Close (Esc)"
@@ -1437,7 +1552,7 @@ window.paypal.Buttons({
                   </label>
                   <PhoneInput
                     international
-                    defaultCountry="IN"
+                    defaultCountry={regionConfig.region === 'india' ? 'IN' : 'US'}
                     value={customerDetails.phone}
                     onChange={(value) => {
                       setCustomerDetails({ ...customerDetails, phone: value || '' });
@@ -1552,12 +1667,35 @@ window.paypal.Buttons({
                         {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
                       </button>
                     </div>
+                  ) : !showPayPalButtons ? (
+                    // ✅ NEW: Global - Show validation button first (like Razorpay)
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setShowBookingModal(false);
+                          setShowPayPalButtons(false);
+                        }}
+                        className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handlePaymentProceed}
+                        disabled={isPaymentLoading}
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isPaymentLoading ? 'Loading...' : 'Proceed to Payment'}
+                      </button>
+                    </div>
                   ) : (
-                    // Global: Show PayPal buttons inline
+                    // ✅ PayPal buttons (shown after validation passes)
                     <div className="space-y-3">
                       <div id="paypal-button-container-modal" className="min-h-[45px]"></div>
                       <button
-                        onClick={() => setShowBookingModal(false)}
+                        onClick={() => {
+                          setShowBookingModal(false);
+                          setShowPayPalButtons(false);
+                        }}
                         className="w-full px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
                       >
                         Cancel
@@ -1566,6 +1704,58 @@ window.paypal.Buttons({
                   )}
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ✅ NEW: Success Overlay - Shows animated progress after payment */}
+      <AnimatePresence>
+        {showSuccessOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-md w-full text-center"
+            >
+              {/* Animated Checkmark */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="w-24 h-24 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center"
+              >
+                <motion.div
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                >
+                  <CheckCircle2 className="w-16 h-16 text-green-600" />
+                </motion.div>
+              </motion.div>
+
+              {/* Dynamic Message */}
+              <motion.h2
+                key={successMessage}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-2xl md:text-3xl font-bold text-slate-900 mb-4"
+              >
+                {successMessage}
+              </motion.h2>
+
+              {/* Progress Spinner */}
+              {successMessage.includes('Generating') || successMessage.includes('Sending') || successMessage.includes('Redirecting') ? (
+                <div className="flex justify-center">
+                  <div className="w-8 h-8 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
+                </div>
+              ) : null}
             </motion.div>
           </motion.div>
         )}
