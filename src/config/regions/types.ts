@@ -43,6 +43,8 @@ export interface PricingConfig {
 
 export interface ContentConfig {
   heroTagline: string;
+  heroSubtitle?: string; // Optional: for region-specific hero subtitle
+  heroDescription?: string; // Optional: for region-specific hero description
   areaServed: string;
   paymentNote: string;
   aboutDescription: string;

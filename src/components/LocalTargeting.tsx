@@ -1,7 +1,12 @@
 import { Zap, DollarSign, Video, Globe, Users, Code2, Shield, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { getActiveRegion } from '../config/regions';
 
 export default function WhyFreelance() {
+  // Get region-specific content
+  const regionConfig = getActiveRegion();
+  const { region, content } = regionConfig;
+
   const benefits = [
     {
       icon: <DollarSign className="w-6 h-6" />,
@@ -21,7 +26,9 @@ export default function WhyFreelance() {
     {
       icon: <Globe className="w-6 h-6" />,
       title: '100% Remote',
-      description: 'Work from anywhere in India. No geographical limitations.'
+      description: region === 'global'
+        ? 'Work from anywhere worldwide. No geographical limitations.'
+        : 'Work from anywhere in India. No geographical limitations.'
     }
   ];
 
@@ -78,10 +85,10 @@ export default function WhyFreelance() {
             </h2>
           </div>
           <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-700 max-w-3xl mx-auto mt-3 md:mt-4 px-4 leading-relaxed">
-            Work directly with an <strong>indie developer</strong>
+            Work directly with an <strong>{region === 'global' ? 'AI-powered indie developer' : 'indie developer'}</strong>
             <br className="sm:hidden" />
             <span className="hidden sm:inline"> </span>
-            serving clients across India
+            {region === 'global' ? 'serving clients worldwide' : 'serving clients across India'}
           </p>
           <p className="text-sm sm:text-base md:text-lg text-slate-600 max-w-2xl mx-auto mt-2 md:mt-3 px-4">
             Professional websites at affordable prices with personalized service
@@ -221,7 +228,10 @@ export default function WhyFreelance() {
             </div>
           </div>
           <p className="text-center text-slate-300">
-            100% Remote work - No office visits required. Work with clients from anywhere in India.
+            {region === 'global'
+              ? '100% Remote work - No office visits required. Work with clients worldwide from any timezone.'
+              : '100% Remote work - No office visits required. Work with clients from anywhere in India.'
+            }
           </p>
         </motion.div>
 
@@ -247,7 +257,10 @@ export default function WhyFreelance() {
               Get Your Free Consultation
             </button>
             <p className="text-sm text-slate-600 mt-4">
-              Serving startups, businesses, and entrepreneurs across India 🇮🇳
+              {region === 'global'
+                ? 'Serving startups, businesses, and entrepreneurs worldwide 🌍'
+                : 'Serving startups, businesses, and entrepreneurs across India 🇮🇳'
+              }
             </p>
           </div>
         </motion.div>

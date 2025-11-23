@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import Navigation from './components/Navigation';
 import RegionBanner from './components/RegionBanner';
+import SEOHead from './components/SEOHead';
 import ErrorBoundary from './components/ErrorBoundary';
 import { features } from './utils/env';
 
@@ -82,6 +83,9 @@ function App() {
   return (
     <ErrorBoundary>
       <Router>
+        {/* Dynamic SEO meta tags based on region */}
+        <SEOHead />
+
         <div className="min-h-screen">
           {/* Skip to main content link for accessibility */}
           <a

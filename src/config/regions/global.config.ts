@@ -67,18 +67,20 @@ export const globalConfig: RegionConfig = {
   },
 
   content: {
-    heroTagline: 'Professional Web Developer | Building Digital Experiences Worldwide',
+    heroTagline: 'AI-Powered Web Developer | Building Smart Digital Experiences Worldwide',
+    heroSubtitle: 'Leveraging AI & Modern Tech to Build Intelligent Web Applications',
+    heroDescription: 'Expert in React, TypeScript, Node.js & AI Integration — Building modern web applications, AI-powered SaaS platforms, and intelligent digital solutions that drive global business growth',
     areaServed: 'Worldwide',
     paymentNote: 'Secure payments via PayPal - All major cards accepted',
-    aboutDescription: 'Hey! I\'m Sudharsan, a professional web developer serving clients worldwide. I build fast, modern websites that help businesses grow online.',
+    aboutDescription: 'Hey! I\'m Sudharsan, an AI-powered web developer serving clients worldwide. I specialize in building intelligent, modern websites that leverage cutting-edge technology to help businesses scale globally.',
     localTargetingTitle: 'Why Work Remote?',
     localTargetingSubtitle: 'Benefits of working with a remote developer',
   },
 
   seo: {
-    title: 'Professional Web Developer | Custom Websites Worldwide',
-    description: 'Professional web developer offering custom website development, portfolio sites, e-commerce stores, and web applications. Competitive pricing starting from $300. Serving clients worldwide with secure PayPal payments.',
-    keywords: 'professional web developer, website development worldwide, custom web development, web developer remote, affordable website design, paypal payment integration, international web developer',
+    title: 'AI-Powered Web Developer | Intelligent Websites & SaaS Worldwide',
+    description: 'AI-powered web developer offering intelligent website development, AI-integrated SaaS platforms, e-commerce stores, and custom web applications. Leveraging cutting-edge AI technology with competitive pricing starting from $300. Serving clients worldwide with secure PayPal payments.',
+    keywords: 'ai powered web developer, ai website development, intelligent web applications, ai saas development, machine learning web apps, ai integration, custom ai solutions, web developer worldwide, affordable ai websites, paypal payment integration, international ai developer, react ai developer, typescript ai development',
     geoRegion: 'WORLDWIDE',
     geoPlace: 'Global',
     priceRange: '$$',
