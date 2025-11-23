@@ -44,6 +44,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [showPayPalButtons, setShowPayPalButtons] = useState(false); // ✅ NEW: Only show PayPal after validation
+  const [showSuccessOverlay, setShowSuccessOverlay] = useState(false); // ✅ NEW: Show success animation before redirect
+  const [successMessage, setSuccessMessage] = useState('Payment Successful!'); // ✅ NEW: Dynamic success messages
   const [showRegionDropdown, setShowRegionDropdown] = useState(false);
   const regionDropdownRef = useRef<HTMLDivElement>(null);
   const [customerDetails, setCustomerDetails] = useState({
@@ -611,8 +613,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               projectDetails: ''
             });
 
-            // Navigate to confirmation page
-            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+            // ✅ NEW: Show success overlay with progress, then navigate
+            await showSuccessAndRedirect(`/payment-confirmation?${confirmationUrl.toString()}`);
           } catch (error) {
             console.error('❌ Payment processing error:', error);
             alert(`⚠️ Payment received but verification failed.\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nPlease contact support to confirm your booking.`);
@@ -1026,7 +1028,8 @@ window.paypal.Buttons({
             });
 
             setCustomerDetails({ name: '', email: '', phone: '', projectDetails: '' });
-            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+            // ✅ NEW: Show success overlay with progress, then navigate
+            await showSuccessAndRedirect(`/payment-confirmation?${confirmationUrl.toString()}`);
           } catch (error) {
             console.error('❌ Payment error:', error);
             alert('❌ Payment processing failed. Please contact support with Order ID: ' + data.orderID);
@@ -1134,6 +1137,25 @@ window.paypal.Buttons({
     // Close modal before Razorpay payment
     setShowBookingModal(false);
     await processRazorpayPayment();
+  };
+
+  // ✅ NEW: Show success overlay with animated messages, then redirect
+  const showSuccessAndRedirect = async (confirmationUrl: string) => {
+    setShowSuccessOverlay(true);
+    setSuccessMessage('✓ Payment Successful!');
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setSuccessMessage('📄 Generating your invoice...');
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setSuccessMessage('📧 Sending confirmation email...');
+
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setSuccessMessage('🎉 Redirecting...');
+
+    await new Promise(resolve => setTimeout(resolve, 500));
+    navigate(confirmationUrl);
+    setShowSuccessOverlay(false);
   };
 
   return (
@@ -1682,6 +1704,58 @@ window.paypal.Buttons({
                   )}
                 </div>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ✅ NEW: Success Overlay - Shows animated progress after payment */}
+      <AnimatePresence>
+        {showSuccessOverlay && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl shadow-2xl p-8 md:p-12 max-w-md w-full text-center"
+            >
+              {/* Animated Checkmark */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="w-24 h-24 mx-auto mb-6 bg-green-100 rounded-full flex items-center justify-center"
+              >
+                <motion.div
+                  initial={{ pathLength: 0 }}
+                  animate={{ pathLength: 1 }}
+                  transition={{ delay: 0.4, duration: 0.6 }}
+                >
+                  <CheckCircle2 className="w-16 h-16 text-green-600" />
+                </motion.div>
+              </motion.div>
+
+              {/* Dynamic Message */}
+              <motion.h2
+                key={successMessage}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-2xl md:text-3xl font-bold text-slate-900 mb-4"
+              >
+                {successMessage}
+              </motion.h2>
+
+              {/* Progress Spinner */}
+              {successMessage.includes('Generating') || successMessage.includes('Sending') || successMessage.includes('Redirecting') ? (
+                <div className="flex justify-center">
+                  <div className="w-8 h-8 border-4 border-cyan-200 border-t-cyan-600 rounded-full animate-spin"></div>
+                </div>
+              ) : null}
             </motion.div>
           </motion.div>
         )}
