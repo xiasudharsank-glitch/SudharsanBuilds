@@ -196,6 +196,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         document.removeEventListener('keydown', handleEscape);
         document.removeEventListener('keydown', handleTab);
       };
+    } else {
+      // ✅ CRITICAL FIX: Reset all state when modal closes (fixes retry payment issue)
+      setIsPaymentLoading(false);
+      setValidationErrors({});
+      setShowSuccessOverlay(false);
+      setSuccessMessage('Payment Successful!');
+      setShowPayPalButtons(false);
     }
   }, [showBookingModal]);
 
@@ -557,6 +564,14 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
             console.log('✅ Payment verified successfully');
 
+            // ✅ CRITICAL FIX: Show success overlay IMMEDIATELY (before invoice generation)
+            setShowSuccessOverlay(true);
+            setSuccessMessage('✓ Payment Successful!');
+
+            // Small delay for visual feedback
+            await new Promise(resolve => setTimeout(resolve, 600));
+            setSuccessMessage('📄 Generating your invoice...');
+
             // Generate invoice and send all emails
             const invoiceResult = await generateAndSendInvoice({
               name: customerDetails.name,
@@ -592,6 +607,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               alert(`Payment successful! However:\n\n${invoiceResult.message}\n\nYou'll be redirected to your confirmation page.`);
             }
 
+            // Update overlay message
+            await new Promise(resolve => setTimeout(resolve, 600));
+            setSuccessMessage('📧 Sending confirmation email...');
+
+            await new Promise(resolve => setTimeout(resolve, 600));
+            setSuccessMessage('🎉 Redirecting to confirmation...');
+
             // ✅ P0 FIX: Navigate to confirmation page
             // Build URL with payment details
             const confirmationUrl = new URLSearchParams({
@@ -613,8 +635,14 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               projectDetails: ''
             });
 
-            // ✅ NEW: Show success overlay with progress, then navigate
-            await showSuccessAndRedirect(`/payment-confirmation?${confirmationUrl.toString()}`);
+            // Small delay before redirect
+            await new Promise(resolve => setTimeout(resolve, 400));
+
+            // Navigate to confirmation page
+            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+
+            // Hide overlay after navigation
+            setShowSuccessOverlay(false);
           } catch (error) {
             console.error('❌ Payment processing error:', error);
             alert(`⚠️ Payment received but verification failed.\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nPlease contact support to confirm your booking.`);
@@ -782,6 +810,14 @@ window.paypal.Buttons({
 
       console.log('✅ Payment verified successfully');
 
+      // ✅ CRITICAL FIX: Show success overlay IMMEDIATELY (before invoice generation)
+      setShowSuccessOverlay(true);
+      setSuccessMessage('✓ Payment Successful!');
+
+      // Small delay for visual feedback
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setSuccessMessage('📄 Generating your invoice...');
+
       // Generate invoice and send emails
       const invoiceResult = await generateAndSendInvoice({
         name: customerDetails.name,
@@ -806,6 +842,13 @@ window.paypal.Buttons({
         alert(`Payment successful! However:\n\n${invoiceResult.message}\n\nYou'll be redirected to confirmation.`);
       }
 
+      // Update overlay message
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setSuccessMessage('📧 Sending confirmation email...');
+
+      await new Promise(resolve => setTimeout(resolve, 600));
+      setSuccessMessage('🎉 Redirecting to confirmation...');
+
       // Navigate to confirmation
       const confirmationUrl = new URLSearchParams({
         invoiceId: invoiceResult.invoiceId || 'N/A',
@@ -825,8 +868,14 @@ window.paypal.Buttons({
         projectDetails: ''
       });
 
+      // Small delay before redirect
+      await new Promise(resolve => setTimeout(resolve, 400));
+
       paypalContainer.remove();
       navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+
+      // Hide overlay after navigation
+      setShowSuccessOverlay(false);
     } catch (error) {
       console.error('❌ Payment error:', error);
       alert('❌ Payment error. Please contact support.');

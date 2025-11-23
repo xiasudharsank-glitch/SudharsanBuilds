@@ -1233,7 +1233,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
     URL.revokeObjectURL(url);
   };
 
-  // ✅ CRITICAL FIX: Voice Input with ACTUAL permission request
+  // ✅ CRITICAL FIX: Voice Input with ACTUAL permission request + Mobile support
   const toggleVoiceInput = async () => {
     if (!recognition) {
       // Show inline message instead of alert
@@ -1253,13 +1253,57 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       return;
     }
 
-    // ✅ CRITICAL FIX: Actually request microphone permission using getUserMedia
-    // This triggers the browser's native permission prompt
+    // ✅ MOBILE FIX: Check permission state BEFORE requesting (prevents cached denials)
     try {
-      console.log('🎤 Requesting microphone permission...');
+      console.log('🎤 Checking microphone permission state...');
 
-      // Request microphone access - this will show browser's permission prompt
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Detect if user is on mobile
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      // ✅ MOBILE FIX: Check current permission state
+      let permissionState = 'prompt'; // Default to prompt
+
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+          const permissionStatus = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+          permissionState = permissionStatus.state;
+          console.log('🔍 Current permission state:', permissionState);
+
+          // ✅ MOBILE FIX: If previously denied, show reset instructions FIRST
+          if (permissionState === 'denied') {
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const isChrome = /chrome|chromium|crios/i.test(navigator.userAgent) && !/edg/i.test(navigator.userAgent);
+
+            let mobileInstructions = '';
+            if (isMobile && isSafari) {
+              mobileInstructions = '\n\n**iPhone/iPad Safari:**\n1. Go to Settings → Safari → Camera & Microphone\n2. Set to "Ask"\n3. Refresh this page\n4. Click mic button again';
+            } else if (isMobile && isChrome) {
+              mobileInstructions = '\n\n**Android Chrome:**\n1. Tap the 🔒 icon in address bar\n2. Tap "Permissions"\n3. Set Microphone to "Allow"\n4. Click mic button again';
+            } else {
+              mobileInstructions = '\n\n**To fix:**\n1. Tap the lock/info icon in your address bar\n2. Find "Microphone" permission\n3. Change to "Allow"\n4. Refresh and try again';
+            }
+
+            const errorMsg: Message = {
+              id: Date.now().toString(),
+              role: 'assistant',
+              content: `🎤 **Microphone blocked**\n\nYou previously blocked microphone access.${mobileInstructions}\n\n💬 **Or just type your message!**`,
+              timestamp: new Date(),
+            };
+            setMessages(prev => [...prev, errorMsg]);
+            return; // Don't try getUserMedia if already denied
+          }
+        } catch (permError) {
+          // Permissions API not supported, continue with getUserMedia
+          console.log('⚠️ Permissions API not supported, falling back to getUserMedia');
+        }
+      }
+
+      // ✅ Request microphone access - this will show browser's permission prompt
+      console.log('🎤 Requesting microphone access...');
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // ✅ CRITICAL: Stop the stream immediately (we only needed permission)
+      stream.getTracks().forEach(track => track.stop());
 
       console.log('✅ Microphone permission granted');
 
@@ -1271,20 +1315,40 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
       console.error('❌ Microphone permission error:', error);
       setIsListening(false);
 
-      // ✅ CRITICAL FIX: Handle specific permission errors
+      // ✅ MOBILE FIX: Better error handling with mobile-specific instructions
       const err = error as Error;
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const isChrome = /chrome|chromium|crios/i.test(navigator.userAgent) && !/edg/i.test(navigator.userAgent);
+
       let userMessage = '';
 
       if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-        userMessage = '🎤 **Microphone access denied**\n\nYou clicked "Block" in the permission prompt.\n\nTo fix:\n1. Click the 🔒 lock icon in your address bar\n2. Change microphone to "Allow"\n3. Click the mic button again\n\nOr just type your message!';
+        let instructions = '';
+
+        if (isMobile && isSafari) {
+          instructions = '\n\n**iPhone/iPad:**\n1. Go to Settings → Safari\n2. Tap "Camera & Microphone"\n3. Set to "Ask" or "Allow"\n4. Refresh this page\n5. Click mic button again';
+        } else if (isMobile && isChrome) {
+          instructions = '\n\n**Android:**\n1. Tap 🔒 in address bar\n2. Tap "Permissions"\n3. Set Microphone to "Allow"\n4. Click mic button again';
+        } else if (isMobile) {
+          instructions = '\n\n**Mobile:**\n1. Tap lock/info icon in address bar\n2. Change Microphone to "Allow"\n3. Refresh and try again';
+        } else {
+          instructions = '\n\n**Desktop:**\n1. Click 🔒 lock icon in address bar\n2. Change Microphone to "Allow"\n3. Click mic button again';
+        }
+
+        userMessage = `🎤 **Microphone access denied**${instructions}\n\n💬 **Or just type your message!**`;
       } else if (err.name === 'NotFoundError') {
         userMessage = '🎤 **No microphone found**\n\nPlease connect a microphone and try again, or type your message.';
       } else if (err.name === 'NotReadableError') {
-        userMessage = '🎤 **Microphone is in use**\n\nAnother app (like Zoom, Teams, or Discord) might be using your microphone.\n\nClose other apps and try again, or type your message.';
+        if (isMobile) {
+          userMessage = '🎤 **Microphone is in use**\n\nAnother app might be using your microphone.\n\n**Try:**\n1. Close other apps (Camera, Voice Recorder, etc.)\n2. Restart your browser\n3. Try again\n\n💬 **Or just type your message!**';
+        } else {
+          userMessage = '🎤 **Microphone is in use**\n\nAnother app (like Zoom, Teams, or Discord) might be using your microphone.\n\nClose other apps and try again, or type your message.';
+        }
       } else if (err.name === 'SecurityError') {
-        userMessage = '🎤 **Security error**\n\nMicrophone access requires HTTPS. If you\'re on HTTP, please use HTTPS instead.\n\nOr just type your message!';
+        userMessage = '🎤 **Security error**\n\nMicrophone access requires HTTPS.\n\n' + (isMobile ? 'Make sure the URL starts with "https://"' : 'If you\'re on HTTP, please use HTTPS instead.') + '\n\n💬 **Or just type your message!**';
       } else {
-        userMessage = `🎤 **Voice input failed**\n\nError: ${err.message}\n\nPlease type your message instead.`;
+        userMessage = `🎤 **Voice input failed**\n\n${isMobile ? 'This might be a browser limitation.' : 'Error: ' + err.message}\n\n💬 **Please type your message instead.**`;
       }
 
       const errorMsg: Message = {
@@ -1506,7 +1570,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
   // ✅ PERSONALIZED: Quick actions showcasing AI features + services (not templated!)
   const quickActions = [
-    { icon: <Mic className="w-4 h-4" />, label: "🎤 Try Voice Chat", action: () => handleQuickAction("What makes your AI chatbot so impressive?") },
+    { icon: <BookOpen className="w-4 h-4" />, label: "📄 Summarize Page", action: () => handleQuickAction("Can you summarize this page for me?") },
     { icon: <Navigation className="w-4 h-4" />, label: "🚀 Navigate Pages", action: () => handleQuickAction("Take me to your blog") },
     { icon: <Sparkles className="w-4 h-4" />, label: "✨ Smart Finder", action: () => handleQuickAction("Find the perfect service for my startup idea") },
     { icon: <Zap className="w-4 h-4" />, label: "⚡ Quick Quote", action: () => handleQuickAction("Get me a quote for an e-commerce store with AI features") },
