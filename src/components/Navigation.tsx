@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Briefcase } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import CountrySwitcher from './CountrySwitcher';
 
 export default function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -134,7 +135,7 @@ export default function Navigation() {
             </span>
           </Link>
 
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
               <a
                 key={link.href}
@@ -145,6 +146,7 @@ export default function Navigation() {
                 {link.label}
               </a>
             ))}
+            <CountrySwitcher />
           </div>
 
           <button
@@ -170,6 +172,9 @@ export default function Navigation() {
                 {link.label}
               </a>
             ))}
+            <div className="pt-4 mt-4 border-t border-slate-800">
+              <CountrySwitcher />
+            </div>
           </div>
         </div>
       )}

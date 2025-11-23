@@ -1,13 +1,22 @@
 import { Globe, Building2, ShoppingCart, Code2, Clock, CheckCircle2, User, Briefcase, Rocket, Layers, X, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef, useCallback } from 'react'; // ✅ FIX: Add useCallback
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { sendBookingConfirmation, sendNewBookingAlert } from '../services/emailService'; // ✅ CHANGED: Import functions, not init
 import { generateAndSendInvoice } from '../services/invoiceService';
 import { env, features } from '../utils/env';
 import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
+import { getActiveRegion, formatCurrency } from '../config/regions';
+
+// TypeScript declarations for payment gateways
+declare global {
+  interface Window {
+    Razorpay: any;
+    paypal: any;
+  }
+}
 
 interface Service {
   icon: React.ReactNode;
@@ -26,10 +35,14 @@ interface Service {
 
 export default function Services({ showAll = false }: { showAll?: boolean }) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const regionConfig = getActiveRegion();
+  const { currency, pricing, payment } = regionConfig;
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
+  const [paypalLoaded, setPaypalLoaded] = useState(false);
   const [customerDetails, setCustomerDetails] = useState({
     name: '',
     email: '',
@@ -60,33 +73,54 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
   // ✅ LAZY LOAD: EmailJS now initializes only when actually sending emails (in handlePaymentProceed)
 
-  // ✅ LAZY LOAD: Razorpay only loads when user opens booking modal, NOT on page load
+  // ✅ LAZY LOAD: Payment Gateway Script - loads Razorpay OR PayPal based on region
   useEffect(() => {
-    // Only load Razorpay if modal is open AND Razorpay not already loaded
-    if (!showBookingModal || razorpayLoaded || window.Razorpay) {
-      return;
+    if (!showBookingModal) return;
+
+    // Load Razorpay for India region
+    if (payment.gateway === 'razorpay' && !razorpayLoaded && !window.Razorpay) {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      script.onload = () => {
+        setRazorpayLoaded(true);
+        console.log('✅ Razorpay script loaded (India region)');
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load Razorpay script');
+        setRazorpayLoaded(false);
+      };
+      document.body.appendChild(script);
+
+      return () => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-    script.async = true;
-    script.onload = () => {
-      setRazorpayLoaded(true);
-      console.log('✅ Razorpay script loaded (lazy loaded on modal open)');
-    };
-    script.onerror = () => {
-      console.error('❌ Failed to load Razorpay script');
-      setRazorpayLoaded(false);
-    };
-    document.body.appendChild(script);
+    // Load PayPal for Global region
+    if (payment.gateway === 'paypal' && !paypalLoaded && !window.paypal) {
+      const script = document.createElement('script');
+      script.src = `https://www.paypal.com/sdk/js?client-id=${env.PAYPAL_CLIENT_ID}&currency=USD`;
+      script.async = true;
+      script.onload = () => {
+        setPaypalLoaded(true);
+        console.log('✅ PayPal SDK loaded (Global region)');
+      };
+      script.onerror = () => {
+        console.error('❌ Failed to load PayPal SDK');
+        setPaypalLoaded(false);
+      };
+      document.body.appendChild(script);
 
-    // ✅ FIX: Cleanup - remove script on unmount
-    return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
-    };
-  }, [showBookingModal, razorpayLoaded]); // ✅ CHANGED: Add showBookingModal dependency
+      return () => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      };
+    }
+  }, [showBookingModal, payment.gateway, razorpayLoaded, paypalLoaded]);
 
 
   // ✅ P2 FIX: Focus management and escape key for modal
@@ -137,8 +171,8 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     {
       icon: <Globe className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Landing Page',
-      price: '₹15,000',
-      totalAmount: 15000,
+      price: formatCurrency(pricing.landingPage.total, regionConfig),
+      totalAmount: pricing.landingPage.total,
       description: '1-2 page website, modern design, mobile responsive, perfect for launching quickly',
       features: [
         'Responsive Design',
@@ -148,16 +182,16 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Fast Loading Speed',
         'Basic SEO Optimization'
       ],
-      timeline: '1-2 weeks',
-      ctaText: 'Book Now - Pay ₹5,000 Deposit',
+      timeline: pricing.landingPage.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.landingPage.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 5000,
+      depositAmount: pricing.landingPage.deposit,
     },
     {
       icon: <User className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Portfolio Website',
-      price: '₹20,000',
-      totalAmount: 20000,
+      price: formatCurrency(pricing.portfolio.total, regionConfig),
+      totalAmount: pricing.portfolio.total,
       description: 'Professional portfolio for freelancers, designers, developers & creatives',
       features: [
         'Project Showcase Gallery',
@@ -167,16 +201,16 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Testimonials Section',
         'Mobile Responsive'
       ],
-      timeline: '2-3 weeks',
-      ctaText: 'Book Now - Pay ₹7,000 Deposit',
+      timeline: pricing.portfolio.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.portfolio.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 7000,
+      depositAmount: pricing.portfolio.deposit,
     },
     {
       icon: <Building2 className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Business Website',
-      price: '₹30,000',
-      totalAmount: 30000,
+      price: formatCurrency(pricing.business.total, regionConfig),
+      totalAmount: pricing.business.total,
       description: '5-10 pages, professional design, CMS integration, perfect for established businesses',
       features: [
         'Multi-page Layout (5-10 pages)',
@@ -186,17 +220,17 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'SEO Optimization',
         'Contact Forms & Maps'
       ],
-      timeline: '3-4 weeks',
-      ctaText: 'Book Now - Pay ₹1 Deposit',
+      timeline: pricing.business.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.business.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 1,
+      depositAmount: pricing.business.deposit,
       popular: true,
     },
     {
       icon: <Briefcase className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Personal Brand Website',
-      price: '₹25,000',
-      totalAmount: 25000,
+      price: formatCurrency(pricing.personalBrand.total, regionConfig),
+      totalAmount: pricing.personalBrand.total,
       description: 'Build your personal brand with a professional website for coaches, consultants & professionals',
       features: [
         'About & Services Pages',
@@ -206,36 +240,36 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Booking/Calendar Integration',
         'SEO & Analytics'
       ],
-      timeline: '3 weeks',
-      ctaText: 'Book Now - Pay ₹8,000 Deposit',
+      timeline: pricing.personalBrand.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.personalBrand.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 8000,
+      depositAmount: pricing.personalBrand.deposit,
     },
     {
       icon: <ShoppingCart className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'E-Commerce Store',
-      price: '₹50,000',
-      totalAmount: 50000,
-      description: 'Complete online store with payment gateway, inventory management & admin panel',
+      price: formatCurrency(pricing.ecommerce.total, regionConfig),
+      totalAmount: pricing.ecommerce.total,
+      description: `Complete online store with payment gateway, inventory management & admin panel`,
       features: [
         'Product Catalog (Unlimited)',
         'Shopping Cart',
-        'Razorpay/PayPal Integration',
+        `${payment.gateway === 'razorpay' ? 'Razorpay' : 'PayPal'} Integration`,
         'Inventory Management',
         'Order Tracking',
         'Admin Dashboard'
       ],
-      timeline: '4-6 weeks',
-      ctaText: 'Book Now - Pay ₹15,000 Deposit',
+      timeline: pricing.ecommerce.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.ecommerce.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 15000,
+      depositAmount: pricing.ecommerce.deposit,
     },
     {
       icon: <Rocket className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'SaaS Product',
-      price: '₹75,000+',
+      price: `${formatCurrency(pricing.saas.total, regionConfig)}+`,
       priceSubtext: 'Starting from',
-      totalAmount: 75000,
+      totalAmount: pricing.saas.total,
       description: 'Full-featured SaaS platform with user management, subscriptions & admin dashboard',
       features: [
         'User Authentication',
@@ -245,17 +279,17 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Database Design',
         'Scalable Architecture'
       ],
-      timeline: '6-10 weeks',
-      ctaText: 'Book Now - Pay ₹20,000 Deposit',
+      timeline: pricing.saas.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.saas.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 20000,
+      depositAmount: pricing.saas.deposit,
     },
     {
       icon: <Layers className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Web Application',
-      price: '₹60,000+',
+      price: `${formatCurrency(pricing.webApp.total, regionConfig)}+`,
       priceSubtext: 'Starting from',
-      totalAmount: 60000,
+      totalAmount: pricing.webApp.total,
       description: 'Custom web applications with complex features & functionality',
       features: [
         'Custom Requirements',
@@ -265,15 +299,15 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         'Third-party Integrations',
         'Responsive Design'
       ],
-      timeline: '5-8 weeks',
-      ctaText: 'Book Now - Pay ₹18,000 Deposit',
+      timeline: pricing.webApp.timeline,
+      ctaText: `Book Now - Pay ${formatCurrency(pricing.webApp.deposit, regionConfig)} Deposit`,
       ctaAction: 'book',
-      depositAmount: 18000,
+      depositAmount: pricing.webApp.deposit,
     },
     {
       icon: <Code2 className="w-8 h-8 md:w-10 md:h-10" />,
       name: 'Custom Development',
-      price: '₹500-₹1000/hour',
+      price: `${formatCurrency(pricing.hourly.rate, regionConfig)}/hour`,
       priceSubtext: 'Negotiable',
       totalAmount: undefined, // Hourly rate - no fixed total
       description: 'Hourly-based custom projects, API integrations, complex features & maintenance',
@@ -293,10 +327,30 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
   const handleBooking = async (service: Service) => {
     if (service.ctaAction === 'quote' || !service.depositAmount) {
-      // Scroll to contact form for quotes
-      const contactSection = document.getElementById('contact');
-      if (contactSection) {
-        contactSection.scrollIntoView({ behavior: 'smooth' });
+      // Navigate to home page first if not already there, then scroll to contact form
+      if (location.pathname !== '/') {
+        navigate('/');
+        // Wait for route change and DOM update before scrolling
+        setTimeout(() => {
+          const contactSection = document.getElementById('contact');
+          if (contactSection) {
+            contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          } else {
+            // Retry if element not found (page might still be loading)
+            setTimeout(() => {
+              const retrySection = document.getElementById('contact');
+              if (retrySection) {
+                retrySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }
+            }, 300);
+          }
+        }, 100);
+      } else {
+        // Already on home page, just scroll to contact
+        const contactSection = document.getElementById('contact');
+        if (contactSection) {
+          contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
       return;
     }
@@ -360,77 +414,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     }
   };
 
-  const handlePaymentProceed = async () => {
+  // ✅ Razorpay Payment Handler (India)
+  const processRazorpayPayment = async () => {
     if (!selectedService || !selectedService.depositAmount) return;
-
-    // ✅ P1 FIX: Inline validation instead of alert()
-    const errors: typeof validationErrors = {};
-
-    // Validate name
-    if (!customerDetails.name.trim()) {
-      errors.name = 'Name is required';
-    }
-
-    // Validate email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!customerDetails.email.trim()) {
-      errors.email = 'Email is required';
-    } else if (!emailRegex.test(customerDetails.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    // Validate phone (optional field)
-    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
-      errors.phone = 'Please enter a valid phone number (8-15 digits, no leading zero)';
-    }
-
-    // Validate project details
-    if (!customerDetails.projectDetails.trim()) {
-      errors.projectDetails = 'Project details are required';
-    }
-
-    // If there are errors, show them and stop
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors);
-      // Scroll to first error field
-      const firstErrorField = Object.keys(errors)[0];
-      const errorElement = document.getElementById(`modal-${firstErrorField === 'projectDetails' ? 'details' : firstErrorField}`);
-      errorElement?.focus();
-      return;
-    }
-
-    // Clear any previous errors
-    setValidationErrors({});
-
-    // ✅ P0 FIX: Keep modal visible while loading Razorpay (prevents blank screen)
-    setIsPaymentLoading(true); // Show "Processing..." button state
-
-    if (!razorpayLoaded || !window.Razorpay) {
-      // Wait up to 15 seconds for Razorpay to load (keeping modal visible)
-      let retries = 0;
-      const maxRetries = 30; // 30 * 500ms = 15 seconds
-
-      while (retries < maxRetries) {
-        if (window.Razorpay && razorpayLoaded) {
-          // Razorpay is now loaded, continue with payment
-          break;
-        }
-        await new Promise(resolve => setTimeout(resolve, 500));
-        retries++;
-      }
-
-      // Check if Razorpay loaded successfully
-      if (!window.Razorpay || !razorpayLoaded) {
-        // Timeout - Razorpay failed to load
-        setIsPaymentLoading(false); // Reset button to normal state
-        // Keep modal open so user can see their data and try again
-        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
-        return;
-      }
-    }
-
-    // Razorpay is ready - now close modal and proceed with payment
-    setShowBookingModal(false);
 
     try {
       // ✅ CRITICAL FIX: Check env vars BEFORE any URL construction
@@ -668,6 +654,392 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     }
   };
 
+  // ✅ PayPal Payment Handler (Global)
+  const processPayPalPayment = async () => {
+    if (!selectedService || !selectedService.depositAmount) return;
+
+    try {
+      // Check PayPal env vars
+      if (!env.PAYPAL_CLIENT_ID || env.PAYPAL_CLIENT_ID === '') {
+        console.error('❌ PayPal not configured');
+        alert('⚠️ Payment system is not configured yet.\n\nPlease contact us directly via email:\nsudharsanofficial0001@gmail.com');
+        setIsPaymentLoading(false);
+        return;
+      }
+
+      const totalAmount = selectedService.totalAmount || selectedService.depositAmount;
+
+      // Create PayPal order via Supabase Edge Function
+      const createOrderUrl = `${env.SUPABASE_URL}/functions/v1/create-paypal-order`;
+      const csrfToken = sessionStorage.getItem('csrf_token');
+
+      const response = await fetch(createOrderUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
+          'X-CSRF-Token': csrfToken || ''
+        },
+        body: JSON.stringify({
+          amount: selectedService.depositAmount,
+          currency: 'USD',
+          description: `Deposit for ${selectedService.name}`,
+          service_name: selectedService.name,
+          service_price: selectedService.price,
+          total_amount: totalAmount,
+          deposit_amount: selectedService.depositAmount,
+          customer_name: customerDetails.name,
+          customer_email: customerDetails.email,
+          customer_phone: customerDetails.phone
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create PayPal order');
+      }
+
+      const order = await response.json();
+const orderId = order.id;
+
+      // Render PayPal buttons
+if (!window.paypal) {
+  throw new Error('PayPal SDK not loaded');
+}
+
+// Create a container for PayPal buttons
+const paypalContainer = document.createElement('div');
+paypalContainer.id = 'paypal-button-container';
+document.body.appendChild(paypalContainer);
+
+window.paypal.Buttons({
+  createOrder: (data: any, actions: any) => {
+    return orderId; // Return the order ID
+  },
+  onApprove: async (data: any, actions: any) => {
+    console.log('✅ PayPal Payment Approved:', data);
+    
+    try {
+      // Call verify-paypal-payment function instead of capture
+      const verifyUrl = `${env.SUPABASE_URL}/functions/v1/verify-paypal-payment`;
+
+      const verifyResponse = await fetch(verifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          order_id: data.orderID,
+          customer_email: customerDetails.email,
+          amount: selectedService.depositAmount,
+          service_name: selectedService.name
+        })
+      });
+
+      const verifyResult = await verifyResponse.json();
+
+      if (!verifyResult.success) {
+        console.error('❌ Payment verification failed:', verifyResult);
+        alert('❌ Payment verification failed. Please contact support.');
+        setIsPaymentLoading(false);
+        paypalContainer.remove();
+        return;
+      }
+
+      console.log('✅ Payment verified successfully');
+
+      // Generate invoice and send emails
+      const invoiceResult = await generateAndSendInvoice({
+        name: customerDetails.name,
+        email: customerDetails.email,
+        phone: customerDetails.phone,
+        service: selectedService.name,
+        amount: totalAmount,
+        depositAmount: selectedService.depositAmount!,
+        timeline: selectedService.timeline,
+        projectDetails: customerDetails.projectDetails,
+        razorpayPaymentId: data.orderID,
+        razorpayOrderId: data.orderID,
+        razorpaySignature: ''
+      });
+
+      const hasEmailIssue = invoiceResult.message.includes('⚠️') || invoiceResult.message.includes('❌');
+
+      if (hasEmailIssue) {
+        console.warn('⚠️ Email notification issue:', invoiceResult.message);
+        alert(`Payment successful! However:\n\n${invoiceResult.message}\n\nYou'll be redirected to confirmation.`);
+      }
+
+      // Navigate to confirmation
+      const confirmationUrl = new URLSearchParams({
+        invoiceId: invoiceResult.invoiceId || 'N/A',
+        paymentId: data.orderID,
+        service: selectedService.name,
+        name: customerDetails.name,
+        email: customerDetails.email,
+        deposit: selectedService.depositAmount!.toString(),
+        total: totalAmount.toString(),
+        emailStatus: hasEmailIssue ? 'warning' : 'success'
+      });
+
+      setCustomerDetails({
+        name: '',
+        email: '',
+        phone: '',
+        projectDetails: ''
+      });
+
+      paypalContainer.remove();
+      navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+    } catch (error) {
+      console.error('❌ Payment error:', error);
+      alert('❌ Payment error. Please contact support.');
+      paypalContainer.remove();
+    } finally {
+      setIsPaymentLoading(false);
+    }
+  },
+  onError: (err: any) => {
+    console.error('❌ PayPal error:', err);
+    alert('❌ Payment failed. Please try again.');
+    setIsPaymentLoading(false);
+    setShowBookingModal(true);
+    paypalContainer.remove();
+  },
+  onCancel: () => {
+    console.log('ℹ️ Payment cancelled');
+    setIsPaymentLoading(false);
+    setShowBookingModal(true);
+    paypalContainer.remove();
+  }
+}).render('#paypal-button-container')
+} catch (error) {
+      console.error('❌ PayPal payment error:', error);
+      alert('❌ Payment system error. Please try again or contact us at:\nsudharsanofficial0001@gmail.com');
+      setIsPaymentLoading(false);
+    }
+  };
+
+  // ✅ Render PayPal Buttons in Modal (Global Region Only)
+  useEffect(() => {
+    if (showBookingModal && payment.gateway === 'paypal' && paypalLoaded && window.paypal && selectedService) {
+      const container = document.getElementById('paypal-button-container-modal');
+      if (!container) return;
+
+      // Clear existing buttons
+      container.innerHTML = '';
+
+      const totalAmount = selectedService.totalAmount || selectedService.depositAmount;
+
+      // Render PayPal buttons
+      window.paypal.Buttons({
+        style: {
+          layout: 'vertical',
+          color: 'blue',
+          shape: 'rect',
+          label: 'paypal',
+          height: 45
+        },
+        createOrder: async () => {
+          try {
+            // Validate before creating order
+            if (!customerDetails.name || !customerDetails.email || !customerDetails.projectDetails) {
+              throw new Error('Please fill in all required fields');
+            }
+
+            const createOrderUrl = `${env.SUPABASE_URL}/functions/v1/create-paypal-order`;
+            const csrfToken = sessionStorage.getItem('csrf_token');
+
+            const response = await fetch(createOrderUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`,
+                'X-CSRF-Token': csrfToken || ''
+              },
+              body: JSON.stringify({
+                amount: selectedService.depositAmount,
+                service_name: selectedService.name
+              })
+            });
+
+            const data = await response.json();
+            console.log('✅ PayPal order created:', data.id);
+            return data.id;
+          } catch (error) {
+            console.error('❌ Order creation error:', error);
+            alert('Please fill in all required fields before proceeding');
+            throw error;
+          }
+        },
+        onApprove: async (data: any) => {
+          console.log('✅ PayPal Payment Approved:', data.orderID);
+          setIsPaymentLoading(true);
+          setShowBookingModal(false);
+
+          try {
+            // Capture payment
+            const captureUrl = `${env.SUPABASE_URL}/functions/v1/capture-paypal-payment`;
+            const captureResponse = await fetch(captureUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+              },
+              body: JSON.stringify({
+                orderId: data.orderID,
+                customer_email: customerDetails.email,
+                amount: selectedService.depositAmount,
+                service_name: selectedService.name
+              })
+            });
+
+            const captureResult = await captureResponse.json();
+
+            if (!captureResult.success) {
+              throw new Error('Payment capture failed');
+            }
+
+            console.log('✅ Payment captured');
+
+            // Generate invoice
+            const invoiceResult = await generateAndSendInvoice({
+              name: customerDetails.name,
+              email: customerDetails.email,
+              phone: customerDetails.phone,
+              service: selectedService.name,
+              amount: totalAmount!,
+              depositAmount: selectedService.depositAmount!,
+              timeline: selectedService.timeline,
+              projectDetails: customerDetails.projectDetails,
+              razorpayPaymentId: data.orderID,
+              razorpayOrderId: data.orderID,
+              razorpaySignature: ''
+            });
+
+            // Navigate to confirmation
+            const confirmationUrl = new URLSearchParams({
+              invoiceId: invoiceResult.invoiceId || 'N/A',
+              paymentId: data.orderID,
+              service: selectedService.name,
+              name: customerDetails.name,
+              email: customerDetails.email,
+              deposit: selectedService.depositAmount!.toString(),
+              total: totalAmount!.toString(),
+              emailStatus: 'success'
+            });
+
+            setCustomerDetails({ name: '', email: '', phone: '', projectDetails: '' });
+            navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+          } catch (error) {
+            console.error('❌ Payment error:', error);
+            alert('Payment processing failed. Please contact support with Order ID: ' + data.orderID);
+            setShowBookingModal(true);
+          } finally {
+            setIsPaymentLoading(false);
+          }
+        },
+        onError: (err: any) => {
+          console.error('❌ PayPal error:', err);
+          alert('Payment failed. Please try again.');
+        },
+        onCancel: () => {
+          console.log('ℹ️ Payment cancelled');
+        }
+      }).render('#paypal-button-container-modal');
+    }
+  }, [showBookingModal, payment.gateway, paypalLoaded, selectedService, customerDetails, navigate]);
+
+  // ✅ Main Payment Handler - Routes to correct payment gateway
+  const handlePaymentProceed = async () => {
+    if (!selectedService || !selectedService.depositAmount) return;
+
+    // Validate customer details
+    const errors: typeof validationErrors = {};
+
+    if (!customerDetails.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!customerDetails.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!emailRegex.test(customerDetails.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+
+    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
+      errors.phone = 'Please enter a valid phone number (8-15 digits, no leading zero)';
+    }
+
+    if (!customerDetails.projectDetails.trim()) {
+      errors.projectDetails = 'Project details are required';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      const firstErrorField = Object.keys(errors)[0];
+      const errorElement = document.getElementById(`modal-${firstErrorField === 'projectDetails' ? 'details' : firstErrorField}`);
+      errorElement?.focus();
+      return;
+    }
+
+    setValidationErrors({});
+    setIsPaymentLoading(true);
+
+    // Wait for payment gateway to load
+    const isRazorpay = payment.gateway === 'razorpay';
+    const isPayPal = payment.gateway === 'paypal';
+
+    if (isRazorpay && (!razorpayLoaded || !window.Razorpay)) {
+      let retries = 0;
+      const maxRetries = 30;
+
+      while (retries < maxRetries) {
+        if (window.Razorpay && razorpayLoaded) break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        retries++;
+      }
+
+      if (!window.Razorpay || !razorpayLoaded) {
+        setIsPaymentLoading(false);
+        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
+        return;
+      }
+    }
+
+    if (isPayPal && (!paypalLoaded || !window.paypal)) {
+      let retries = 0;
+      const maxRetries = 30;
+
+      while (retries < maxRetries) {
+        if (window.paypal && paypalLoaded) break;
+        await new Promise(resolve => setTimeout(resolve, 500));
+        retries++;
+      }
+
+      if (!window.paypal || !paypalLoaded) {
+        setIsPaymentLoading(false);
+        alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
+        return;
+      }
+    }
+
+    // Close modal before payment
+    setShowBookingModal(false);
+
+    // Route to correct payment handler
+    if (isRazorpay) {
+      await processRazorpayPayment();
+    } else if (isPayPal) {
+      await processPayPalPayment();
+    } else {
+      console.error('❌ Unknown payment gateway:', payment.gateway);
+      alert('⚠️ Payment system configuration error. Please contact support.');
+      setIsPaymentLoading(false);
+    }
+  };
+
   return (
     <section id="services" className="py-16 md:py-24 bg-gradient-to-b from-slate-50 to-white">
       <div className="container mx-auto px-4 md:px-6">
@@ -855,7 +1227,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               className="mt-12 text-center"
             >
               <p className="text-sm text-slate-600">
-                <strong>Secure payments via Razorpay</strong> - UPI, Cards, Net Banking accepted.
+                <strong>{regionConfig.content.paymentNote}</strong>
                 <br />
                 Can't pay deposit now? <a href="#contact" className="text-cyan-600 hover:underline">Contact me</a> to discuss your project first.
               </p>
@@ -891,7 +1263,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                   <div>
                     <h3 id="modal-title" className="text-2xl font-bold mb-2">Complete Your Booking</h3>
                     <p className="text-cyan-50">{selectedService.name} - {selectedService.price}</p>
-                    <p className="text-sm text-cyan-100 mt-1">Deposit: ₹{selectedService.depositAmount?.toLocaleString('en-IN')}</p>
+                    <p className="text-sm text-cyan-100 mt-1">
+                      Deposit: {formatCurrency(selectedService.depositAmount!, regionConfig)}
+                    </p>
                   </div>
                   <button
                     onClick={() => setShowBookingModal(false)}
@@ -1071,7 +1445,9 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
                     </div>
                     <div className="flex justify-between border-t pt-2">
                       <span className="text-slate-600">Deposit (Pay Now):</span>
-                      <span className="font-bold text-cyan-600 text-lg">₹{selectedService.depositAmount?.toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-cyan-600 text-lg">
+                        {formatCurrency(selectedService.depositAmount!, regionConfig)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-slate-600">Timeline:</span>
@@ -1082,21 +1458,35 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
 
                 {/* Actions - Sticky at bottom for better UX */}
                 <div className="sticky bottom-0 bg-white pt-4 pb-2 mt-4 border-t border-slate-200">
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => setShowBookingModal(false)}
-                      className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handlePaymentProceed}
-                      disabled={isPaymentLoading}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
-                    </button>
-                  </div>
+                  {payment.gateway === 'razorpay' ? (
+                    // India: Show Proceed to Payment button for Razorpay
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowBookingModal(false)}
+                        className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handlePaymentProceed}
+                        disabled={isPaymentLoading}
+                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
+                      </button>
+                    </div>
+                  ) : (
+                    // Global: Show PayPal buttons inline
+                    <div className="space-y-3">
+                      <div id="paypal-button-container-modal" className="min-h-[45px]"></div>
+                      <button
+                        onClick={() => setShowBookingModal(false)}
+                        className="w-full px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>

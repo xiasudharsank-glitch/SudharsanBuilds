@@ -1,8 +1,13 @@
 import { Code2, Palette, Rocket, Zap } from "lucide-react";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useState } from "react";
+import { getActiveRegion } from "../config/regions";
 
 export default function About() {
+  // Get region-specific content
+  const regionConfig = getActiveRegion();
+  const { content, region } = regionConfig;
+
   const skills = [
     { icon: <Code2 className="w-6 h-6" />, name: "No-Code Development" },
     { icon: <Rocket className="w-6 h-6" />, name: "SaaS Products" },
@@ -60,8 +65,14 @@ export default function About() {
                 {/* Profile Image */}
                 <motion.img
                   src={new URL('../assets/professional photo.jpg', import.meta.url).href}
-                  alt="Sudharsan - Full Stack Web Developer and SaaS Expert - Professional Headshot"
-                  title="Sudharsan | Web Developer specializing in React, TypeScript, and Node.js"
+                  alt={region === 'global'
+                    ? "Sudharsan - AI-Powered Web Developer and SaaS Expert - Professional Headshot"
+                    : "Sudharsan - Full Stack Web Developer and SaaS Expert - Professional Headshot"
+                  }
+                  title={region === 'global'
+                    ? "Sudharsan | AI-Powered Web Developer specializing in React, TypeScript, Node.js & AI Integration"
+                    : "Sudharsan | Web Developer specializing in React, TypeScript, and Node.js"
+                  }
                   className="w-full h-full object-cover rounded-3xl transition-all duration-500"
                   whileHover={{ scale: 1.12 }}
                   loading="lazy"
@@ -75,26 +86,44 @@ export default function About() {
             {/* ---------- TEXT SECTION ---------- */}
             <div className="space-y-4 md:space-y-6">
               <p className="text-base md:text-lg text-slate-700 leading-relaxed">
-                Hi! I'm <strong>Sudharsan</strong>, a <strong>full stack web developer</strong> specializing in transforming
-                ideas into fully functional <strong>web applications</strong> and <strong>SaaS products</strong>.
-                With expertise in <strong>React, TypeScript, Node.js</strong>, and AI-assisted development, I
-                help businesses and entrepreneurs bring their visions to life
-                quickly and efficiently.
+                {content.aboutDescription}
               </p>
 
               <p className="text-base md:text-lg text-slate-700 leading-relaxed">
-                As a professional <strong>web developer</strong>, my goal is to provide high-quality, production-ready solutions
-                that not only look stunning but also deliver exceptional user
-                experiences. Whether you need an <strong>e-commerce platform</strong>, a
-                <strong>subscription service</strong>, or a <strong>custom web application</strong>, I leverage modern
-                web technologies to build scalable, performant solutions that drive results.
+                {region === 'global' ? (
+                  <>
+                    With expertise in <strong>React, TypeScript, Node.js, and AI Integration</strong>, I
+                    help businesses and entrepreneurs transform their ideas into fully functional
+                    <strong> web applications</strong> and <strong>AI-powered SaaS products</strong>.
+                    My approach combines cutting-edge technology with intelligent solutions to deliver
+                    exceptional results.
+                  </>
+                ) : (
+                  <>
+                    With expertise in <strong>React, TypeScript, Node.js</strong>, and AI-assisted development, I
+                    help businesses and entrepreneurs bring their visions to life
+                    quickly and efficiently.
+                  </>
+                )}
               </p>
 
               <p className="text-base md:text-lg text-slate-700 leading-relaxed">
-                <strong>Based in India</strong>, I work with clients worldwide to deliver cutting-edge
-                <strong> web development services</strong> including front-end development, back-end development,
-                API integration, database design, and full-stack solutions. My portfolio showcases
-                real-world projects built with industry-leading technologies.
+                {region === 'global' ? (
+                  <>
+                    My goal is to provide high-quality, production-ready solutions that not only look
+                    stunning but also deliver exceptional user experiences. Whether you need an
+                    <strong> e-commerce platform</strong>, a <strong>subscription service</strong>, or a
+                    <strong> custom web application</strong>, I leverage modern web technologies and AI
+                    capabilities to build scalable, intelligent solutions that drive global business growth.
+                  </>
+                ) : (
+                  <>
+                    <strong>Based in India</strong>, I work with clients worldwide to deliver cutting-edge
+                    <strong> web development services</strong> including front-end development, back-end development,
+                    API integration, database design, and full-stack solutions. My portfolio showcases
+                    real-world projects built with industry-leading technologies.
+                  </>
+                )}
               </p>
 
               <div className="pt-4 md:pt-6">

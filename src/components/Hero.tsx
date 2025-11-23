@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, FC } from 'react';
 import { Github, Linkedin, Mail, Twitter, ArrowDown, Sparkles, Calendar } from 'lucide-react';
 import { motion, useSpring, useReducedMotion } from "framer-motion";
 import { useNavigate } from 'react-router-dom';
+import { getActiveRegion } from '../config/regions';
 
 // --- 1. TYPES ---
 type MousePosition = { x: number; y: number };
@@ -142,6 +143,10 @@ const Hero: FC = () => {
     const scrollToSection = useSmoothScroll();
     const heroRef = useRef<HTMLElement>(null);
 
+    // Get region-specific content
+    const regionConfig = getActiveRegion();
+    const { content } = regionConfig;
+
     // Mobile detection and reduced motion preference
     const isMobile = useIsMobile();
     const shouldReduceMotion = useReducedMotion();
@@ -277,11 +282,17 @@ const Hero: FC = () => {
                         <div className="space-y-3 px-4">
                             <p className="text-lg xs:text-xl sm:text-2xl md:text-3xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-cyan-300 font-bold pt-2 flex flex-wrap items-center justify-center gap-2">
                                 <Sparkles className="text-cyan-400" size={isMobile ? 20 : 28} />
-                                <span className="text-center">Full Stack Web Developer & SaaS Builder</span>
+                                <span className="text-center">
+                                    {content.heroSubtitle || 'Full Stack Web Developer & SaaS Builder'}
+                                </span>
                                 <Sparkles className="text-cyan-400" size={isMobile ? 20 : 28} />
                             </p>
                             <p className="text-base xs:text-lg sm:text-xl md:text-2xl text-slate-300 max-w-3xl mx-auto pt-2 leading-relaxed">
-                                Expert in <span className="text-cyan-400 font-semibold">React, TypeScript, Node.js</span> — Building modern web applications, SaaS platforms, and e-commerce solutions that drive business growth
+                                {content.heroDescription || (
+                                    <>
+                                        Expert in <span className="text-cyan-400 font-semibold">React, TypeScript, Node.js</span> — Building modern web applications, SaaS platforms, and e-commerce solutions that drive business growth
+                                    </>
+                                )}
                             </p>
                         </div>
                     </div>
