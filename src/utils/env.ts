@@ -17,6 +17,10 @@ interface EnvConfig {
   WHATSAPP_NUMBER: string;
   UPI_ID: string;
   REGION: string;
+  // ✅ P3 FIX: Social media URLs
+  GITHUB_URL: string;
+  LINKEDIN_URL: string;
+  TWITTER_URL: string;
 }
 
 /**
@@ -131,7 +135,11 @@ export const env: EnvConfig = {
   YOUR_EMAIL: getEnvVar('YOUR_EMAIL') || '',
   WHATSAPP_NUMBER: getEnvVar('WHATSAPP_NUMBER') || '',
   UPI_ID: getEnvVar('UPI_ID', false) || '',
-  REGION: getEnvVar('REGION', false) || ''
+  REGION: getEnvVar('REGION', false) || '',
+  // ✅ P3 FIX: Social media URLs (optional - defaults provided)
+  GITHUB_URL: getEnvVar('GITHUB_URL', false) || 'https://github.com',
+  LINKEDIN_URL: getEnvVar('LINKEDIN_URL', false) || 'https://linkedin.com',
+  TWITTER_URL: getEnvVar('TWITTER_URL', false) || 'https://twitter.com'
 };
 
 /**

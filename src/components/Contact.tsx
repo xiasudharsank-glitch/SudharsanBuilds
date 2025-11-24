@@ -335,7 +335,7 @@ export default function Contact() {
               <p className="text-slate-700 font-semibold mb-4">Connect on Social</p>
               <div className="flex gap-4">
                 <a
-                  href="https://github.com"
+                  href={env.GITHUB_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-slate-800 text-white rounded-lg flex items-center justify-center hover:bg-slate-700 transition-colors"
@@ -344,7 +344,7 @@ export default function Contact() {
                   <Github className="w-5 h-5" />
                 </a>
                 <a
-                  href="https://linkedin.com"
+                  href={env.LINKEDIN_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-500 transition-colors"
@@ -353,7 +353,7 @@ export default function Contact() {
                   <Linkedin className="w-5 h-5" />
                 </a>
                 <a
-                  href="https://twitter.com"
+                  href={env.TWITTER_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-10 h-10 bg-sky-400 text-white rounded-lg flex items-center justify-center hover:bg-sky-300 transition-colors"

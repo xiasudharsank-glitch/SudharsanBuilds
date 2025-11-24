@@ -38,6 +38,10 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { validateEnv } from './utils/env';
+
+// ✅ P3 FIX: Validate environment variables at startup
+validateEnv();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

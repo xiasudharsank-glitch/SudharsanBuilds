@@ -936,9 +936,35 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
 
-  // ✅ Rate Limiting State (free tier)
-  const [messageCount, setMessageCount] = useState(0);
+  // ✅ P3 FIX: Rate Limiting State with localStorage persistence (free tier)
   const MESSAGE_LIMIT = 50; // Daily limit for free tier
+  const RATE_LIMIT_KEY = `chat_rate_limit_${userId}`;
+
+  // Initialize message count from localStorage with daily reset
+  const [messageCount, setMessageCount] = useState(() => {
+    try {
+      const saved = localStorage.getItem(RATE_LIMIT_KEY);
+      if (saved) {
+        const { count, date } = JSON.parse(saved);
+        const today = new Date().toDateString();
+
+        // Reset count if it's a new day
+        if (date === today) {
+          return count;
+        } else {
+          // New day - reset count
+          localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ count: 0, date: today }));
+          return 0;
+        }
+      }
+      // No saved data - initialize
+      localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({ count: 0, date: new Date().toDateString() }));
+      return 0;
+    } catch (error) {
+      console.error('Failed to load rate limit data:', error);
+      return 0;
+    }
+  });
 
   // ✅ Streaming State (for typewriter effect)
   const [streamingMessageId, setStreamingMessageId] = useState<string | null>(null);
@@ -1747,8 +1773,19 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
 
       // ✅ CRITICAL FIX: Handle both messages AND function calls (function calls can have empty messages)
       if (data.success && (data.message || data.functionCall)) {
-        // ✅ CRITICAL FIX #9: Only increment count after successful API response
-        setMessageCount(prev => prev + 1);
+        // ✅ P3 FIX: Increment count and persist to localStorage with daily reset
+        setMessageCount(prev => {
+          const newCount = prev + 1;
+          try {
+            localStorage.setItem(RATE_LIMIT_KEY, JSON.stringify({
+              count: newCount,
+              date: new Date().toDateString()
+            }));
+          } catch (error) {
+            console.error('Failed to save rate limit data:', error);
+          }
+          return newCount;
+        });
 
         const assistantMessageId = (Date.now() + 1).toString();
 
