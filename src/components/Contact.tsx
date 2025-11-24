@@ -283,55 +283,10 @@ export default function Contact() {
           viewport={{ once: true }}
           className="grid md:grid-cols-2 gap-8 md:gap-12"
         >
-          {/* Left: Contact Info & Social */}
+          {/* Left: Social Links - Clean & Subtle */}
           <div>
-            {/* Contact Info Cards */}
-            <div className="space-y-6">
-              {/* Email */}
-              <motion.div
-                whileHover={{ translateX: 8 }}
-                className="flex items-start gap-4 p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow"
-              >
-                <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Mail className="w-6 h-6 text-cyan-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 mb-1">Email</h3>
-                  <p className="text-slate-600 text-sm break-all">sudharsanofficial0001@gmail.com</p>
-                </div>
-              </motion.div>
-
-              {/* Response Time */}
-              <motion.div
-                whileHover={{ translateX: 8 }}
-                className="flex items-start gap-4 p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow"
-              >
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Send className="w-6 h-6 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 mb-1">Response Time</h3>
-                  <p className="text-slate-600 text-sm">I typically respond within 24 hours</p>
-                </div>
-              </motion.div>
-
-              {/* Availability */}
-              <motion.div
-                whileHover={{ translateX: 8 }}
-                className="flex items-start gap-4 p-6 bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow"
-              >
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-2xl">📍</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 mb-1">Location</h3>
-                  <p className="text-slate-600 text-sm">Trichy, India (GMT+5:30)</p>
-                </div>
-              </motion.div>
-            </div>
-
             {/* Social Links */}
-            <div className="mt-8 pt-8 border-t border-slate-200">
+            <div>
               <p className="text-slate-700 font-semibold mb-4">Connect on Social</p>
               <div className="flex gap-4">
                 <a
