@@ -1,6 +1,28 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// ✅ P2 FIX: Restrict CORS to specific domains for security
+const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [
+  'https://sudharsanbuilds.com',
+  'https://www.sudharsanbuilds.com',
+  'https://sudharsanbuilds.in',
+  'https://www.sudharsanbuilds.in',
+  'http://localhost:5173', // Development
+  'http://localhost:4173', // Preview
+];
+
+function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
+  const origin = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)
+    ? requestOrigin
+    : ALLOWED_ORIGINS[0];
+
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
+
 // ✅ FIX: Use correct environment variable names (without VITE_ prefix for Edge Functions)
 const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
 const PAYPAL_CLIENT_SECRET = Deno.env.get("PAYPAL_CLIENT_SECRET");

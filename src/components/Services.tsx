@@ -538,32 +538,74 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
               throw new Error('Payment verification unavailable - invalid configuration');
             }
 
-            // Now safe to construct URL
+            // ✅ P2 FIX: Add retry logic with exponential backoff for payment verification
+            // Network issues shouldn't cause false payment failures
             const verifyUrl = `${env.SUPABASE_URL}/functions/v1/verify-payment`;
+            const maxRetries = 3;
+            let verifyResult: any = null;
+            let lastError: any = null;
 
-            const verifyResponse = await fetch(verifyUrl, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
-              },
-              body: JSON.stringify({
-                razorpay_order_id: razorpayResponse.razorpay_order_id,
-                razorpay_payment_id: razorpayResponse.razorpay_payment_id,
-                razorpay_signature: razorpayResponse.razorpay_signature
-              })
-            });
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+              try {
+                console.log(`🔄 Payment verification attempt ${attempt}/${maxRetries}`);
 
-            const verifyResult = await verifyResponse.json();
+                const verifyResponse = await fetch(verifyUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${env.SUPABASE_ANON_KEY}`
+                  },
+                  body: JSON.stringify({
+                    razorpay_order_id: razorpayResponse.razorpay_order_id,
+                    razorpay_payment_id: razorpayResponse.razorpay_payment_id,
+                    razorpay_signature: razorpayResponse.razorpay_signature
+                  })
+                });
 
-            if (!verifyResult.success || !verifyResult.verified) {
-              console.error('❌ Payment verification failed:', verifyResult);
+                verifyResult = await verifyResponse.json();
+
+                // If verification succeeded, break out of retry loop
+                if (verifyResult.success && verifyResult.verified) {
+                  if (attempt > 1) {
+                    console.log(`✅ Payment verified successfully on attempt ${attempt}`);
+                  } else {
+                    console.log('✅ Payment verified successfully');
+                  }
+                  break;
+                }
+
+                // If verification explicitly failed (not network error), don't retry
+                if (verifyResult.success === false) {
+                  lastError = verifyResult;
+                  break;
+                }
+
+                // Otherwise, retry with exponential backoff
+                lastError = verifyResult;
+                if (attempt < maxRetries) {
+                  const backoffMs = Math.pow(2, attempt) * 500; // 1s, 2s, 4s
+                  console.warn(`⚠️ Verification attempt ${attempt} failed, retrying in ${backoffMs}ms...`);
+                  await new Promise(resolve => setTimeout(resolve, backoffMs));
+                }
+              } catch (error) {
+                lastError = error;
+                if (attempt < maxRetries) {
+                  const backoffMs = Math.pow(2, attempt) * 500;
+                  console.warn(`⚠️ Network error on attempt ${attempt}, retrying in ${backoffMs}ms...`);
+                  await new Promise(resolve => setTimeout(resolve, backoffMs));
+                } else {
+                  console.error('❌ All verification attempts failed');
+                }
+              }
+            }
+
+            // Check final result after all retries
+            if (!verifyResult || !verifyResult.success || !verifyResult.verified) {
+              console.error('❌ Payment verification failed after retries:', lastError);
               alert('❌ Payment verification failed. Please contact support with Payment ID: ' + razorpayResponse.razorpay_payment_id);
               setIsPaymentLoading(false);
               return;
             }
-
-            console.log('✅ Payment verified successfully');
 
             // ✅ CRITICAL FIX: Show success overlay IMMEDIATELY (before invoice generation)
             setShowSuccessOverlay(true);
@@ -654,11 +696,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
         prefill: {
           name: customerDetails.name || '',
           email: customerDetails.email || '',
-          // ✅✅✅ THIS IS THE MAIN FIX ✅✅✅
-          // Remove all non-digit characters from phone
-          // Converts: "+91 9999999999" to "9999999999"
-          contact: customerDetails.phone 
-            ? customerDetails.phone.replace(/[^0-9]/g, '') 
+          // ✅ P2 FIX: Preserve phone format for international numbers
+          // Razorpay accepts numbers in E.164 format (with country code)
+          // Remove only spaces, dashes, and parentheses but keep the '+' and digits
+          // Examples: "+91 9999999999" -> "+919999999999"
+          //           "+1 (555) 123-4567" -> "+15551234567"
+          contact: customerDetails.phone
+            ? customerDetails.phone.replace(/[\s\-()]/g, '')
             : ''
         },
         theme: {
@@ -997,11 +1041,32 @@ window.paypal.Buttons({
             const data = await response.json();
             console.log('📥 PayPal order response:', data);
 
-            // ✅ CRITICAL FIX: Validate response structure
-            if (!data || !data.id) {
-              console.error('❌ Invalid order response - missing order ID:', data);
+            // ✅ P2 FIX: Enhanced response structure validation
+            // Validate critical PayPal order response fields
+            if (!data || typeof data !== 'object') {
+              console.error('❌ Invalid order response - not an object:', data);
               alert('❌ Invalid payment response. Please try again or contact support.');
-              throw new Error('Invalid order response: missing order ID');
+              throw new Error('Invalid order response: response is not an object');
+            }
+
+            if (!data.id || typeof data.id !== 'string') {
+              console.error('❌ Invalid order response - missing or invalid order ID:', data);
+              alert('❌ Invalid payment response. Please try again or contact support.');
+              throw new Error('Invalid order response: missing or invalid order ID');
+            }
+
+            // Validate status field (should be CREATED, SAVED, APPROVED, etc.)
+            if (!data.status || typeof data.status !== 'string') {
+              console.error('❌ Invalid order response - missing status:', data);
+              alert('❌ Invalid payment response. Please try again or contact support.');
+              throw new Error('Invalid order response: missing status');
+            }
+
+            // Validate links array (needed for approval)
+            if (!data.links || !Array.isArray(data.links) || data.links.length === 0) {
+              console.error('❌ Invalid order response - missing or invalid links:', data);
+              alert('❌ Invalid payment response. Please try again or contact support.');
+              throw new Error('Invalid order response: missing or invalid links array');
             }
 
             console.log('✅ PayPal order created successfully:', data.id);

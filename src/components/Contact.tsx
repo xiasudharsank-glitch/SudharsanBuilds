@@ -8,6 +8,7 @@ import { sanitizeFormData } from '../utils/sanitize';
 import { validatePhone } from '../utils/validation'; // ✅ FIX: Use shared validation
 import { supabase } from '../services/supabaseClient'; // ✅ FIX: Use singleton Supabase client
 import { getActiveRegion } from '../config/regions'; // ✅ ADDED: For region-based phone defaults
+import { env } from '../utils/env'; // ✅ P1 FIX: Import env for Formspree ID
 
 interface FormErrors {
   name?: string;
@@ -149,11 +150,11 @@ export default function Contact() {
       console.error("❌ Supabase not configured");
     }
 
-    // ✅ NEW: Send email via Formspree
+    // ✅ P1 FIX: Send email via Formspree using environment variable
     let emailSent = false;
-    if (dataSaved) {
+    if (dataSaved && env.FORMSPREE_ID) {
       try {
-        const formspreeResponse = await fetch('https://formspree.io/f/xeopodle', {
+        const formspreeResponse = await fetch(`https://formspree.io/f/${env.FORMSPREE_ID}`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -180,6 +181,8 @@ export default function Contact() {
         console.error("❌ Formspree submission error:", formspreeError);
         emailSent = false;
       }
+    } else if (dataSaved && !env.FORMSPREE_ID) {
+      console.warn('⚠️ Formspree ID not configured - skipping email notification');
     }
 
     // ✅ FIX: Show success/error based on both database save AND email

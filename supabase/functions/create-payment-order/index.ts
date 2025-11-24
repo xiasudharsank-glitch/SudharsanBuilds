@@ -1,7 +1,32 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
+// ✅ P2 FIX: Restrict CORS to specific domains for security
+// Read allowed origins from environment variable, default to specific domains
+const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [
+  'https://sudharsanbuilds.com',
+  'https://www.sudharsanbuilds.com',
+  'https://sudharsanbuilds.in',
+  'https://www.sudharsanbuilds.in',
+  'http://localhost:5173', // Development
+  'http://localhost:4173', // Preview
+];
+
+// Helper to get CORS headers based on request origin
+function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
+  const origin = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)
+    ? requestOrigin
+    : ALLOWED_ORIGINS[0]; // Default to primary domain
+
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
+
+// Legacy corsHeaders for backward compatibility (uses first allowed origin)
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
 }
 
@@ -77,6 +102,72 @@ serve(async (req) => {
     console.log('✅ CSRF token validated successfully')
 
     const { amount, currency, receipt, notes } = await req.json()
+
+    // ✅ P2 FIX: Input validation to prevent malformed requests
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid amount',
+          message: 'Amount must be a positive number'
+        }),
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      )
+    }
+
+    if (amount > 10000000) { // Max 100,000 INR (100 lakh paise)
+      return new Response(
+        JSON.stringify({
+          error: 'Amount too large',
+          message: 'Amount exceeds maximum allowed limit'
+        }),
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      )
+    }
+
+    if (currency && typeof currency !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid currency',
+          message: 'Currency must be a string'
+        }),
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      )
+    }
+
+    if (receipt && typeof receipt !== 'string') {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid receipt',
+          message: 'Receipt must be a string'
+        }),
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      )
+    }
+
+    if (notes && typeof notes !== 'object') {
+      return new Response(
+        JSON.stringify({
+          error: 'Invalid notes',
+          message: 'Notes must be an object'
+        }),
+        {
+          status: 400,
+          headers: corsHeaders
+        }
+      )
+    }
 
     // Get Razorpay credentials from Supabase secrets
     const razorpayKeyId = Deno.env.get('RAZORPAY_KEY_ID')

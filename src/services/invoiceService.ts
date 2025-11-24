@@ -112,9 +112,22 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
     };
 
     // ✅ FIX: Save to Supabase with proper error handling
-    // ⚠️ SECURITY WARNING: Sensitive data (email, phone) stored as plain text
-    // TODO: Implement encryption for PII data using Supabase Vault or client-side encryption
-    // See SECURITY.md for recommendations
+    //
+    // ⚠️⚠️⚠️ CRITICAL SECURITY WARNING - P1 PRODUCTION BLOCKER ⚠️⚠️⚠️
+    // PII DATA (email, phone) IS STORED AS PLAIN TEXT IN DATABASE
+    // This violates GDPR Article 32 (Security of Processing) and data protection best practices
+    //
+    // REQUIRED ACTIONS BEFORE PRODUCTION:
+    // 1. Implement client-side encryption using Web Crypto API before storing
+    // 2. OR use Supabase Vault for server-side encryption at rest
+    // 3. OR use database-level column encryption (pgcrypto extension)
+    // 4. Update privacy policy to reflect current security measures
+    // 5. Implement proper key management and rotation
+    //
+    // RISK: HIGH - Database breach would expose customer PII (emails, phone numbers)
+    // COMPLIANCE: May violate GDPR, CCPA, and other privacy regulations
+    // ⚠️⚠️⚠️ END SECURITY WARNING ⚠️⚠️⚠️
+    //
     let invoiceSavedToDatabase = false;
     if (supabase) {
       try {

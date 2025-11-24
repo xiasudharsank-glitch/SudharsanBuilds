@@ -1,5 +1,27 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
+// ✅ P2 FIX: Restrict CORS to specific domains for security
+const ALLOWED_ORIGINS = Deno.env.get('ALLOWED_ORIGINS')?.split(',') || [
+  'https://sudharsanbuilds.com',
+  'https://www.sudharsanbuilds.com',
+  'https://sudharsanbuilds.in',
+  'https://www.sudharsanbuilds.in',
+  'http://localhost:5173', // Development
+  'http://localhost:4173', // Preview
+];
+
+function getCorsHeaders(requestOrigin: string | null): Record<string, string> {
+  const origin = requestOrigin && ALLOWED_ORIGINS.includes(requestOrigin)
+    ? requestOrigin
+    : ALLOWED_ORIGINS[0];
+
+  return {
+    'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  };
+}
+
 // ✅ FIX: Use correct environment variable names (without VITE_ prefix for Edge Functions)
 const PAYPAL_CLIENT_ID = Deno.env.get("PAYPAL_CLIENT_ID");
 const PAYPAL_CLIENT_SECRET = Deno.env.get("PAYPAL_CLIENT_SECRET");
@@ -109,18 +131,73 @@ serve(async (req: Request) => {
   try {
     const { amount, service_name } = await req.json();
 
+    // ✅ P2 FIX: Enhanced input validation
     if (!amount || !service_name) {
       return new Response(
         JSON.stringify({ error: "Missing amount or service_name" }),
-        { 
-    status: 400,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
+          }
+        }
+      );
     }
-  }
-);
+
+    // Validate amount is a positive number
+    if (typeof amount !== 'number' || amount <= 0) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid amount",
+          message: "Amount must be a positive number"
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
+          }
+        }
+      );
+    }
+
+    // Max amount check (10,000 USD)
+    if (amount > 10000) {
+      return new Response(
+        JSON.stringify({
+          error: "Amount too large",
+          message: "Amount exceeds maximum allowed limit"
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
+          }
+        }
+      );
+    }
+
+    // Validate service_name is a non-empty string
+    if (typeof service_name !== 'string' || service_name.trim().length === 0) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid service_name",
+          message: "Service name must be a non-empty string"
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-csrf-token',
+          }
+        }
+      );
     }
 
     const order = await createPayPalOrder(amount, service_name);
