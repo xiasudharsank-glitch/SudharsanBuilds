@@ -66,9 +66,10 @@ export default function Contact() {
       newErrors.email = "Please enter a valid email";
     }
 
-    // ✅ FIX: Enhanced phone validation using shared utility
-    // Only validate if phone is provided (not empty) - phone is OPTIONAL
-    if (formData.phone && formData.phone.trim() && !validatePhone(formData.phone)) {
+    // ✅ FIX: Phone is optional - only validate if user actually entered digits (not just country code)
+    // Check if phone has actual number digits beyond just country code (+1, +91, etc.)
+    const phoneDigitsOnly = formData.phone?.replace(/\D/g, '') || '';
+    if (formData.phone && phoneDigitsOnly.length > 2 && !validatePhone(formData.phone)) {
       newErrors.phone = "Please enter a valid phone number (8-15 digits, no leading zero)";
     }
 

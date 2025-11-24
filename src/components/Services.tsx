@@ -203,6 +203,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       setShowSuccessOverlay(false);
       setSuccessMessage('Payment Successful!');
       setShowPayPalButtons(false);
+      // Don't reset razorpayLoaded/paypalLoaded - scripts stay loaded for performance
     }
   }, [showBookingModal]);
 
@@ -1116,7 +1117,10 @@ window.paypal.Buttons({
       errors.email = 'Please enter a valid email address';
     }
 
-    if (customerDetails.phone && customerDetails.phone.trim() && !validatePhone(customerDetails.phone)) {
+    // ✅ FIX: Phone is optional - only validate if user actually entered digits (not just country code)
+    // Check if phone has actual number digits beyond just country code (+1, +91, etc.)
+    const phoneDigitsOnly = customerDetails.phone?.replace(/\D/g, '') || '';
+    if (customerDetails.phone && phoneDigitsOnly.length > 2 && !validatePhone(customerDetails.phone)) {
       errors.phone = 'Please enter a valid phone number (8-15 digits, no leading zero)';
     }
 
