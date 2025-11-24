@@ -684,8 +684,13 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
             // Navigate to confirmation page
             navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
 
-            // Hide overlay after navigation
+            // ✅ CRITICAL FIX: Reset all state after navigation (enables multiple bookings in one session)
+            // This ensures when user comes back and books again, React will trigger re-renders
             setShowSuccessOverlay(false);
+            setShowBookingModal(false);  // Reset modal state (true → false)
+            setSelectedService(null);    // Clear selected service
+            setIsPaymentLoading(false);  // Reset loading state
+            setValidationErrors({});     // Clear any errors
           } catch (error) {
             console.error('❌ Payment processing error:', error);
             alert(`⚠️ Payment received but verification failed.\n\nPayment ID: ${razorpayResponse.razorpay_payment_id}\n\nPlease contact support to confirm your booking.`);
@@ -924,8 +929,12 @@ window.paypal.Buttons({
       paypalContainer.remove();
       navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
 
-      // Hide overlay after navigation
+      // ✅ CRITICAL FIX: Reset all state after navigation (enables multiple bookings in one session)
       setShowSuccessOverlay(false);
+      setShowBookingModal(false);  // Reset modal state (true → false)
+      setSelectedService(null);    // Clear selected service
+      setIsPaymentLoading(false);  // Reset loading state
+      setValidationErrors({});     // Clear any errors
     } catch (error) {
       console.error('❌ Payment error:', error);
       alert('❌ Payment error. Please contact support.');
@@ -1244,7 +1253,14 @@ window.paypal.Buttons({
             // Small delay before redirect
             await new Promise(resolve => setTimeout(resolve, 600));
             navigate(`/payment-confirmation?${confirmationUrl.toString()}`);
+
+            // ✅ CRITICAL FIX: Reset all state after navigation (enables multiple bookings in one session)
+            // This ensures when user comes back and books again, React will trigger re-renders
             setShowSuccessOverlay(false);
+            setShowBookingModal(false);  // Reset modal state (true → false)
+            setSelectedService(null);    // Clear selected service
+            setIsPaymentLoading(false);  // Reset loading state
+            setValidationErrors({});     // Clear any errors
           } catch (error) {
             console.error('❌ Payment error:', error);
             setShowSuccessOverlay(false);
