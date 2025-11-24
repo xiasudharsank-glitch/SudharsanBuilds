@@ -956,10 +956,9 @@ window.paypal.Buttons({
   };
 
   // ✅ Render PayPal Buttons in Modal (Global Region Only)
-  // ✅ CRITICAL FIX: Removed customerDetails from dependency array to prevent re-rendering on every keystroke
-  // ✅ NEW: Only render when showPayPalButtons is true (after validation)
+  // ✅ INSTANT TRUST: Show PayPal buttons immediately when modal opens (disabled until form valid)
   useEffect(() => {
-    if (showBookingModal && payment.gateway === 'paypal' && paypalLoaded && window.paypal && selectedService && showPayPalButtons) {
+    if (showBookingModal && payment.gateway === 'paypal' && paypalLoaded && window.paypal && selectedService) {
       const container = document.getElementById('paypal-button-container-modal');
       if (!container) return;
 
@@ -1167,7 +1166,23 @@ window.paypal.Buttons({
         }
       }).render('#paypal-button-container-modal');
     }
-  }, [showBookingModal, payment.gateway, paypalLoaded, selectedService, showPayPalButtons, navigate, currency]); // ✅ Added showPayPalButtons and currency
+  }, [showBookingModal, payment.gateway, paypalLoaded, selectedService, navigate, currency]); // ✅ Removed showPayPalButtons - buttons always render
+
+  // ✅ Helper: Check if form is valid (for PayPal button state)
+  const isFormValid = () => {
+    if (!customerDetails.name.trim()) return false;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!customerDetails.email.trim() || !emailRegex.test(customerDetails.email)) return false;
+
+    // Phone validation (optional but must be valid if provided)
+    const phoneDigitsOnly = customerDetails.phone?.replace(/\D/g, '') || '';
+    if (customerDetails.phone && phoneDigitsOnly.length >= 6 && !validatePhone(customerDetails.phone)) return false;
+
+    if (!customerDetails.projectDetails.trim()) return false;
+
+    return true;
+  };
 
   // ✅ Main Payment Handler - Routes to correct payment gateway
   const handlePaymentProceed = async () => {
@@ -1357,7 +1372,7 @@ window.paypal.Buttons({
             </div>
           </motion.div>
 
-          {/* ✅ Payment Gateway Trust Badge - Premium animated design for instant credibility */}
+          {/* ✅ Payment Gateway Trust Badge - Clean & Professional with Apple Card shimmer */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -1365,132 +1380,52 @@ window.paypal.Buttons({
             transition={{ delay: 0.15 }}
             className="flex justify-center mb-8"
           >
-            <div className="relative overflow-hidden group">
-              {/* Animated shimmer effect - passes over badge every 3 seconds */}
+            <div className="relative overflow-hidden">
+              {/* Subtle Apple Card-style shimmer - passes over every 7 seconds */}
               <motion.div
-                className="absolute inset-0 w-full h-full"
+                className="absolute inset-0 w-full h-full z-10"
                 animate={{
                   x: ['-100%', '100%']
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 1.5,
                   repeat: Infinity,
-                  repeatDelay: 3,
+                  repeatDelay: 7,
                   ease: "easeInOut"
                 }}
                 style={{
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent)',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent)',
                   pointerEvents: 'none'
                 }}
               />
 
-              {/* Main badge with subtle glow animation */}
-              <motion.div
-                animate={{
-                  boxShadow: [
-                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 20px rgba(59, 130, 246, 0.3)',
-                    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
-                  ]
-                }}
-                transition={{
-                  duration: 2.5,
-                  repeat: Infinity,
-                  repeatDelay: 1.5,
-                  ease: "easeInOut"
-                }}
-                className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-white via-blue-50/30 to-white rounded-xl border-2 border-blue-100 backdrop-blur-sm relative"
-              >
+              {/* Clean badge - no extra animations */}
+              <div className="inline-flex items-center gap-3 px-6 py-3 bg-white rounded-xl border border-slate-200 shadow-sm relative">
                 {regionConfig.region === 'india' ? (
                   <>
-                    {/* Razorpay Branding */}
-                    <div className="flex items-center gap-2">
-                      {/* Razorpay Lightning Icon */}
-                      <div className="relative">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-900 to-blue-700 rounded-lg flex items-center justify-center shadow-md">
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-                            <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" fill="#3395FF" stroke="#3395FF" strokeWidth="1" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                        {/* Verified badge */}
-                        <motion.div
-                          animate={{ scale: [0.8, 1, 0.8], opacity: [0.6, 1, 0.6] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"
-                        />
-                      </div>
-                      {/* Razorpay Text */}
-                      <div>
-                        <div className="font-bold text-sm" style={{ color: '#0C2654' }}>Razorpay</div>
-                        <div className="text-xs text-blue-600 font-medium">Secure Payments</div>
-                      </div>
-                    </div>
-                    {/* Verified Icon */}
-                    <motion.div
-                      animate={{ scale: [1, 1.1, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <svg className="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                    {/* Razorpay Lightning Icon */}
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-900 to-blue-700 rounded-lg flex items-center justify-center shadow-sm">
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                        <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" fill="#3395FF" stroke="#3395FF" strokeWidth="1" strokeLinejoin="round"/>
                       </svg>
-                    </motion.div>
+                    </div>
+                    {/* Razorpay Text */}
+                    <span className="font-semibold text-sm" style={{ color: '#0C2654' }}>
+                      Pay Safely With Razorpay
+                    </span>
                   </>
                 ) : (
                   <>
-                    {/* PayPal Branding */}
-                    <div className="flex items-center gap-2.5">
-                      {/* PayPal Icon */}
-                      <div className="relative">
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-700 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
-                          <span className="text-white font-bold text-lg">P</span>
-                        </div>
-                        {/* Verified badge */}
-                        <motion.div
-                          animate={{ scale: [0.8, 1, 0.8], opacity: [0.6, 1, 0.6] }}
-                          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                          className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"
-                        />
-                      </div>
-                      {/* PayPal Text with proper spacing */}
-                      <div>
-                        <div className="font-bold text-base tracking-wide flex items-center gap-0.5">
-                          <span style={{ color: '#003087' }}>Pay</span>
-                          <span style={{ color: '#009cde' }}>Pal</span>
-                        </div>
-                        <div className="text-xs text-blue-600 font-medium">Secure Payments</div>
-                      </div>
-                    </div>
-                    {/* Verified Icon with pulse */}
-                    <motion.div
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <svg className="w-5 h-5 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
-                      </svg>
-                    </motion.div>
+                    {/* PayPal Text Only - No logo */}
+                    <span className="font-bold text-lg tracking-tight flex items-center">
+                      <span style={{ color: '#003087' }}>Pay</span>
+                      <span style={{ color: '#009cde' }}>Pal</span>
+                    </span>
+                    <span className="text-xs text-slate-500 font-medium">
+                      Pay with PayPal
+                    </span>
                   </>
                 )}
-              </motion.div>
-
-              {/* Flowing dots animation - like GPay transaction flow */}
-              <div className="absolute inset-0 pointer-events-none">
-                {[0, 1, 2].map((i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute top-1/2 w-1.5 h-1.5 bg-blue-400 rounded-full opacity-60"
-                    animate={{
-                      x: ['-10%', '110%'],
-                      opacity: [0, 0.8, 0]
-                    }}
-                    transition={{
-                      duration: 2.5,
-                      repeat: Infinity,
-                      delay: i * 0.4,
-                      ease: "easeOut"
-                    }}
-                  />
-                ))}
               </div>
             </div>
           </motion.div>
@@ -1929,35 +1864,31 @@ window.paypal.Buttons({
                         {isPaymentLoading ? 'Processing...' : 'Proceed to Payment'}
                       </button>
                     </div>
-                  ) : !showPayPalButtons ? (
-                    // ✅ NEW: Global - Show validation button first (like Razorpay)
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => {
-                          setShowBookingModal(false);
-                          setShowPayPalButtons(false);
-                        }}
-                        className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handlePaymentProceed}
-                        disabled={isPaymentLoading}
-                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isPaymentLoading ? 'Loading...' : 'Proceed to Payment'}
-                      </button>
-                    </div>
                   ) : (
-                    // ✅ PayPal buttons (shown after validation passes)
+                    // ✅ INSTANT TRUST: Global - Show PayPal buttons immediately with overlay when form invalid
                     <div className="space-y-3">
-                      <div id="paypal-button-container-modal" className="min-h-[45px]"></div>
+                      {/* PayPal Button Container with conditional overlay */}
+                      <div className="relative">
+                        <div id="paypal-button-container-modal" className="min-h-[45px]"></div>
+
+                        {/* Overlay when form is invalid - prevents clicks and shows message */}
+                        {!isFormValid() && (
+                          <div className="absolute inset-0 bg-white/95 backdrop-blur-sm rounded-lg flex items-center justify-center cursor-not-allowed">
+                            <div className="text-center px-4 py-3">
+                              <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold mb-1">
+                                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                                  <path d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                                </svg>
+                                <span className="text-sm">Complete the form above</span>
+                              </div>
+                              <p className="text-xs text-slate-600">Fill in all required fields to enable PayPal checkout</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <button
-                        onClick={() => {
-                          setShowBookingModal(false);
-                          setShowPayPalButtons(false);
-                        }}
+                        onClick={() => setShowBookingModal(false)}
                         className="w-full px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
                       >
                         Cancel
