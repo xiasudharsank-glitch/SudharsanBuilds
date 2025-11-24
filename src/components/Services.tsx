@@ -1122,8 +1122,14 @@ window.paypal.Buttons({
         },
         onApprove: async (data: any) => {
           console.log('✅ PayPal Payment Approved:', data.orderID);
-          setIsPaymentLoading(true);
+
+          // ✅ CRITICAL FIX: Show overlay IMMEDIATELY (like Razorpay), BEFORE any backend work
           setShowBookingModal(false);
+          setShowSuccessOverlay(true);
+          setSuccessMessage('✓ Payment Successful!');
+
+          // Force React to render overlay before continuing
+          await new Promise(resolve => setTimeout(resolve, 800));
 
           try {
             // Get current form values
@@ -1136,6 +1142,10 @@ window.paypal.Buttons({
             const currentEmail = emailInput?.value || '';
             const currentPhone = phoneInput?.value || '';
             const currentDetails = detailsInput?.value || '';
+
+            // Update overlay for capture step
+            setSuccessMessage('🔍 Verifying payment...');
+            await new Promise(resolve => setTimeout(resolve, 600));
 
             // Capture payment
             const captureUrl = `${env.SUPABASE_URL}/functions/v1/capture-paypal-payment`;
@@ -1161,6 +1171,10 @@ window.paypal.Buttons({
 
             console.log('✅ Payment captured');
 
+            // Update overlay for invoice generation
+            await new Promise(resolve => setTimeout(resolve, 600));
+            setSuccessMessage('📄 Generating your invoice...');
+
             // Generate invoice
             const invoiceResult = await generateAndSendInvoice({
               name: currentName,
@@ -1178,6 +1192,13 @@ window.paypal.Buttons({
               currency_locale: currency?.locale || 'en-US',
             });
 
+            // Update overlay for email step
+            await new Promise(resolve => setTimeout(resolve, 600));
+            setSuccessMessage('📧 Sending confirmation email...');
+
+            await new Promise(resolve => setTimeout(resolve, 600));
+            setSuccessMessage('🎉 Redirecting to confirmation...');
+
             // Navigate to confirmation
             const confirmationUrl = new URLSearchParams({
               invoiceId: invoiceResult.invoiceId || 'N/A',
@@ -1191,14 +1212,16 @@ window.paypal.Buttons({
             });
 
             setCustomerDetails({ name: '', email: '', phone: '', projectDetails: '' });
-            // ✅ NEW: Show success overlay with progress, then navigate
-            await showSuccessAndRedirect(`/payment-confirmation?${confirmationUrl.toString()}`);
+
+            // Small delay before redirect
+            await new Promise(resolve => setTimeout(resolve, 600));
+            navigate(`/confirmation?${confirmationUrl.toString()}`);
+            setShowSuccessOverlay(false);
           } catch (error) {
             console.error('❌ Payment error:', error);
+            setShowSuccessOverlay(false);
             alert('❌ Payment processing failed. Please contact support with Order ID: ' + data.orderID);
             setShowBookingModal(true);
-          } finally {
-            setIsPaymentLoading(false);
           }
         },
         onError: (err: any) => {
