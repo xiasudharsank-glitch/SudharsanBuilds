@@ -1,203 +1,53 @@
 import { useState, useEffect } from 'react';
-import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, ChevronRight, ChevronLeft } from 'lucide-react';
+import { ExternalLink, X, FolderOpen, Briefcase, Github, BookOpen, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import ProjectGallery from './ProjectGallery';
 import { PROJECTS_DATA, type Project, type ProjectType } from '../data/projectsData';
+import { fetchPublishedProjects } from '../utils/projectsApi';
 
 const getWebsitePreview = (url: string) => {
   return `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true&meta=false&embed=screenshot.url`;
 };
-
-const PROJECTS: Project[] = PROJECTS_DATA; // Use shared data
-
-// Unused - kept for backward compatibility
-const _PROJECTS: Project[] = [
-  {
-  id: 'manoj-kumar-portfolio',
-  title: 'Finance & Business Analytics Professional Portfolio',
-  type: 'personal',
-  status: 'completed',
-  role: 'Full-stack Developer',
-  description: 'Professional portfolio website for an MBA graduate specializing in Finance and Business Analytics. Showcases technical skills in Power BI, Tableau, SQL, and Python, along with academic projects. Also includes an ATS-friendly resume designed to pass through recruitment systems and stand out to hiring managers.',
-  link: 'https://manoj-rho-navy.vercel.app/',
-  techStack: [
-    { name: 'React' },
-    { name: 'Next.js' },
-    { name: 'Tailwind CSS' },
-    { name: 'Responsive Design' }
-  ],
-  tags: ['Professional Portfolio', 'Finance Analytics', 'Job Search'],
-  startDate: '2024-08-01',
-  endDate: '2024-09-10',
-  featured: true,
-  clientName: 'Manoj Kumar S',
-  clientTestimonial: {
-    text: 'Sudharsan built a clean, professional portfolio that effectively showcases my analytics skills and MBA background. Combined with the ATS-friendly resume he created, I\'ve been receiving consistent recruiter inquiries and interview opportunities from companies in my target list.',
-    name: 'Manoj Kumar S',
-    role: 'MBA Graduate, Finance & Business Analytics'
-  },
-  keyAchievements: [
-    'Professional portfolio increases visibility among recruiters and hiring managers',
-    'ATS-optimized resume ensures applications pass through recruitment screening systems',
-    'Clear presentation of technical skills (Power BI, Tableau, SQL, Python) attracts relevant opportunities',
-    'Organized layout makes it easy for recruiters to find key qualifications',
-    'Mobile-responsive design accessible on all devices'
-  ]
-  },
-  {
-  id: 'bharath-kumar-marketing-portfolio',
-  title: 'Marketing & Sales Executive Professional Portfolio',
-  type: 'personal',
-  status: 'completed',
-  role: 'Full-stack Developer',
-  description: 'Professional portfolio website for a Marketing and Sales Executive seeking opportunities to leverage digital marketing expertise, sales management, and business development skills. Showcases professional experience, marketing campaigns, sales achievements, and career vision with clear call-to-actions for recruiters and business partners.',
-  link: 'https://bharathkumar-henna.vercel.app/',
-  techStack: [
-    { name: 'React' },
-    { name: 'Next.js' },
-    { name: 'Tailwind CSS' },
-    { name: 'Responsive Design' }
-  ],
-  tags: ['Marketing Portfolio', 'Sales Executive', 'Job Search', 'Professional'],
-  startDate: '2024-08-05',
-  endDate: '2024-09-05',
-  featured: true,
-  clientName: 'Bharath Kumar S',
-  clientTestimonial: {
-    text: 'My marketing and sales background deserved a portfolio that would stand out, and that\'s exactly what I got. The professional design by Sudharsan perfectly highlights my digital marketing expertise, sales achievements, and career aspirations. Recruiters now have a comprehensive view of my experience and strengths. The clean layout makes it easy for potential employers to understand my value proposition.',
-    name: 'Bharath Kumar S',
-    role: 'Marketing & Sales Executive'
-  },
-  keyAchievements: [
-    'Professional portfolio effectively showcases digital marketing and sales expertise',
-    'Clear career vision and goals resonate with hiring managers',
-    'Organized presentation of professional experience and achievements',
-    'Mobile-responsive design ensures accessibility across all devices',
-    'Portfolio attracts inquiries from marketing and sales-focused companies',
-    'Professional credibility elevated through polished online presence'
-  ]
-  },
-  {
-  id: 'vembarasi-nurse-portfolio',
-  title: 'Professional Nurse Portfolio - Germany Job Search',
-  type: 'personal',
-  status: 'completed',
-  role: 'Full-stack Developer',
-  description: 'Professional portfolio website for an experienced nurse seeking employment opportunities in Germany. Showcases nursing qualifications, experience, certifications, and professional achievements with a downloadable resume optimized for international healthcare recruitment standards.',
-  link: 'https://vembarasi.vercel.app',
-  techStack: [
-    { name: 'React' },
-    { name: 'Next.js' },
-    { name: 'Tailwind CSS' },
-    { name: 'Framer Motion' },
-    { name: 'PDF Download Feature' },
-    { name: 'Responsive Design' }
-  ],
-  tags: ['Nurse Portfolio', 'Healthcare', 'International Job Search', 'Germany'],
-  startDate: '2024-07-01',
-  endDate: '2024-08-15',
-  featured: true,
-  clientName: 'Vembarasi K',
-  clientTestimonial: {
-    text: 'Sudharsan created a professional portfolio that perfectly highlights my nursing experience and qualifications for international positions. The one-click downloadable resume feature is convenient for recruiters, and the polished design helped me get noticed by German healthcare employers. It\'s been instrumental in my job search abroad.',
-    name: 'Vembarasi K',
-    role: 'Registered Nurse, Healthcare Professional'
-  },
-  keyAchievements: [
-    'Professional portfolio showcases nursing certifications and international experience',
-    'One-click resume download feature allows recruiters instant access to qualifications',
-    'Optimized for international healthcare recruitment standards (Germany-focused)',
-    'Clean, professional design builds credibility with international employers',
-    'Mobile-responsive layout accessible on all devices for global reach',
-    'Increased visibility among German healthcare recruitment agencies'
-  ]
-  },
-  {
-  id: 'rsk-enterprises-sevai',
-  title: 'e-Sevai Maiyam Website - Government Services Portal',
-  type: 'client',
-  status: 'completed',
-  role: 'Full-stack Developer',
-  description: 'Professional website for RSK Enterprises, an e-Sevai Maiyam service center in Trichy offering Aadhaar, PAN, certificates, bill payments, and printing services. Features Google Maps integration for location discovery, YouTube channel integration, comprehensive service documentation, dynamic shop status display, and detailed working hours to reduce customer inquiries.',
-  link: 'https://rsk-enterprises.vercel.app',
-  techStack: [
-    { name: 'React' },
-    { name: 'Next.js' },
-    { name: 'Tailwind CSS' },
-    { name: 'Google Maps API' },
-    { name: 'YouTube Integration' },
-    { name: 'Dynamic Status System' },
-    { name: 'Responsive Design' }
-  ],
-  tags: ['Government Services', 'e-Sevai Maiyam', 'Local Business', 'Service Portal'],
-  startDate: '2024-07-15',
-  endDate: '2024-08-20',
-  featured: true,
-  screenshots: [
-    '/images/projects/rsk-enterprises/homepage.svg',
-    '/images/projects/rsk-enterprises/services.svg',
-    '/images/projects/rsk-enterprises/contact.svg',
-    '/images/projects/rsk-enterprises/about.svg'
-  ],
-  clientName: 'RSK Enterprises',
-  clientTestimonial: {
-    text: 'Sudharsan built an excellent website that has transformed how we handle customer inquiries. The document requirements section and working hours display have reduced our phone calls significantly. Customers appreciate knowing exactly what documents they need and when we\'re open. The Google Maps and YouTube integration were great additions!',
-    name: 'RSK Enterprises Owner',
-    role: 'e-Sevai Maiyam Service Center, Trichy'
-  },
-  keyAchievements: [
-    'Reduced repetitive customer inquiries by 70% through self-service documentation',
-    'Google Maps integration increased foot traffic from local searches',
-    'Dynamic open/closed status automatically updates based on working hours',
-    'YouTube channel integration increased subscriber engagement',
-    'Comprehensive service details (Aadhaar, PAN, Certificates) available 24/7',
-    'Customers save time by knowing exact documents needed before visiting'
-  ]
-  },
-  {
-    id: 'psquare-menswear',
-    title: 'E-Commerce Platform',
-    description: 'Full-featured online store with payment integration and admin dashboard for a premium menswear brand.',
-    link: 'https://psquaremenswear.vercel.app',
-    type: 'client',
-    status: 'in-progress',
-    role: 'Full-stack Developer',
-    techStack: [
-      { name: 'React' },
-      { name: 'TypeScript' },
-      { name: 'Supabase' },
-      { name: 'Razorpay' },
-      { name: 'Tailwind CSS' }
-    ],
-    tags: ['E-commerce', 'Payments', 'Responsive'],
-    startDate: '2023-07-10',
-    endDate: '2023-10-20',
-    featured: true,
-    clientName: 'Prasanth Kumar',
-    clientTestimonial: {
-      text: 'in progress',
-      name: 'Prasanth Kumar',
-      role: 'Founder, PSquare Menswear'
-    },
-    keyAchievements: []
-  }
-];
 
 type CategoryType = 'My Projects' | 'Client Projects';
 
 export default function Projects() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isProjectModalOpen, setIsProjectModalOpen] = useState(false);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<CategoryType | null>(null);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
   const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
-  // ✅ FIX #5: Track failed images to prevent infinite loop
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const myProjects = PROJECTS.filter(p => p.type === 'personal');
-  const clientProjects = PROJECTS.filter(p => p.type === 'client' || p.type === 'freelance');
+  const myProjects = projects.filter(p => p.type === 'personal');
+  const clientProjects = projects.filter(p => p.type === 'client' || p.type === 'freelance');
+
+  // Load projects from Supabase, fallback to local data
+  useEffect(() => {
+    const loadProjects = async () => {
+      try {
+        setLoading(true);
+        const data = await fetchPublishedProjects();
+        if (data && data.length > 0) {
+          setProjects(data);
+        } else {
+          // Fallback to local data if no projects in database yet
+          setProjects(PROJECTS_DATA);
+        }
+      } catch (err) {
+        console.error('Error loading projects from database, using local data:', err);
+        setProjects(PROJECTS_DATA);
+        setError('Using cached projects');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProjects();
+  }, []);
 
   // ✅ FIX: Cleanup body overflow on unmount
   useEffect(() => {
@@ -281,11 +131,6 @@ export default function Projects() {
     document.body.style.overflow = 'unset';
   };
 
-  const closeGallery = () => {
-    setIsGalleryOpen(false);
-    setSelectedProject(null);
-  };
-
   const handleImageLoad = (url: string, imageUrl: string) => {
     setPreviewCache(prev => ({
       ...prev,
@@ -296,6 +141,27 @@ export default function Projects() {
   const getProjectsByCategory = (category: CategoryType): Project[] => {
     return category === 'My Projects' ? myProjects : clientProjects;
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <section id="projects" className="py-12 md:py-24 bg-slate-900">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="text-center mb-6 md:mb-16">
+            <h2 className="text-3xl md:text-5xl font-bold text-white mb-2 md:mb-4">
+              Featured <span className="text-cyan-400">Projects</span>
+            </h2>
+            <p className="text-slate-400 text-sm md:text-base max-w-2xl mx-auto">
+              Explore my work across personal projects and client collaborations
+            </p>
+          </div>
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-12 h-12 text-cyan-500 animate-spin" />
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="projects" className="py-12 md:py-24 bg-slate-900">
@@ -682,16 +548,6 @@ export default function Projects() {
             </motion.div>
           )}
         </AnimatePresence>
-
-      {/* Project Gallery */}
-      {selectedProject?.screenshots && selectedProject.screenshots.length > 0 && (
-        <ProjectGallery
-          images={selectedProject.screenshots}
-          isOpen={isGalleryOpen}
-          onClose={closeGallery}
-          initialIndex={0}
-        />
-      )}
       </div>
     </section>
   );

@@ -15,6 +15,13 @@ const FAQPage = lazy(() => import('./pages/FAQPage'));
 const PaymentConfirmationPage = lazy(() => import('./pages/PaymentConfirmationPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
+// Lazy load admin pages
+const AdminAuth = lazy(() => import('./components/admin/AdminAuth'));
+const AdminLayout = lazy(() => import('./components/admin/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'));
+const ProjectForm = lazy(() => import('./pages/admin/ProjectForm'));
+
 // ✅ FIX: Lazy load global widgets (available on all pages)
 const AIChatbot = lazy(() => import('./components/AIChatbot'));
 const FloatingAvatar = lazy(() => import('./components/FloatingAvatar'));
@@ -103,12 +110,32 @@ function App() {
           <main id="main-content">
             <Suspense fallback={<PageLoader />}>
               <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/services" element={<ServicesPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/testimonials" element={<TestimonialsPage />} />
                 <Route path="/faq" element={<FAQPage />} />
                 <Route path="/payment-confirmation" element={<PaymentConfirmationPage />} />
+
+                {/* Admin Routes */}
+                <Route
+                  path="/admin/*"
+                  element={
+                    <AdminAuth>
+                      <AdminLayout>
+                        <Routes>
+                          <Route path="/" element={<AdminDashboard />} />
+                          <Route path="/projects" element={<AdminProjects />} />
+                          <Route path="/projects/new" element={<ProjectForm />} />
+                          <Route path="/projects/edit/:id" element={<ProjectForm />} />
+                          <Route path="*" element={<div className="text-white text-center py-12">Coming soon...</div>} />
+                        </Routes>
+                      </AdminLayout>
+                    </AdminAuth>
+                  }
+                />
+
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </Suspense>

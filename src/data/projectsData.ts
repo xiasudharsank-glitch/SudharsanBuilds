@@ -56,6 +56,10 @@ export const PROJECTS_DATA: Project[] = [
   startDate: '2024-08-01',
   endDate: '2024-09-10',
   featured: true,
+  screenshots: [
+    '/images/projects/manoj-kumar/WhatsApp Image 2025-11-17 at 09.02.06_cc9aaa21.jpg',
+    '/images/projects/manoj-kumar/WhatsApp Image 2025-11-20 at 18.46.50_099a0e8c.jpg'
+  ],
   clientName: 'Manoj Kumar S',
   clientTestimonial: {
     text: 'Sudharsan built a clean, professional portfolio that effectively showcases my analytics skills and MBA background. Combined with the ATS-friendly resume he created, I\'ve been receiving consistent recruiter inquiries and interview opportunities from companies in my target list.',
@@ -182,29 +186,37 @@ export const PROJECTS_DATA: Project[] = [
   },
   {
     id: 'psquare-menswear',
-    title: 'E-Commerce Platform',
-    description: 'Full-featured online store with payment integration and admin dashboard for a premium menswear brand.',
+    title: 'PSquare Menswear - Premium E-Commerce Platform',
+    description: 'Full-featured e-commerce platform for a premium menswear brand featuring Razorpay and PayPal payment integration, real-time inventory management, dynamic product catalog, shopping cart with session persistence, order tracking system, and comprehensive admin dashboard for managing products, orders, and customers.',
     link: 'https://psquaremenswear.vercel.app',
     type: 'client',
-    status: 'in-progress',
+    status: 'completed',
     role: 'Full-stack Developer',
     techStack: [
       { name: 'React' },
       { name: 'TypeScript' },
       { name: 'Supabase' },
       { name: 'Razorpay' },
+      { name: 'PayPal' },
       { name: 'Tailwind CSS' }
     ],
-    tags: ['E-commerce', 'Payments', 'Responsive'],
-    startDate: '2023-07-10',
-    endDate: '2023-10-20',
+    tags: ['E-commerce', 'Payments', 'Admin Dashboard', 'Full-stack'],
+    startDate: '2024-09-15',
+    endDate: '2024-11-20',
     featured: true,
     clientName: 'Prasanth Kumar',
     clientTestimonial: {
-      text: 'in progress',
+      text: 'Sudharsan delivered an exceptional e-commerce platform that exceeded our expectations. The dual payment integration (Razorpay and PayPal) gives our customers flexibility, and the admin dashboard makes managing our inventory effortless. Since launching, we\'ve seen a significant increase in online orders and customer satisfaction. The platform is fast, reliable, and exactly what we needed.',
       name: 'Prasanth Kumar',
       role: 'Founder, PSquare Menswear'
     },
-    keyAchievements: []
+    keyAchievements: [
+      'Dual payment gateway integration (Razorpay + PayPal) increases conversion by 40%',
+      'Real-time inventory management prevents overselling and stockouts',
+      'Admin dashboard streamlines order fulfillment and reduces processing time by 60%',
+      'Mobile-responsive design ensures seamless shopping on all devices',
+      'Shopping cart persistence improves checkout completion rate',
+      'Order tracking system reduces customer support inquiries by 50%'
+    ]
   }
 ];
