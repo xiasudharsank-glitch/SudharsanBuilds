@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { HelpCircle, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { fetchPublishedFAQs, type FAQ as FAQType } from '../utils/faqApi';
 
 interface FAQItem {
   question: string;
@@ -17,6 +18,8 @@ interface FAQProps {
 export default function FAQ({ limit = null, showViewAll = false, showContactCTA = true }: FAQProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [attentionPulse, setAttentionPulse] = useState(true);
+  const [faqs, setFAQs] = useState<FAQType[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Engaging first FAQ animation - toggles automatically to draw attention
   useEffect(() => {
@@ -39,7 +42,8 @@ export default function FAQ({ limit = null, showViewAll = false, showContactCTA 
     }
   }, [limit]);
 
-  const faqs: FAQItem[] = [
+  // Hardcoded fallback FAQs
+  const fallbackFAQs: FAQItem[] = [
     {
       question: 'How long does it take to build a website?',
       answer: 'Timeline depends on the type of website: Landing Pages take 1-2 weeks, Business Websites take 3-4 weeks, and E-Commerce Stores take 4-6 weeks. Custom projects are flexible. I work efficiently to deliver quality work on time.'
@@ -90,9 +94,47 @@ export default function FAQ({ limit = null, showViewAll = false, showContactCTA 
     }
   ];
 
+  // Fetch FAQs from database
+  useEffect(() => {
+    const loadFAQs = async () => {
+      try {
+        const data = await fetchPublishedFAQs();
+
+        if (data && data.length > 0) {
+          setFAQs(data);
+        } else {
+          // Fallback to hardcoded FAQs
+          setFAQs(fallbackFAQs as any);
+        }
+      } catch (error) {
+        console.error('Error loading FAQs from database, using fallback data:', error);
+        setFAQs(fallbackFAQs as any);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFAQs();
+  }, []);
+
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
+
+  if (loading) {
+    return (
+      <section id="faq" className="py-20 md:py-28 bg-gradient-to-b from-slate-50 to-white border-t-2 border-slate-200/50">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-slate-600">Loading FAQs...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="faq" className="py-20 md:py-28 bg-gradient-to-b from-slate-50 to-white border-t-2 border-slate-200/50">

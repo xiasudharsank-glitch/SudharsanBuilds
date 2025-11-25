@@ -23,6 +23,7 @@ const AdminProjects = lazy(() => import('./pages/admin/AdminProjects'));
 const ProjectForm = lazy(() => import('./pages/admin/ProjectForm'));
 const AdminInquiries = lazy(() => import('./pages/admin/AdminInquiries'));
 const AdminTestimonials = lazy(() => import('./pages/admin/AdminTestimonials'));
+const AdminFAQ = lazy(() => import('./pages/admin/AdminFAQ'));
 
 // ✅ FIX: Lazy load global widgets (available on all pages)
 const AIChatbot = lazy(() => import('./components/AIChatbot'));
@@ -133,6 +134,7 @@ function App() {
                           <Route path="/projects/edit/:id" element={<ProjectForm />} />
                           <Route path="/inquiries" element={<AdminInquiries />} />
                           <Route path="/testimonials" element={<AdminTestimonials />} />
+                          <Route path="/faq" element={<AdminFAQ />} />
                           <Route path="*" element={<div className="text-white text-center py-12">Coming soon...</div>} />
                         </Routes>
                       </AdminLayout>
