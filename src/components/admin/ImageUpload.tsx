@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Loader2, Zap } from 'lucide-react';
 import { uploadProjectImage, deleteProjectImage } from '../../utils/projectsApi';
+import { optimizeImage, validateImageFile, formatFileSize } from '../../utils/imageOptimization';
 
 interface ImageUploadProps {
   projectId?: string;
@@ -69,13 +70,33 @@ export default function ImageUpload({
 
     setUploading(true);
     const uploadedUrls: string[] = [];
+    let totalSaved = 0;
 
     for (const file of files) {
       try {
-        const fileId = Date.now() + Math.random();
-        setUploadProgress((prev) => ({ ...prev, [fileId]: 0 }));
+        // Validate image
+        const validation = validateImageFile(file);
+        if (!validation.valid) {
+          alert(`${file.name}: ${validation.error}`);
+          continue;
+        }
 
-        // Simulate progress for better UX
+        const fileId = Date.now() + Math.random();
+        setUploadProgress((prev) => ({ ...prev, [fileId]: 10 }));
+
+        // Optimize image before upload
+        const optimized = await optimizeImage(file, {
+          maxWidth: 1920,
+          maxHeight: 1080,
+          quality: 0.85,
+          outputFormat: 'jpeg'
+        });
+
+        totalSaved += (optimized.originalSize - optimized.optimizedSize);
+
+        setUploadProgress((prev) => ({ ...prev, [fileId]: 40 }));
+
+        // Upload optimized image
         const progressInterval = setInterval(() => {
           setUploadProgress((prev) => ({
             ...prev,
@@ -83,7 +104,7 @@ export default function ImageUpload({
           }));
         }, 100);
 
-        const url = await uploadProjectImage(file, projectId);
+        const url = await uploadProjectImage(optimized.file, projectId);
 
         clearInterval(progressInterval);
         setUploadProgress((prev) => ({ ...prev, [fileId]: 100 }));
@@ -108,6 +129,11 @@ export default function ImageUpload({
 
     onChange([...images, ...uploadedUrls]);
     setUploading(false);
+
+    // Show optimization results
+    if (totalSaved > 0) {
+      console.log(`✨ Optimized images! Saved ${formatFileSize(totalSaved)} (${((totalSaved / files.reduce((sum, f) => sum + f.size, 0)) * 100).toFixed(1)}% reduction)`);
+    }
   };
 
   const handleRemoveImage = async (index: number) => {
@@ -176,6 +202,10 @@ export default function ImageUpload({
                 </p>
                 <p className="text-sm text-slate-500">
                   PNG, JPG, GIF, WebP up to 10MB ({images.length}/{maxImages} images)
+                </p>
+                <p className="text-xs text-cyan-400 mt-2 flex items-center justify-center gap-1">
+                  <Zap className="w-3 h-3" />
+                  Auto-optimization enabled
                 </p>
               </div>
             </>

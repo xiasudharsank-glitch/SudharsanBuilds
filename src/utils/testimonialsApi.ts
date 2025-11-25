@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { optimizeAvatar } from './imageOptimization';
 
 // Types
 export interface Testimonial {
@@ -185,18 +186,25 @@ export async function reorderTestimonials(testimonials: { id: string; display_or
 
 // Upload avatar image
 export async function uploadTestimonialAvatar(file: File, testimonialId: string): Promise<string | null> {
-  const fileExt = file.name.split('.').pop();
-  const fileName = `${testimonialId}/${Date.now()}.${fileExt}`;
+  try {
+    // Optimize avatar (square crop, 400x400)
+    const optimized = await optimizeAvatar(file);
 
-  const { data, error } = await supabase.storage
-    .from('testimonial-avatars')
-    .upload(fileName, file, {
-      cacheControl: '3600',
-      upsert: false
-    });
+    const fileName = `${testimonialId}/${Date.now()}.jpg`;
 
-  if (error) {
-    console.error('Error uploading avatar:', error);
+    const { data, error } = await supabase.storage
+      .from('testimonial-avatars')
+      .upload(fileName, optimized.file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+
+    if (error) {
+      console.error('Error uploading avatar:', error);
+      return null;
+    }
+  } catch (optimizationError) {
+    console.error('Error optimizing avatar:', optimizationError);
     throw error;
   }
 
