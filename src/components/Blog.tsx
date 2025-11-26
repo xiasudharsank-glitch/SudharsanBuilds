@@ -3,9 +3,10 @@ import { BookOpen, Clock, Calendar, ArrowRight, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import DOMPurify from 'dompurify';
+import { fetchPublishedPosts, fetchFeaturedPosts, type BlogPost as DBBlogPost } from '../utils/blogApi';
 
 interface BlogPost {
-  id: number;
+  id: number | string;
   title: string;
   excerpt: string;
   content: string[];
@@ -22,10 +23,13 @@ interface BlogProps {
 
 export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
+  const [blogPosts, setBlogPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
-  const blogPosts: BlogPost[] = [
+  // Fallback hardcoded blog posts
+  const fallbackBlogPosts: BlogPost[] = [
     {
       id: 1,
       title: 'How to Start an Online Business in Trichy - Step by Step Guide',
@@ -188,6 +192,41 @@ export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
     }
   ];
 
+  // Fetch blog posts from database with fallback to hardcoded data
+  useEffect(() => {
+    const loadBlogPosts = async () => {
+      try {
+        // Fetch from database
+        const data = limit ? await fetchFeaturedPosts(limit) : await fetchPublishedPosts();
+
+        if (data && data.length > 0) {
+          // Transform database posts to match component interface
+          const transformedPosts: BlogPost[] = data.map(post => ({
+            id: post.id,
+            title: post.title,
+            excerpt: post.excerpt,
+            content: post.content.split('\n\n'), // Split content into paragraphs
+            keywords: post.seo_keywords || [],
+            readTime: post.read_time || '5 min read',
+            publishDate: post.published_at || post.created_at,
+            featured: post.is_featured
+          }));
+          setBlogPosts(transformedPosts);
+        } else {
+          // Use fallback if no data from database
+          setBlogPosts(fallbackBlogPosts);
+        }
+      } catch (error) {
+        console.error('Error loading blog posts from database, using fallback data:', error);
+        setBlogPosts(fallbackBlogPosts);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadBlogPosts();
+  }, [limit]);
+
   const scrollToContact = () => {
     // Close modal first
     setSelectedPost(null);
@@ -250,6 +289,21 @@ export default function Blog({ limit = null, showViewAll = false }: BlogProps) {
       KEEP_CONTENT: true,
     });
   };
+
+  if (loading) {
+    return (
+      <section id="blog" className="py-16 md:py-24 bg-slate-50">
+        <div className="container mx-auto px-4 md:px-6">
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="text-center">
+              <div className="w-16 h-16 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-slate-600">Loading blog posts...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="blog" className="py-16 md:py-24 bg-slate-50">
