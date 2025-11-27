@@ -5,6 +5,9 @@ import RegionBanner from './components/RegionBanner';
 import SEOHead from './components/SEOHead';
 import ErrorBoundary from './components/ErrorBoundary';
 import { features } from './utils/env';
+import { autoTrackPerformance, setupGlobalErrorHandler } from './utils/notificationsAnalyticsApi';
+import { registerServiceWorker } from './utils/serviceWorkerRegistration';
+import { setupLazyLoading, preloadImages } from './utils/imageOptimization';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -30,10 +33,12 @@ const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
 const AdminServices = lazy(() => import('./pages/admin/AdminServices'));
 const AdminHero = lazy(() => import('./pages/admin/AdminHero'));
 const AdminEmailAutomation = lazy(() => import('./pages/admin/AdminEmailAutomation'));
+const AdminAdvancedAnalytics = lazy(() => import('./pages/admin/AdminAdvancedAnalytics'));
 
 // ✅ FIX: Lazy load global widgets (available on all pages)
 const AIChatbot = lazy(() => import('./components/AIChatbot'));
 const FloatingAvatar = lazy(() => import('./components/FloatingAvatar'));
+const NotificationCenter = lazy(() => import('./components/NotificationCenter'));
 
 // ✅ P2 FIX: Enhanced page loader with better visual feedback
 const PageLoader = () => (
@@ -94,6 +99,40 @@ function App() {
         console.log('✅ All features properly configured!');
       }
     }
+
+    // ✅ AUTO-TRACK: Performance metrics and global errors
+    autoTrackPerformance();
+    setupGlobalErrorHandler();
+
+    // ✅ PERFORMANCE: Register service worker for offline support
+    registerServiceWorker({
+      onUpdate: (registration) => {
+        console.log('🔄 New version available! Refresh to update.');
+        // Could show a toast notification here
+      },
+      onSuccess: (registration) => {
+        console.log('✅ Service Worker registered successfully');
+      },
+      onOffline: () => {
+        console.log('📡 You are offline. Some features may be limited.');
+      },
+      onOnline: () => {
+        console.log('📡 You are back online!');
+      }
+    });
+
+    // ✅ PERFORMANCE: Setup lazy loading for images
+    const cleanupLazyLoading = setupLazyLoading('img[data-src]');
+
+    // ✅ PERFORMANCE: Preload critical images (hero, logo)
+    preloadImages([
+      '/logo.png',
+      '/hero-bg.jpg'
+    ]);
+
+    return () => {
+      cleanupLazyLoading();
+    };
   }, []);
 
   return (
@@ -111,7 +150,14 @@ function App() {
             Skip to main content
           </a>
 
-          <Navigation />
+          <div className="flex items-center justify-between">
+            <Navigation />
+            <div className="fixed top-4 right-4 z-50">
+              <Suspense fallback={null}>
+                <NotificationCenter />
+              </Suspense>
+            </div>
+          </div>
 
           {/* Region Suggestion Banner */}
           <RegionBanner />
@@ -142,6 +188,7 @@ function App() {
                           <Route path="/testimonials" element={<AdminTestimonials />} />
                           <Route path="/faq" element={<AdminFAQ />} />
                           <Route path="/analytics" element={<AdminAnalytics />} />
+                          <Route path="/advanced-analytics" element={<AdminAdvancedAnalytics />} />
                           <Route path="/blog" element={<AdminBlog />} />
                           <Route path="/services" element={<AdminServices />} />
                           <Route path="/hero" element={<AdminHero />} />

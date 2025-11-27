@@ -380,3 +380,212 @@ export async function optimizeImagesWithProgress(
 
   return results;
 }
+
+// =====================================================
+// LAZY LOADING WITH INTERSECTION OBSERVER
+// =====================================================
+
+/**
+ * Setup lazy loading for images using IntersectionObserver
+ */
+export function setupLazyLoading(selector: string = 'img[data-src]') {
+  if (!('IntersectionObserver' in window)) {
+    // Fallback: load all images immediately
+    document.querySelectorAll<HTMLImageElement>(selector).forEach(img => {
+      const src = img.getAttribute('data-src');
+      if (src) img.src = src;
+    });
+    return () => {};
+  }
+
+  const imageObserver = new IntersectionObserver(
+    (entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target as HTMLImageElement;
+          const src = img.getAttribute('data-src');
+          const srcset = img.getAttribute('data-srcset');
+
+          if (src) {
+            img.src = src;
+            img.removeAttribute('data-src');
+          }
+
+          if (srcset) {
+            img.srcset = srcset;
+            img.removeAttribute('data-srcset');
+          }
+
+          img.classList.add('loaded');
+          observer.unobserve(img);
+        }
+      });
+    },
+    {
+      rootMargin: '50px 0px', // Load 50px before entering viewport
+      threshold: 0.01
+    }
+  );
+
+  document.querySelectorAll<HTMLImageElement>(selector).forEach(img => {
+    imageObserver.observe(img);
+  });
+
+  // Return cleanup function
+  return () => imageObserver.disconnect();
+}
+
+/**
+ * Preload critical images
+ */
+export function preloadImages(urls: string[]) {
+  urls.forEach(url => {
+    const link = document.createElement('link');
+    link.rel = 'preload';
+    link.as = 'image';
+    link.href = url;
+    document.head.appendChild(link);
+  });
+}
+
+// =====================================================
+// CDN / CLOUDINARY HELPERS
+// =====================================================
+
+export interface CDNTransformOptions {
+  width?: number;
+  height?: number;
+  quality?: number | 'auto';
+  format?: 'auto' | 'webp' | 'jpeg' | 'png';
+  crop?: 'fill' | 'fit' | 'scale' | 'crop';
+  gravity?: 'auto' | 'face' | 'center';
+  dpr?: 1 | 2 | 3; // Device pixel ratio
+}
+
+/**
+ * Generate Cloudinary URL with transformations
+ */
+export function cloudinaryUrl(
+  publicId: string,
+  options: CDNTransformOptions = {}
+): string {
+  const {
+    width,
+    height,
+    quality = 'auto',
+    format = 'auto',
+    crop = 'fill',
+    gravity = 'auto',
+    dpr = 1
+  } = options;
+
+  const transformations: string[] = [];
+
+  if (width) transformations.push(`w_${width}`);
+  if (height) transformations.push(`h_${height}`);
+  if (quality) transformations.push(`q_${quality}`);
+  if (format) transformations.push(`f_${format}`);
+  if (crop) transformations.push(`c_${crop}`);
+  if (gravity) transformations.push(`g_${gravity}`);
+  if (dpr > 1) transformations.push(`dpr_${dpr}`);
+
+  const transformString = transformations.join(',');
+  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'demo';
+
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transformString}/${publicId}`;
+}
+
+/**
+ * Generate srcset for CDN images with different DPRs
+ */
+export function cdnResponsiveSrcSet(
+  publicId: string,
+  baseOptions: CDNTransformOptions = {}
+): string {
+  const dprs = [1, 2, 3];
+  return dprs
+    .map(dpr => {
+      const url = cloudinaryUrl(publicId, { ...baseOptions, dpr });
+      return `${url} ${dpr}x`;
+    })
+    .join(', ');
+}
+
+/**
+ * Generate responsive srcset for Supabase Storage
+ */
+export function generateSupabaseSrcSet(
+  baseUrl: string,
+  sizes: number[] = [320, 640, 768, 1024, 1280, 1920]
+): string {
+  return sizes
+    .map(size => `${baseUrl}?width=${size}&quality=80 ${size}w`)
+    .join(', ');
+}
+
+// =====================================================
+// BLUR-UP PLACEHOLDER
+// =====================================================
+
+/**
+ * Generate tiny base64 placeholder for blur-up effect
+ */
+export async function generateBlurPlaceholder(file: File): Promise<string> {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) throw new Error('Could not get canvas context');
+
+  canvas.width = 10;
+  canvas.height = 10;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 10, 10);
+      resolve(canvas.toDataURL('image/jpeg', 0.1));
+    };
+
+    img.onerror = reject;
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * Get average color from image for placeholder background
+ */
+export async function getAverageColor(file: File): Promise<string> {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+
+  if (!ctx) throw new Error('Could not get canvas context');
+
+  canvas.width = 1;
+  canvas.height = 1;
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      resolve(`rgb(${r}, ${g}, ${b})`);
+    };
+
+    img.onerror = reject;
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
