@@ -8,6 +8,7 @@ import { features } from './utils/env';
 import { autoTrackPerformance, setupGlobalErrorHandler } from './utils/notificationsAnalyticsApi';
 import { registerServiceWorker } from './utils/serviceWorkerRegistration';
 import { setupLazyLoading, preloadImages } from './utils/imageOptimization';
+import { useTheme } from './hooks/useSettings';
 
 // Lazy load pages
 const HomePage = lazy(() => import('./pages/HomePage'));
@@ -34,6 +35,7 @@ const AdminServices = lazy(() => import('./pages/admin/AdminServices'));
 const AdminHero = lazy(() => import('./pages/admin/AdminHero'));
 const AdminEmailAutomation = lazy(() => import('./pages/admin/AdminEmailAutomation'));
 const AdminAdvancedAnalytics = lazy(() => import('./pages/admin/AdminAdvancedAnalytics'));
+const AdminRemoteControl = lazy(() => import('./pages/admin/AdminRemoteControl'));
 
 // ✅ FIX: Lazy load global widgets (available on all pages)
 const AIChatbot = lazy(() => import('./components/AIChatbot'));
@@ -67,6 +69,9 @@ function App() {
 
   const handleOpenChat = () => setIsChatOpen(true);
   const handleCloseChat = () => setIsChatOpen(false);
+
+  // ✅ REMOTE CONTROL: Load and apply theme automatically
+  useTheme();
 
   // ✅ P0 FIX: Validate environment variables on startup and log warnings
   useEffect(() => {
@@ -189,6 +194,7 @@ function App() {
                           <Route path="/faq" element={<AdminFAQ />} />
                           <Route path="/analytics" element={<AdminAnalytics />} />
                           <Route path="/advanced-analytics" element={<AdminAdvancedAnalytics />} />
+                          <Route path="/remote-control" element={<AdminRemoteControl />} />
                           <Route path="/blog" element={<AdminBlog />} />
                           <Route path="/services" element={<AdminServices />} />
                           <Route path="/hero" element={<AdminHero />} />
