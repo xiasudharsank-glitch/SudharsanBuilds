@@ -47,7 +47,7 @@ export const getSupabaseClient = (silent = false): SupabaseClient | null => {
  * Export the default client instance with lazy initialization
  * ✅ P1 FIX: Client is created on first access, not at module load time
  * This prevents error logs when Supabase is not needed
- * Use this for direct imports: import { supabase } from './supabaseClient'
+ * Use this for direct imports: import { supabase } from '../services/supabaseClient';
  */
 let _lazySupabase: SupabaseClient | null | undefined = undefined;
 export const supabase = new Proxy({} as SupabaseClient | null, {

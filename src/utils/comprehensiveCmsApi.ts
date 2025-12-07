@@ -2,9 +2,7 @@
  * Comprehensive CMS API - Handles 10 content management systems
  * Settings, Hero, Contact, Social, SEO, Email, Navigation, Footer, Skills, Achievements
  */
-
-import { supabase } from '../lib/supabase';
-
+import { supabase } from '../services/supabaseClient';
 // ===================================================================
 // 1. SITE SETTINGS
 // ===================================================================

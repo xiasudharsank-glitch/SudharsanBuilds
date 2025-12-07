@@ -1,4 +1,7 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from "../services/supabaseClient";    
+// or, if you prefer the explicit client:
+import { getSupabaseClient } from "../services/supabaseClient"; 
+
 import type { Project, TechStack, ClientTestimonial } from '../data/projectsData';
 
 // Database types (matches Supabase schema)

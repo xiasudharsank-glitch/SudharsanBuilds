@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { sendBookingConfirmation, sendInvoiceEmail, sendNewBookingAlert } from './emailService';
 import { env } from '../utils/env';
-import { supabase } from './supabaseClient'; // ✅ FIX: Use singleton Supabase client
+import { supabase } from '../services/supabaseClient'; // ✅ FIX: Use singleton Supabase client
 
 if (!supabase) {
   console.error('❌ Supabase client not initialized - missing environment variables');
@@ -171,9 +171,9 @@ export const generateAndSendInvoice = async (paymentData: PaymentData): Promise<
     }
 
     // Get configuration
-    const yourEmail = env.YOUR_EMAIL || 'sudharsanofficial0001@gmail.com';
-    const whatsappNumber = env.WHATSAPP_NUMBER || '919876543210';
-    const upiId = env.UPI_ID || 'sudharsan@upi';
+    const yourEmail = env.YOUR_EMAIL || 'contact@sudharsanbuilds.com';
+    const whatsappNumber = env.WHATSAPP_NUMBER || '916381556407';
+    const upiId = env.UPI_ID || 'sudharsanbuilds@ptyes';
 
     // ✅ FIX: Track email sending results
     const emailResults = {

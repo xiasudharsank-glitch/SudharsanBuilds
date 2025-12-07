@@ -96,19 +96,33 @@ CREATE OR REPLACE VIEW form_performance_metrics AS
 SELECT
   fs.form_name,
   COUNT(*) as total_sessions,
+
   COUNT(*) FILTER (WHERE fs.is_converted = true) as conversions,
+
+  -- conversion_rate: cast to numeric before rounding
   ROUND(
-    COUNT(*) FILTER (WHERE fs.is_converted = true) * 100.0 / NULLIF(COUNT(*), 0),
+    (
+      COUNT(*) FILTER (WHERE fs.is_converted = true)
+      * 100.0
+      / NULLIF(COUNT(*), 0)
+    )::numeric,
     2
   ) as conversion_rate,
-  ROUND(AVG(fs.time_to_complete_seconds), 0) as avg_completion_time_seconds,
-  ROUND(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fs.time_to_complete_seconds), 0) as median_completion_time_seconds,
-  COUNT(*) FILTER (WHERE fs.device_type = 'mobile') as mobile_sessions,
-  COUNT(*) FILTER (WHERE fs.device_type = 'desktop') as desktop_sessions,
-  COUNT(*) FILTER (WHERE fs.device_type = 'tablet') as tablet_sessions
+
+  -- average completion time: cast to numeric before rounding
+  ROUND(
+    AVG(fs.time_to_complete_seconds)::numeric,
+    0
+  ) as avg_completion_time_seconds,
+
+  -- median completion time: cast percentile result to numeric before rounding
+  ROUND(
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY fs.time_to_complete_seconds)::numeric,
+    0
+  ) as median_completion_time_seconds
 FROM form_sessions fs
-WHERE fs.started_at >= NOW() - INTERVAL '30 days'
 GROUP BY fs.form_name;
+
 
 -- Create view for field-level analytics
 CREATE OR REPLACE VIEW field_analytics AS

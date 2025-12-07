@@ -1754,7 +1754,7 @@ export default function AIChatbot({ isOpen, onClose }: AIChatbotProps) {
         if (data.error === 'QUOTA_EXCEEDED') {
           displayMessage = `${errorContent}\n\n💡 **Tip:** High traffic right now. The AI will be ready in just a moment!`;
         } else if (data.error === 'AUTH_ERROR') {
-          displayMessage = `${errorContent}\n\n📧 **Email:** sudharsanofficial0001@gmail.com`;
+          displayMessage = `${errorContent}\n\n📧 **Email:** support@sudharsanbuilds.com`;
         } else if (data.error === 'NETWORK_ERROR') {
           displayMessage = `${errorContent}\n\n💡 **Tip:** Check your WiFi/data connection and try again.`;
         }

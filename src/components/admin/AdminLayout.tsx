@@ -11,7 +11,7 @@ import {
   MessageSquare,
   Users
 } from 'lucide-react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from "../../services/supabaseClient";
 
 interface AdminLayoutProps {
   children: React.ReactNode;

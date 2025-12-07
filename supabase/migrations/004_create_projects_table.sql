@@ -89,6 +89,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Add trigger to auto-update updated_at
+DROP TRIGGER IF EXISTS update_projects_updated_at ON projects;
 CREATE TRIGGER update_projects_updated_at
   BEFORE UPDATE ON projects
   FOR EACH ROW
@@ -101,6 +102,20 @@ ALTER TABLE project_screenshots ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_key_achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE project_testimonials ENABLE ROW LEVEL SECURITY;
+
+-- Drop all existing policies
+DROP POLICY IF EXISTS "Public can view published projects" ON projects;
+DROP POLICY IF EXISTS "Public can view tech stack" ON project_tech_stack;
+DROP POLICY IF EXISTS "Public can view screenshots" ON project_screenshots;
+DROP POLICY IF EXISTS "Public can view achievements" ON project_key_achievements;
+DROP POLICY IF EXISTS "Public can view challenges" ON project_challenges;
+DROP POLICY IF EXISTS "Public can view testimonials" ON project_testimonials;
+DROP POLICY IF EXISTS "Authenticated users can manage projects" ON projects;
+DROP POLICY IF EXISTS "Authenticated users can manage tech stack" ON project_tech_stack;
+DROP POLICY IF EXISTS "Authenticated users can manage screenshots" ON project_screenshots;
+DROP POLICY IF EXISTS "Authenticated users can manage achievements" ON project_key_achievements;
+DROP POLICY IF EXISTS "Authenticated users can manage challenges" ON project_challenges;
+DROP POLICY IF EXISTS "Authenticated users can manage testimonials" ON project_testimonials;
 
 -- Public read access (everyone can view published projects)
 CREATE POLICY "Public can view published projects" ON projects
@@ -172,36 +187,80 @@ CREATE POLICY "Authenticated users can manage testimonials" ON project_testimoni
   FOR ALL USING (auth.role() = 'authenticated');
 
 -- Create helpful views
+DROP VIEW IF EXISTS projects_with_details;
+
 CREATE OR REPLACE VIEW projects_with_details AS
 SELECT
   p.*,
+
+  -- Tech stack: distinct + ordered
   COALESCE(
-    json_agg(
-      DISTINCT jsonb_build_object(
-        'name', pts.name,
-        'icon', pts.icon
-      ) ORDER BY pts.display_order
-    ) FILTER (WHERE pts.id IS NOT NULL),
-    '[]'
-  ) as tech_stack,
+    (
+      SELECT json_agg(
+               jsonb_build_object(
+                 'name', t.name,
+                 'icon', t.icon
+               )
+               ORDER BY t.display_order
+             )
+      FROM (
+        SELECT DISTINCT
+          pts.name,
+          pts.icon,
+          pts.display_order
+        FROM project_tech_stack pts
+        WHERE pts.project_id = p.id
+      ) AS t
+    ),
+    '[]'::json
+  ) AS tech_stack,
+
+  -- Screenshots: distinct + ordered
   COALESCE(
-    json_agg(
-      DISTINCT ps.image_url ORDER BY ps.display_order
-    ) FILTER (WHERE ps.id IS NOT NULL),
-    '[]'
-  ) as screenshots,
+    (
+      SELECT json_agg(t.image_url ORDER BY t.display_order)
+      FROM (
+        SELECT DISTINCT
+          ps.image_url,
+          ps.display_order
+        FROM project_screenshots ps
+        WHERE ps.project_id = p.id
+      ) AS t
+    ),
+    '[]'::json
+  ) AS screenshots,
+
+  -- Key achievements: distinct + ordered
   COALESCE(
-    json_agg(
-      DISTINCT pka.achievement ORDER BY pka.display_order
-    ) FILTER (WHERE pka.id IS NOT NULL),
-    '[]'
-  ) as key_achievements,
+    (
+      SELECT json_agg(t.achievement ORDER BY t.display_order)
+      FROM (
+        SELECT DISTINCT
+          pka.achievement,
+          pka.display_order
+        FROM project_key_achievements pka
+        WHERE pka.project_id = p.id
+      ) AS t
+    ),
+    '[]'::json
+  ) AS key_achievements,
+
+  -- Challenges: distinct + ordered
   COALESCE(
-    json_agg(
-      DISTINCT pc.challenge ORDER BY pc.display_order
-    ) FILTER (WHERE pc.id IS NOT NULL),
-    '[]'
-  ) as challenges,
+    (
+      SELECT json_agg(t.challenge ORDER BY t.display_order)
+      FROM (
+        SELECT DISTINCT
+          pc.challenge,
+          pc.display_order
+        FROM project_challenges pc
+        WHERE pc.project_id = p.id
+      ) AS t
+    ),
+    '[]'::json
+  ) AS challenges,
+
+  -- Single client testimonial
   (
     SELECT jsonb_build_object(
       'text', pt.text,
@@ -211,14 +270,12 @@ SELECT
     FROM project_testimonials pt
     WHERE pt.project_id = p.id
     LIMIT 1
-  ) as client_testimonial
+  ) AS client_testimonial
+
 FROM projects p
-LEFT JOIN project_tech_stack pts ON p.id = pts.project_id
-LEFT JOIN project_screenshots ps ON p.id = ps.project_id
-LEFT JOIN project_key_achievements pka ON p.id = pka.project_id
-LEFT JOIN project_challenges pc ON p.id = pc.project_id
-GROUP BY p.id
 ORDER BY p.display_order, p.created_at DESC;
+
+
 
 -- Grant access to the view
 GRANT SELECT ON projects_with_details TO anon, authenticated;

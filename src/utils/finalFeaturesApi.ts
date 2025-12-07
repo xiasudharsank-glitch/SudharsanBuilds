@@ -3,7 +3,7 @@
 // Comments, newsletter, forms, health, backups, checklist
 // =====================================================
 
-import { supabase } from './supabase';
+import { supabase } from '../services/supabaseClient';
 
 // =====================================================
 // TYPES
@@ -502,11 +502,12 @@ export function getPriorityColor(priority: string): string {
 
 export function getCategoryIcon(category: string): string {
   const icons = {
-    seo: '=',
-    performance: '¡',
+    seo: '=
+',
+    performance: 'ï¿½',
     security: '=',
-    content: '=Ý',
-    functionality: '™'
+    content: '=ï¿½',
+    functionality: 'ï¿½'
   };
-  return icons[category as keyof typeof icons] || '=Ë';
+  return icons[category as keyof typeof icons] || '=ï¿½';
 }

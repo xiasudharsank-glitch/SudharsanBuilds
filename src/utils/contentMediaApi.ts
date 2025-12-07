@@ -3,7 +3,7 @@
 // Media library, content drafts, SEO, scheduling, search
 // =====================================================
 
-import { supabase } from './supabase';
+import { supabase } from '../services/supabaseClient';
 
 // =====================================================
 // TYPES

@@ -3,7 +3,7 @@
 // Live settings, theme, menus, content blocks, feature flags
 // =====================================================
 
-import { supabase } from './supabase';
+import { supabase } from '../services/supabaseClient';
 
 // =====================================================
 // TYPES

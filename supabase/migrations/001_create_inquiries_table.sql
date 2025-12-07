@@ -1,4 +1,3 @@
--- Create inquiries table for storing contact form submissions
 CREATE TABLE IF NOT EXISTS inquiries (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
@@ -13,13 +12,18 @@ CREATE TABLE IF NOT EXISTS inquiries (
 );
 
 -- Create index on created_at for faster queries
-CREATE INDEX idx_inquiries_created_at ON inquiries(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_inquiries_created_at ON inquiries(created_at DESC);
 
 -- Create index on status for filtering
-CREATE INDEX idx_inquiries_status ON inquiries(status);
+CREATE INDEX IF NOT EXISTS idx_inquiries_status ON inquiries(status);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE inquiries ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Allow public inserts" ON inquiries;
+DROP POLICY IF EXISTS "Allow authenticated users to view" ON inquiries;
+DROP POLICY IF EXISTS "Allow authenticated users to update" ON inquiries;
 
 -- Create policy to allow inserts from anyone (for contact form submissions)
 CREATE POLICY "Allow public inserts" ON inquiries

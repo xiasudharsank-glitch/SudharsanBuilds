@@ -1,27 +1,44 @@
--- ✅ FIX #7: Add server-side phone number validation
--- This migration adds CHECK constraints to ensure valid phone number formats
+-- Step 1: Make phone optional (allow NULL)
+ALTER TABLE inquiries 
+ALTER COLUMN phone DROP NOT NULL;
 
--- Add phone validation constraint to inquiries table
--- Format: Optional '+' followed by 1-9, then 7-14 digits (E.164 international format)
--- Examples: +919876543210, 9876543210, +12125551234
+-- Step 2: Clean up any existing invalid phone numbers
+UPDATE inquiries 
+SET phone = NULL 
+WHERE phone IS NOT NULL 
+AND phone != ''
+AND phone !~* '^\+?[1-9]\d{7,14}$';
+
+-- Step 3: Drop existing constraint if any
+ALTER TABLE inquiries
+DROP CONSTRAINT IF EXISTS valid_phone_format;
+
+-- Step 4: Add new validation constraint (allows NULL)
 ALTER TABLE inquiries
 ADD CONSTRAINT valid_phone_format
-CHECK (phone ~* '^\+?[1-9]\d{7,14}$');
+CHECK (
+  phone IS NULL 
+  OR phone = '' 
+  OR phone ~* '^\+?[1-9]\d{7,14}$'
+);
 
--- Add phone validation constraint to invoices table (if exists)
--- Same format as above for consistency
+-- Step 5: Same for invoices table (if exists)
+ALTER TABLE invoices 
+ALTER COLUMN customer_phone DROP NOT NULL;
+
+UPDATE invoices 
+SET customer_phone = NULL 
+WHERE customer_phone IS NOT NULL 
+AND customer_phone != ''
+AND customer_phone !~* '^\+?[1-9]\d{7,14}$';
+
+ALTER TABLE invoices
+DROP CONSTRAINT IF EXISTS valid_phone_format;
+
 ALTER TABLE invoices
 ADD CONSTRAINT valid_phone_format
-CHECK (customer_phone ~* '^\+?[1-9]\d{7,14}$');
-
--- Note: This regex pattern validates:
--- - Optional international prefix (+)
--- - First digit must be 1-9 (not 0)
--- - Total of 7-14 digits after first digit
--- - No spaces, dashes, or other special characters
---
--- Invalid examples that will be rejected:
--- - "123" (too short)
--- - "+0123456789" (starts with 0)
--- - "123-456-7890" (contains special chars)
--- - "12345678901234567" (too long)
+CHECK (
+  customer_phone IS NULL 
+  OR customer_phone = '' 
+  OR customer_phone ~* '^\+?[1-9]\d{7,14}$'
+);

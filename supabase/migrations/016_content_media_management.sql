@@ -5,6 +5,36 @@
 -- =====================================================
 
 -- =====================================================
+-- 0. MEDIA LIBRARY FOLDERS (for organizing media)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS media_library_folders (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE,
+  parent_id UUID REFERENCES media_library_folders(id) ON DELETE SET NULL,
+  path TEXT,  -- folder path, e.g. "root/projects/landing-pages"
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE media_library_folders
+  ADD COLUMN IF NOT EXISTS path TEXT;
+
+ALTER TABLE media_library_folders
+  ADD COLUMN IF NOT EXISTS created_by TEXT;
+
+ALTER TABLE media_library_folders
+  ADD COLUMN IF NOT EXISTS description TEXT;
+
+CREATE INDEX IF NOT EXISTS idx_media_library_folders_parent
+  ON media_library_folders(parent_id);
+
+CREATE INDEX IF NOT EXISTS idx_media_folders_path
+  ON media_library_folders(path);
+
+
+-- =====================================================
 -- 1. MEDIA LIBRARY
 -- =====================================================
 
@@ -38,23 +68,6 @@ CREATE INDEX idx_media_folder ON media_library(folder_id);
 CREATE INDEX idx_media_tags ON media_library USING GIN(tags);
 CREATE INDEX idx_media_uploaded_at ON media_library(uploaded_at DESC);
 
--- =====================================================
--- 2. MEDIA FOLDERS
--- =====================================================
-
-CREATE TABLE IF NOT EXISTS media_library_folders (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  parent_id UUID REFERENCES media_library_folders(id) ON DELETE CASCADE,
-  path TEXT NOT NULL, -- Full path for quick lookup
-  description TEXT,
-  created_by TEXT NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE INDEX idx_media_folders_parent ON media_library_folders(parent_id);
-CREATE INDEX idx_media_folders_path ON media_library_folders(path);
 
 -- =====================================================
 -- 3. CONTENT DRAFTS & VERSIONS

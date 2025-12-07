@@ -10,7 +10,9 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Enable RLS on storage.objects
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- NOTE: On hosted Supabase, this table is system-owned and already has RLS configured.
+-- ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+
 
 -- Public read access for project images
 CREATE POLICY "Public can view project images" ON storage.objects
@@ -37,4 +39,5 @@ CREATE POLICY "Authenticated users can delete project images" ON storage.objects
     AND auth.role() = 'authenticated'
   );
 
-COMMENT ON TABLE storage.objects IS 'Storage for project images and screenshots';
+-- COMMENT ON TABLE storage.objects IS 'Storage for project images and screenshots';
+-- NOTE: Supabase system tables cannot be commented or altered by migrations.

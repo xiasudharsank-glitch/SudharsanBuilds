@@ -30,7 +30,7 @@ export default function PaymentConfirmationPage() {
   const whatsappLink = `https://wa.me/${whatsappNumber}?text=${whatsappMessage}`;
 
   // Email contact
-  const yourEmail = env.YOUR_EMAIL || 'sudharsanofficial0001@gmail.com';
+  const yourEmail = env.YOUR_EMAIL || 'info@sudharsanbuilds.com';
 
   // Scroll to top on mount
   useEffect(() => {

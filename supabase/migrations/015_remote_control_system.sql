@@ -22,8 +22,47 @@ CREATE TABLE IF NOT EXISTS site_settings (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure required columns exist on site_settings for seeding
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS key TEXT;
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS value JSONB DEFAULT '{}'::jsonb;
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS category TEXT;
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS label TEXT;
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS description TEXT;
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS data_type TEXT DEFAULT 'string';
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT true;
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS updated_by TEXT;
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE site_settings
+  ADD COLUMN IF NOT EXISTS setting_key TEXT;
+
+DROP INDEX IF EXISTS idx_site_settings_category;
+DROP INDEX IF EXISTS idx_site_settings_public;
+
 CREATE INDEX idx_site_settings_category ON site_settings(category);
 CREATE INDEX idx_site_settings_public ON site_settings(is_public);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_site_settings_key_unique ON site_settings(key);
 
 -- =====================================================
 -- 2. THEME CUSTOMIZATION
@@ -184,41 +223,53 @@ CREATE INDEX idx_config_snapshots_created ON config_snapshots(created_at DESC);
 -- SEED DATA: Default Site Settings
 -- =====================================================
 
-INSERT INTO site_settings (key, value, category, label, description, data_type, is_public) VALUES
+-- SEED DATA: Default Site Settings
+INSERT INTO site_settings (
+  setting_key,
+  key,
+  value,
+  category,
+  label,
+  description,
+  data_type,
+  is_public
+) VALUES
+
 -- General
-('site_title', '"Developer Portfolio"', 'general', 'Site Title', 'Main website title', 'string', true),
-('site_tagline', '"Building the Future, One Line at a Time"', 'general', 'Tagline', 'Site tagline/slogan', 'string', true),
-('site_description', '"Professional web developer specializing in modern web applications"', 'general', 'Description', 'Site description for SEO', 'string', true),
+('site_title', 'site_title', '"Developer Portfolio"', 'general', 'Site Title', 'Main website title', 'string', true),
+('site_tagline', 'site_tagline', '"Building the Future, One Line at a Time"', 'general', 'Tagline', 'Site tagline/slogan', 'string', true),
+('site_description', 'site_description', '"Professional web developer specializing in modern web applications"', 'general', 'Description', 'Site description for SEO', 'string', true),
 
 -- Branding
-('logo_url', '"/logo.png"', 'branding', 'Logo URL', 'Main site logo', 'image', true),
-('logo_dark_url', '"/logo-dark.png"', 'branding', 'Dark Logo URL', 'Logo for dark backgrounds', 'image', true),
-('favicon_url', '"/favicon.ico"', 'branding', 'Favicon URL', 'Browser tab icon', 'image', true),
-('brand_color_primary', '"#06b6d4"', 'branding', 'Primary Color', 'Main brand color', 'color', true),
-('brand_color_secondary', '"#3b82f6"', 'branding', 'Secondary Color', 'Secondary brand color', 'color', true),
+('logo_url', 'logo_url', '"/logo.png"', 'branding', 'Logo URL', 'Main site logo', 'image', true),
+('logo_dark_url', 'logo_dark_url', '"/logo-dark.png"', 'branding', 'Dark Logo URL', 'Logo for dark backgrounds', 'image', true),
+('favicon_url', 'favicon_url', '"/favicon.ico"', 'branding', 'Favicon URL', 'Browser tab icon', 'image', true),
+('brand_color_primary', 'brand_color_primary', '"#06b6d4"', 'branding', 'Primary Color', 'Main brand color', 'color', true),
+('brand_color_secondary', 'brand_color_secondary', '"#3b82f6"', 'branding', 'Secondary Color', 'Secondary brand color', 'color', true),
 
 -- Contact
-('contact_email', '"hello@example.com"', 'contact', 'Contact Email', 'Primary contact email', 'string', true),
-('contact_phone', '"+1 (555) 123-4567"', 'contact', 'Contact Phone', 'Primary phone number', 'string', true),
-('contact_address', '"123 Tech Street, San Francisco, CA"', 'contact', 'Address', 'Business address', 'string', true),
+('contact_email', 'contact_email', '"hello@example.com"', 'contact', 'Contact Email', 'Primary contact email', 'string', true),
+('contact_phone', 'contact_phone', '"+1 (555) 123-4567"', 'contact', 'Contact Phone', 'Primary phone number', 'string', true),
+('contact_address', 'contact_address', '"123 Tech Street, San Francisco, CA"', 'contact', 'Address', 'Business address', 'string', true),
 
 -- Social Media
-('social_github', '"https://github.com/username"', 'social', 'GitHub URL', 'GitHub profile', 'url', true),
-('social_linkedin', '"https://linkedin.com/in/username"', 'social', 'LinkedIn URL', 'LinkedIn profile', 'url', true),
-('social_twitter', '"https://twitter.com/username"', 'social', 'Twitter URL', 'Twitter profile', 'url', true),
-('social_instagram', '""', 'social', 'Instagram URL', 'Instagram profile', 'url', true),
+('social_github', 'social_github', '"https://github.com/username"', 'social', 'GitHub URL', 'GitHub profile', 'url', true),
+('social_linkedin', 'social_linkedin', '"https://linkedin.com/in/username"', 'social', 'LinkedIn URL', 'LinkedIn profile', 'url', true),
+('social_twitter', 'social_twitter', '"https://twitter.com/username"', 'social', 'Twitter URL', 'Twitter profile', 'url', true),
+('social_instagram', 'social_instagram', '""', 'social', 'Instagram URL', 'Instagram profile', 'url', true),
 
 -- SEO
-('seo_keywords', '["web developer", "portfolio", "react", "typescript"]', 'seo', 'SEO Keywords', 'Meta keywords', 'json', true),
-('seo_og_image', '"/og-image.jpg"', 'seo', 'OG Image', 'Social media preview image', 'image', true),
-('google_analytics_id', '""', 'seo', 'Google Analytics ID', 'GA tracking ID', 'string', false),
+('seo_keywords', 'seo_keywords', '["web developer", "portfolio", "react", "typescript"]', 'seo', 'SEO Keywords', 'Meta keywords', 'json', true),
+('seo_og_image', 'seo_og_image', '"/og-image.jpg"', 'seo', 'OG Image', 'Social media preview image', 'image', true),
+('google_analytics_id', 'google_analytics_id', '""', 'seo', 'Google Analytics ID', 'GA tracking ID', 'string', false),
 
 -- Advanced
-('enable_maintenance_mode', 'false', 'advanced', 'Maintenance Mode', 'Show maintenance page', 'boolean', true),
-('enable_analytics', 'true', 'advanced', 'Enable Analytics', 'Track user analytics', 'boolean', false),
-('enable_error_reporting', 'true', 'advanced', 'Error Reporting', 'Log errors to database', 'boolean', false),
-('max_upload_size_mb', '10', 'advanced', 'Max Upload Size (MB)', 'Maximum file upload size', 'number', false)
-ON CONFLICT (key) DO NOTHING;
+('enable_maintenance_mode', 'enable_maintenance_mode', 'false', 'advanced', 'Maintenance Mode', 'Show maintenance page', 'boolean', true),
+('enable_analytics', 'enable_analytics', 'true', 'advanced', 'Enable Analytics', 'Track user analytics', 'boolean', false),
+('enable_error_reporting', 'enable_error_reporting', 'true', 'advanced', 'Error Reporting', 'Log errors to database', 'boolean', false),
+('max_upload_size_mb', 'max_upload_size_mb', '10', 'advanced', 'Max Upload Size (MB)', 'Maximum file upload size', 'number', false)
+ON CONFLICT (setting_key) DO NOTHING;
+
 
 -- =====================================================
 -- SEED DATA: Default Theme

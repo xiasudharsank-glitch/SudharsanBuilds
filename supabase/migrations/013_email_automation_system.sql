@@ -123,6 +123,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Make triggers idempotent
+DROP TRIGGER IF EXISTS update_email_templates_timestamp ON email_templates;
+DROP TRIGGER IF EXISTS update_email_sequences_timestamp ON email_sequences;
+DROP TRIGGER IF EXISTS update_notification_prefs_timestamp ON notification_preferences;
+
 CREATE TRIGGER update_email_templates_timestamp
   BEFORE UPDATE ON email_templates
   FOR EACH ROW EXECUTE FUNCTION update_email_automation_timestamp();
@@ -301,31 +306,90 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Ensure required columns exist on email_templates for seeding
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS name TEXT;
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE;
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS subject TEXT;
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS body_html TEXT;
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS body_text TEXT;
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'general';
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS variables JSONB DEFAULT '[]'::jsonb;
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+ALTER TABLE email_templates
+  ADD COLUMN IF NOT EXISTS template_key TEXT;
+
+
 -- Seed default templates
-INSERT INTO email_templates (name, slug, subject, body_html, body_text, category, variables) VALUES
-('Welcome Email', 'welcome', 'Welcome to Sudharsan''s Portfolio - Let''s Build Something Amazing!',
- '<h1>Welcome, {{customer_name}}!</h1><p>Thank you for your inquiry. I''m excited to learn more about your project!</p><p>I''ll review your requirements and get back to you within 24 hours.</p><p>In the meantime, feel free to check out my <a href="{{portfolio_url}}">recent projects</a>.</p><p>Best regards,<br>Sudharsan</p>',
- 'Welcome, {{customer_name}}! Thank you for your inquiry. I will get back to you within 24 hours.',
- 'welcome',
- '["customer_name", "portfolio_url"]'::jsonb),
+INSERT INTO email_templates (
+  template_key,
+  name,
+  slug,
+  subject,
+  body_html,
+  body_text,
+  category,
+  variables
+) VALUES
+(
+  'welcome',
+  'Welcome Email',
+  'welcome',
+  'Welcome to Sudharsan''s Portfolio - Let''s Build Something Amazing!',
+  '<h1>Welcome, {{customer_name}}!</h1><p>Thank you for your inquiry. I''m excited to learn more about your project!</p><p>I''ll review your requirements and get back to you within 24 hours.</p><p>In the meantime, feel free to check out my <a href="{{portfolio_url}}">recent projects</a>.</p><p>Best regards,<br>Sudharsan</p>',
+  'Welcome, {{customer_name}}! Thank you for your inquiry. I will get back to you within 24 hours.',
+  'welcome',
+  '["customer_name", "portfolio_url"]'::jsonb
+),
+(
+  'followup-3days',
+  'Follow-up Email',
+  'followup-3days',
+  'Following Up - Your Website Project',
+  '<h1>Hi {{customer_name}},</h1><p>I wanted to follow up on your inquiry from a few days ago.</p><p>Are you still interested in discussing your {{service_type}} project?</p><p>I''d love to answer any questions you have and provide a detailed proposal.</p><p>Reply to this email or schedule a call at your convenience.</p><p>Best,<br>Sudharsan</p>',
+  'Hi {{customer_name}}, following up on your inquiry. Still interested in your {{service_type}} project?',
+  'followup',
+  '["customer_name", "service_type"]'::jsonb
+),
+(
+  'payment-reminder',
+  'Payment Reminder',
+  'payment-reminder',
+  'Friendly Reminder - Payment Due for {{service_type}}',
+  '<h1>Hi {{customer_name}},</h1><p>This is a friendly reminder that your payment for {{service_type}} is due on {{due_date}}.</p><p><strong>Amount: {{amount}}</strong></p><p>Please let me know if you have any questions or need to adjust the payment schedule.</p><p>Payment methods:<br>- UPI: {{upi_id}}<br>- Bank Transfer: [Details]</p><p>Thanks!<br>Sudharsan</p>',
+  'Payment reminder: {{amount}} due for {{service_type}} on {{due_date}}',
+  'reminder',
+  '["customer_name", "service_type", "amount", "due_date", "upi_id"]'::jsonb
+),
+(
+  'thankyou-completed',
+  'Thank You Email',
+  'thankyou-completed',
+  'Thank You - Project Completed Successfully!',
+  '<h1>Thank You, {{customer_name}}!</h1><p>It was a pleasure working with you on {{service_type}}.</p><p>Your project is now live and ready to go!</p><p>If you need any support or want to discuss future enhancements, I''m just an email away.</p><p>I''d greatly appreciate if you could leave a testimonial about your experience.</p><p>Wishing you great success!<br>Sudharsan</p>',
+  'Thank you {{customer_name}}! Your {{service_type}} project is complete.',
+  'thankyou',
+  '["customer_name", "service_type"]'::jsonb
+);
 
-('Follow-up Email', 'followup-3days', 'Following Up - Your Website Project',
- '<h1>Hi {{customer_name}},</h1><p>I wanted to follow up on your inquiry from a few days ago.</p><p>Are you still interested in discussing your {{service_type}} project?</p><p>I''d love to answer any questions you have and provide a detailed proposal.</p><p>Reply to this email or schedule a call at your convenience.</p><p>Best,<br>Sudharsan</p>',
- 'Hi {{customer_name}}, following up on your inquiry. Still interested in your {{service_type}} project?',
- 'followup',
- '["customer_name", "service_type"]'::jsonb),
-
-('Payment Reminder', 'payment-reminder', 'Friendly Reminder - Payment Due for {{service_type}}',
- '<h1>Hi {{customer_name}},</h1><p>This is a friendly reminder that your payment for {{service_type}} is due on {{due_date}}.</p><p><strong>Amount: {{amount}}</strong></p><p>Please let me know if you have any questions or need to adjust the payment schedule.</p><p>Payment methods:<br>- UPI: {{upi_id}}<br>- Bank Transfer: [Details]</p><p>Thanks!<br>Sudharsan</p>',
- 'Payment reminder: {{amount}} due for {{service_type}} on {{due_date}}',
- 'reminder',
- '["customer_name", "service_type", "amount", "due_date", "upi_id"]'::jsonb),
-
-('Thank You Email', 'thankyou-completed', 'Thank You - Project Completed Successfully!',
- '<h1>Thank You, {{customer_name}}!</h1><p>It was a pleasure working with you on {{service_type}}.</p><p>Your project is now live and ready to go!</p><p>If you need any support or want to discuss future enhancements, I''m just an email away.</p><p>I''d greatly appreciate if you could leave a testimonial about your experience.</p><p>Wishing you great success!<br>Sudharsan</p>',
- 'Thank you {{customer_name}}! Your {{service_type}} project is complete.',
- 'thankyou',
- '["customer_name", "service_type"]'::jsonb);
 
 -- Seed default sequence: Inquiry Follow-up
 INSERT INTO email_sequences (name, description, trigger_event, is_active) VALUES

@@ -470,7 +470,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
           !env.RAZORPAY_KEY_ID ||
           env.RAZORPAY_KEY_ID === '') {
         console.error('❌ Payment system not configured - missing or invalid environment variables');
-        alert('⚠️ Payment system is not configured yet.\n\nPlease contact us directly via email:\nsudharsanofficial0001@gmail.com');
+        alert('⚠️ Payment system is not configured yet.\n\nPlease contact us directly via email:\ncontact@sudharsanbuilds.com');
         setIsPaymentLoading(false);
 
         // Scroll to contact form
@@ -739,7 +739,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       razorpay.on('payment.failed', function (response: any) {
         console.error('❌ Payment failed:', response);
         const errorMessage = getRazorpayErrorMessage(response);
-        alert(errorMessage + '\n\nNeed help? Contact us at:\nsudharsanofficial0001@gmail.com');
+        alert(errorMessage + '\n\nNeed help? Contact us at:\ncontact@sudharsanbuilds.com');
         setIsPaymentLoading(false);
         // ✅ P0 FIX: Reopen modal WITHOUT clearing customerDetails
         // User can retry payment with their data still filled in
@@ -750,7 +750,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     } catch (error) {
       console.error('❌ Payment error:', error);
       const errorMessage = getRazorpayErrorMessage(error);
-      alert(errorMessage + '\n\nNeed help? Contact us at:\nsudharsanofficial0001@gmail.com');
+      alert(errorMessage + '\n\nNeed help? Contact us at:\n0001@gmail.com');
       setIsPaymentLoading(false);
 
       // Fallback to contact form
@@ -769,7 +769,7 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       // Check PayPal env vars
       if (!env.PAYPAL_CLIENT_ID || env.PAYPAL_CLIENT_ID === '') {
         console.error('❌ PayPal not configured');
-        alert('⚠️ Payment system is not configured yet.\n\nPlease contact us directly via email:\nsudharsanofficial0001@gmail.com');
+        alert('⚠️ Payment system is not configured yet.\n\nPlease contact us directly via email:\ncontact@sudharsanbuilds.com');
         setIsPaymentLoading(false);
         return;
       }
@@ -1321,7 +1321,7 @@ window.paypal.Buttons({
 
         if (!window.paypal || !paypalLoaded) {
           setIsPaymentLoading(false);
-          alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\nsudharsanofficial0001@gmail.com');
+          alert('⚠️ Payment system failed to load. Please refresh the page and try again.\n\nIf the issue persists, contact us at:\ncontact@sudharsanbuilds.com');
           return;
         }
         setIsPaymentLoading(false);

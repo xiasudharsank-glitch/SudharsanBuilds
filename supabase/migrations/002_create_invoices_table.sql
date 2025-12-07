@@ -20,25 +20,23 @@ CREATE TABLE IF NOT EXISTS public.invoices (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
--- Create index on invoice_id for fast lookups
+-- Create indexes
 CREATE INDEX IF NOT EXISTS idx_invoices_invoice_id ON public.invoices(invoice_id);
-
--- Create index on customer_email for customer queries
 CREATE INDEX IF NOT EXISTS idx_invoices_customer_email ON public.invoices(customer_email);
-
--- Create index on status for filtering
 CREATE INDEX IF NOT EXISTS idx_invoices_status ON public.invoices(status);
 
 -- Enable Row Level Security
 ALTER TABLE public.invoices ENABLE ROW LEVEL SECURITY;
 
--- Create policy to allow all operations for authenticated users
--- (You can modify this based on your security requirements)
+-- Drop existing policies
+DROP POLICY IF EXISTS "Allow all operations for service role" ON public.invoices;
+DROP POLICY IF EXISTS "Allow customers to view their own invoices" ON public.invoices;
+
+-- Create policies
 CREATE POLICY "Allow all operations for service role" ON public.invoices
   FOR ALL
   USING (true);
 
--- Create policy to allow customers to view their own invoices
 CREATE POLICY "Allow customers to view their own invoices" ON public.invoices
   FOR SELECT
   USING (auth.jwt() ->> 'email' = customer_email);
@@ -53,6 +51,7 @@ END;
 $$ language 'plpgsql';
 
 -- Create trigger to automatically update updated_at
+DROP TRIGGER IF EXISTS update_invoices_updated_at ON public.invoices;
 CREATE TRIGGER update_invoices_updated_at
   BEFORE UPDATE ON public.invoices
   FOR EACH ROW
