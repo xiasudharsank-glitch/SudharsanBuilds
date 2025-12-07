@@ -47,10 +47,10 @@ export default function AdminAnalytics() {
   };
 
   // Get overall stats
-  const totalViews = funnelData.reduce((sum, f) => sum + f.views, 0);
-  const totalStarts = funnelData.reduce((sum, f) => sum + f.starts, 0);
-  const totalConversions = funnelData.reduce((sum, f) => sum + f.successes, 0);
-  const avgConversionRate = totalStarts > 0 ? ((totalConversions / totalStarts) * 100).toFixed(2) : '0';
+  const totalViews = funnelData.reduce((sum, f) => sum + (f.views || 0), 0);
+  const totalStarts = funnelData.reduce((sum, f) => sum + (f.starts || 0), 0);
+  const totalConversions = funnelData.reduce((sum, f) => sum + (f.successes || 0), 0);
+  const avgConversionRate = totalStarts > 0 ? ((totalConversions / totalStarts) * 100).toFixed(2) : '0.00';
 
   if (loading) {
     return (

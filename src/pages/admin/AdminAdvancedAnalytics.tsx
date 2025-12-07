@@ -140,7 +140,7 @@ export default function AdminAdvancedAnalytics() {
               <div className="flex items-center justify-between mb-2">
                 <Zap className="w-8 h-8 opacity-80" />
               </div>
-              <h3 className="text-3xl font-bold mb-1">{avgPageLoad.toFixed(0)}ms</h3>
+              <h3 className="text-3xl font-bold mb-1">{(avgPageLoad || 0).toFixed(0)}ms</h3>
               <p className="text-emerald-100 text-sm">Avg Page Load</p>
             </div>
 
@@ -197,7 +197,7 @@ export default function AdminAdvancedAnalytics() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
               <h3 className="text-slate-400 text-sm mb-2">Avg Page Load</h3>
-              <p className="text-3xl font-bold text-white">{avgPageLoad.toFixed(0)}ms</p>
+              <p className="text-3xl font-bold text-white">{(avgPageLoad || 0).toFixed(0)}ms</p>
               <p className={`text-sm mt-2 ${avgPageLoad < 2000 ? 'text-green-400' : avgPageLoad < 4000 ? 'text-yellow-400' : 'text-red-400'}`}>
                 {avgPageLoad < 2000 ? 'Excellent' : avgPageLoad < 4000 ? 'Good' : 'Needs Improvement'}
               </p>
@@ -205,7 +205,7 @@ export default function AdminAdvancedAnalytics() {
 
             <div className="bg-slate-800 rounded-lg p-6 border border-slate-700">
               <h3 className="text-slate-400 text-sm mb-2">Avg LCP</h3>
-              <p className="text-3xl font-bold text-white">{avgLCP.toFixed(0)}ms</p>
+              <p className="text-3xl font-bold text-white">{(avgLCP || 0).toFixed(0)}ms</p>
               <p className={`text-sm mt-2 ${avgLCP < 2500 ? 'text-green-400' : avgLCP < 4000 ? 'text-yellow-400' : 'text-red-400'}`}>
                 {avgLCP < 2500 ? 'Good' : avgLCP < 4000 ? 'Needs Improvement' : 'Poor'}
               </p>
@@ -234,7 +234,7 @@ export default function AdminAdvancedAnalytics() {
                   {performance.slice(0, 20).map(metric => (
                     <tr key={metric.id} className="border-b border-slate-700/50 text-sm">
                       <td className="py-3 text-cyan-400">{metric.metric_type}</td>
-                      <td className="py-3 text-white font-semibold">{metric.metric_value.toFixed(0)}ms</td>
+                      <td className="py-3 text-white font-semibold">{(metric.metric_value || 0).toFixed(0)}ms</td>
                       <td className="py-3 text-slate-400">{metric.page_url?.split('/').pop() || 'N/A'}</td>
                       <td className="py-3 text-slate-500">{new Date(metric.created_at).toLocaleTimeString()}</td>
                     </tr>

@@ -124,7 +124,7 @@ export default function AdminProductionChecklist() {
                   }}
                   className="absolute text-3xl"
                 >
-                  {['<‰', '=€', '(', '<Š', 'P'][i % 5]}
+                  {['ðŸŽ‰', 'ðŸŽŠ', 'ðŸŽˆ', 'ðŸ†', 'ðŸš€'][i % 5]}
                 </motion.div>
               ))}
             </div>
@@ -152,7 +152,7 @@ export default function AdminProductionChecklist() {
               </div>
 
               <div className="text-right">
-                <div className="text-6xl font-bold mb-2">{score.toFixed(0)}%</div>
+                <div className="text-6xl font-bold mb-2">{(score || 0).toFixed(0)}%</div>
                 <div className="text-white/90">Overall Score</div>
               </div>
             </div>
@@ -170,7 +170,7 @@ export default function AdminProductionChecklist() {
             {isProductionReady && (
               <div className="mt-6 p-4 bg-white/10 rounded-lg backdrop-blur-sm">
                 <p className="text-lg font-medium">
-                  <‰ Congratulations! All required items are complete. Your website is ready to launch!
+                  ðŸŽ‰ Congratulations! All required items are complete. Your website is ready to launch!
                 </p>
               </div>
             )}

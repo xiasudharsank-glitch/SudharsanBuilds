@@ -160,7 +160,7 @@ export default function AdminMediaLibrary() {
           <div className="mb-6 p-4 bg-cyan-50 border border-cyan-200 rounded-lg">
             <div className="flex items-center justify-between mb-2">
               <span className="text-cyan-800 font-medium">Uploading files...</span>
-              <span className="text-cyan-600">{uploadProgress.toFixed(0)}%</span>
+              <span className="text-cyan-600">{(uploadProgress || 0).toFixed(0)}%</span>
             </div>
             <div className="h-2 bg-cyan-200 rounded-full overflow-hidden">
               <div
@@ -503,7 +503,7 @@ function MediaDetailsModal({
                 {media.width && media.height && (
                   <div>
                     <div className="text-slate-600">Dimensions</div>
-                    <div className="font-medium">{media.width} × {media.height}</div>
+                    <div className="font-medium">{media.width} ï¿½ {media.height}</div>
                   </div>
                 )}
                 <div>

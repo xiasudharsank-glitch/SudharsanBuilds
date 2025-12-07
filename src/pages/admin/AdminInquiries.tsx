@@ -338,7 +338,7 @@ export default function AdminInquiries() {
         </div>
         <div className="bg-slate-800 rounded-xl border border-cyan-500/50 p-4">
           <p className="text-slate-400 text-sm mb-1">Conv. Rate</p>
-          <p className="text-2xl font-bold text-cyan-400">{stats.conversionRate.toFixed(1)}%</p>
+          <p className="text-2xl font-bold text-cyan-400">{stats.conversionRate?.toFixed(1) || '0.0'}%</p>
         </div>
       </div>
 

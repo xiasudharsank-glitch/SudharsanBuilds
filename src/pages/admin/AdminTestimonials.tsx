@@ -292,7 +292,7 @@ export default function AdminTestimonials() {
         </div>
         <div className="bg-slate-800 rounded-xl border border-amber-500/50 p-4">
           <p className="text-slate-400 text-sm mb-1">Avg Rating</p>
-          <p className="text-2xl font-bold text-amber-400">{stats.average_rating.toFixed(1)} ⭐</p>
+          <p className="text-2xl font-bold text-amber-400">{stats.average_rating?.toFixed(1) || '0.0'} ⭐</p>
         </div>
         <div className="bg-slate-800 rounded-xl border border-orange-500/50 p-4">
           <p className="text-slate-400 text-sm mb-1">5 Stars</p>
