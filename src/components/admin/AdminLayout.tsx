@@ -9,7 +9,16 @@ import {
   Settings,
   BarChart3,
   MessageSquare,
-  Users
+  Users,
+  BookOpen,
+  Briefcase,
+  HelpCircle,
+  Zap,
+  Mail,
+  TrendingUp,
+  Sliders,
+  Image,
+  CheckSquare
 } from 'lucide-react';
 import { supabase } from "../../services/supabaseClient";
 
@@ -30,9 +39,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const menuItems = [
     { icon: Home, label: 'Dashboard', path: '/admin' },
     { icon: FolderOpen, label: 'Projects', path: '/admin/projects' },
-    { icon: MessageSquare, label: 'Inquiries', path: '/admin/inquiries' },
+    { icon: Briefcase, label: 'Services', path: '/admin/services' },
+    { icon: BookOpen, label: 'Blog', path: '/admin/blog' },
     { icon: Users, label: 'Testimonials', path: '/admin/testimonials' },
+    { icon: HelpCircle, label: 'FAQ', path: '/admin/faq' },
+    { icon: MessageSquare, label: 'Inquiries', path: '/admin/inquiries' },
+    { icon: Zap, label: 'Hero Section', path: '/admin/hero' },
     { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
+    { icon: TrendingUp, label: 'Advanced Analytics', path: '/admin/advanced-analytics' },
+    { icon: Mail, label: 'Email Automation', path: '/admin/email-automation' },
+    { icon: Sliders, label: 'Remote Control', path: '/admin/remote-control' },
+    { icon: Image, label: 'Media Library', path: '/admin/media' },
+    { icon: CheckSquare, label: 'Production Checklist', path: '/admin/production-checklist' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
   ];
 
