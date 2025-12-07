@@ -1,16 +1,24 @@
 import { useState, useEffect } from 'react';
-import { Mail, Send, Clock, CheckCircle, XCircle, Plus, Edit, Trash2, Play, Pause } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Mail, Send, Clock, CheckCircle, XCircle, Plus, Edit, Trash2, Play, Pause, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   fetchAllEmailTemplates,
   fetchAllEmailSequences,
   fetchPendingEmails,
   fetchEmailLogs,
+  createEmailTemplate,
+  updateEmailTemplate,
+  deleteEmailTemplate,
+  createEmailSequence,
+  updateEmailSequence,
+  deleteEmailSequence,
+  cancelScheduledEmail,
   type EmailTemplate,
   type EmailSequence,
   type EmailQueueItem,
   type EmailLog
 } from '../../utils/emailAutomationApi';
+import LoadingButton, { SaveButton, DeleteButton, CancelButton } from '../../components/LoadingButton';
 
 type TabType = 'templates' | 'sequences' | 'queue' | 'logs';
 
@@ -21,6 +29,15 @@ export default function AdminEmailAutomation() {
   const [queueItems, setQueueItems] = useState<EmailQueueItem[]>([]);
   const [logs, setLogs] = useState<EmailLog[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Modal states
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [showSequenceModal, setShowSequenceModal] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [editingSequence, setEditingSequence] = useState<EmailSequence | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [canceling, setCanceling] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -51,6 +68,50 @@ export default function AdminEmailAutomation() {
       console.error('Error loading data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Template handlers
+  const handleDeleteTemplate = async (id: string) => {
+    if (!confirm('Delete this template? This cannot be undone.')) return;
+
+    setDeleting(id);
+    try {
+      await deleteEmailTemplate(id);
+      await loadData();
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      alert('Failed to delete template');
+    } finally {
+      setDeleting(null);
+    }
+  };
+
+  const handleToggleSequence = async (sequence: EmailSequence) => {
+    setSaving(true);
+    try {
+      await updateEmailSequence(sequence.id, { is_active: !sequence.is_active });
+      await loadData();
+    } catch (error) {
+      console.error('Error toggling sequence:', error);
+      alert('Failed to update sequence');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancelEmail = async (id: string) => {
+    if (!confirm('Cancel this scheduled email?')) return;
+
+    setCanceling(id);
+    try {
+      await cancelScheduledEmail(id);
+      await loadData();
+    } catch (error) {
+      console.error('Error canceling email:', error);
+      alert('Failed to cancel email');
+    } finally {
+      setCanceling(null);
     }
   };
 
@@ -113,10 +174,15 @@ export default function AdminEmailAutomation() {
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">Email Templates</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 font-semibold">
-              <Plus className="w-5 h-5" />
+            <LoadingButton
+              onClick={() => {
+                setEditingTemplate(null);
+                setShowTemplateModal(true);
+              }}
+              icon={<Plus className="w-5 h-5" />}
+            >
               New Template
-            </button>
+            </LoadingButton>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,11 +224,25 @@ export default function AdminEmailAutomation() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button className="flex-1 px-3 py-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 text-sm font-medium">
+                  <button
+                    onClick={() => {
+                      setEditingTemplate(template);
+                      setShowTemplateModal(true);
+                    }}
+                    className="flex-1 px-3 py-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 text-sm font-medium transition"
+                  >
                     <Edit className="w-4 h-4 mx-auto" />
                   </button>
-                  <button className="flex-1 px-3 py-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 text-sm font-medium">
-                    <Trash2 className="w-4 h-4 mx-auto" />
+                  <button
+                    onClick={() => handleDeleteTemplate(template.id)}
+                    disabled={deleting === template.id}
+                    className="flex-1 px-3 py-2 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 text-sm font-medium transition disabled:opacity-50"
+                  >
+                    {deleting === template.id ? (
+                      <div className="w-4 h-4 mx-auto border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4 mx-auto" />
+                    )}
                   </button>
                 </div>
               </motion.div>
@@ -175,10 +255,15 @@ export default function AdminEmailAutomation() {
         <div>
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-xl font-bold text-white">Email Sequences</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 font-semibold">
-              <Plus className="w-5 h-5" />
+            <LoadingButton
+              onClick={() => {
+                setEditingSequence(null);
+                setShowSequenceModal(true);
+              }}
+              icon={<Plus className="w-5 h-5" />}
+            >
               New Sequence
-            </button>
+            </LoadingButton>
           </div>
 
           <div className="space-y-4">
@@ -208,17 +293,33 @@ export default function AdminEmailAutomation() {
                 </div>
 
                 <div className="flex gap-2 mt-4">
-                  <button className="flex-1 px-3 py-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 text-sm font-medium flex items-center justify-center gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingSequence(sequence);
+                      setShowSequenceModal(true);
+                    }}
+                    className="flex-1 px-3 py-2 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30 text-sm font-medium flex items-center justify-center gap-2 transition"
+                  >
                     <Edit className="w-4 h-4" />
                     Edit Steps
                   </button>
-                  <button className={`flex-1 px-3 py-2 rounded text-sm font-medium flex items-center justify-center gap-2 ${
-                    sequence.is_active
-                      ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
-                      : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
-                  }`}>
-                    {sequence.is_active ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    {sequence.is_active ? 'Pause' : 'Activate'}
+                  <button
+                    onClick={() => handleToggleSequence(sequence)}
+                    disabled={saving}
+                    className={`flex-1 px-3 py-2 rounded text-sm font-medium flex items-center justify-center gap-2 transition disabled:opacity-50 ${
+                      sequence.is_active
+                        ? 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30'
+                        : 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                    }`}
+                  >
+                    {saving ? (
+                      <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    ) : sequence.is_active ? (
+                      <Pause className="w-4 h-4" />
+                    ) : (
+                      <Play className="w-4 h-4" />
+                    )}
+                    {!saving && (sequence.is_active ? 'Pause' : 'Activate')}
                   </button>
                 </div>
               </motion.div>
@@ -269,8 +370,19 @@ export default function AdminEmailAutomation() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 text-xs font-medium">
-                        Cancel
+                      <button
+                        onClick={() => handleCancelEmail(item.id)}
+                        disabled={canceling === item.id}
+                        className="px-3 py-1 bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 text-xs font-medium transition disabled:opacity-50 inline-flex items-center gap-1"
+                      >
+                        {canceling === item.id ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                            Canceling...
+                          </>
+                        ) : (
+                          'Cancel'
+                        )}
                       </button>
                     </td>
                   </tr>
