@@ -395,9 +395,14 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
       return;
     }
 
-    // Show booking modal to collect customer details
-    setSelectedService(service);
-    setShowBookingModal(true);
+    // Navigate to checkout page with service details
+    navigate('/checkout', {
+      state: {
+        serviceName: service.name,
+        totalAmount: service.totalAmount,
+        depositAmount: service.depositAmount
+      }
+    });
   };
 
   // ✅ NEW: Handle Enter key to move to next field in booking modal

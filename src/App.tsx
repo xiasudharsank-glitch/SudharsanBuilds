@@ -16,6 +16,7 @@ const ServicesPage = lazy(() => import('./pages/ServicesPage'));
 const BlogPage = lazy(() => import('./pages/BlogPage'));
 const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const PaymentConfirmationPage = lazy(() => import('./pages/PaymentConfirmationPage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
@@ -175,6 +176,7 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/services" element={<ServicesPage />} />
+                <Route path="/checkout" element={<CheckoutPage />} />
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/testimonials" element={<TestimonialsPage />} />
                 <Route path="/faq" element={<FAQPage />} />
