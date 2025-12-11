@@ -398,9 +398,11 @@ export default function Services({ showAll = false }: { showAll?: boolean }) {
     // Navigate to checkout page with service details
     navigate('/checkout', {
       state: {
-        serviceName: service.name,
+        name: service.name,
+        price: service.price,
         totalAmount: service.totalAmount,
-        depositAmount: service.depositAmount
+        depositAmount: service.depositAmount,
+        timeline: service.timeline
       }
     });
   };
