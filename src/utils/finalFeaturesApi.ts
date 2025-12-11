@@ -502,12 +502,11 @@ export function getPriorityColor(priority: string): string {
 
 export function getCategoryIcon(category: string): string {
   const icons = {
-    seo: '=
-',
-    performance: '�',
-    security: '=',
-    content: '=�',
-    functionality: '�'
+    seo: '🔍',
+    performance: '⚡',
+    security: '🔒',
+    content: '📝',
+    functionality: '⚙️'
   };
-  return icons[category as keyof typeof icons] || '=�';
+  return icons[category as keyof typeof icons] || '📋';
 }
