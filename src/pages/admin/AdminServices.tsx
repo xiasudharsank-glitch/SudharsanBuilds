@@ -234,7 +234,7 @@ export default function AdminServices() {
               <div className="flex items-baseline gap-3 mb-4">
                 <div className="flex items-center gap-1">
                   <DollarSign className="w-4 h-4 text-cyan-400" />
-                  <span className="text-2xl font-bold text-cyan-400">₹{service.price_inr.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-cyan-400">₹{(service.price_inr || 0).toLocaleString()}</span>
                 </div>
                 {service.price_usd && service.price_usd > 0 && (
                   <span className="text-slate-500">/ ${service.price_usd}</span>

@@ -266,7 +266,7 @@ export default function AdminBlog() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-slate-400 text-sm">Total Views</p>
-                <p className="text-3xl font-bold text-purple-400 mt-1">{stats.total_views.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-purple-400 mt-1">{(stats?.total_views || 0).toLocaleString()}</p>
               </div>
               <TrendingUp className="w-12 h-12 text-purple-400 opacity-20" />
             </div>
