@@ -18,6 +18,8 @@ const TestimonialsPage = lazy(() => import('./pages/TestimonialsPage'));
 const FAQPage = lazy(() => import('./pages/FAQPage'));
 const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 const PaymentConfirmationPage = lazy(() => import('./pages/PaymentConfirmationPage'));
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'));
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'));
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 // Lazy load admin pages
@@ -180,6 +182,8 @@ function App() {
                 <Route path="/blog" element={<BlogPage />} />
                 <Route path="/testimonials" element={<TestimonialsPage />} />
                 <Route path="/faq" element={<FAQPage />} />
+                <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                <Route path="/terms" element={<TermsOfServicePage />} />
                 <Route path="/payment-confirmation" element={<PaymentConfirmationPage />} />
 
                 {/* Admin Routes */}

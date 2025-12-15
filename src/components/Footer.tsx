@@ -1,5 +1,5 @@
 import { Heart, Mail, MapPin, Github, Linkedin, Twitter } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -34,7 +34,7 @@ export default function Footer() {
     <footer className="bg-slate-900 text-slate-300">
       {/* Main Footer Content */}
       <div className="container mx-auto px-4 md:px-6 py-12 md:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
           {/* About Section */}
           <div>
             <h3 className="text-white text-xl font-bold mb-4">Sudharsan Builds</h3>
@@ -138,6 +138,23 @@ export default function Footer() {
                 >
                   info@sudharsanbuilds.com
                 </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal Section */}
+          <div>
+            <h3 className="text-white text-lg font-bold mb-4">Legal</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/privacy" className="text-slate-400 hover:text-cyan-400 transition-colors">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/terms" className="text-slate-400 hover:text-cyan-400 transition-colors">
+                  Terms & Conditions
+                </Link>
               </li>
             </ul>
           </div>
